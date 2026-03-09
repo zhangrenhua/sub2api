@@ -103,7 +103,7 @@ COPY --from=backend-builder --chown=sub2api:sub2api /app/backend/resources /app/
 RUN mkdir -p /app/data && chown sub2api:sub2api /app/data
 
 # Switch to non-root user
-USER sub2api
+USER root
 
 # Expose port (can be overridden by SERVER_PORT env var)
 EXPOSE 8080
