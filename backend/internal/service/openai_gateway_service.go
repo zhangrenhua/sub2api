@@ -2199,13 +2199,8 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			Kind:               "request_error",
 			Message:            safeErr,
 		})
-		c.JSON(http.StatusBadGateway, gin.H{
-			"error": gin.H{
-				"type":    "upstream_error",
-				"message": "Upstream request failed",
-			},
-		})
-		return nil, fmt.Errorf("upstream request failed: %s", safeErr)
+		// 连接错误触发 failover，切换到其他账号重试（最多 1 次）
+		return nil, &UpstreamFailoverError{StatusCode: http.StatusBadGateway, MaxSwitchOverride: 1}
 	}
 	defer func() { _ = resp.Body.Close() }()
 

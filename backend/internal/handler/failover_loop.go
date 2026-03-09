@@ -99,8 +99,12 @@ func (s *FailoverState) HandleFailoverError(
 	// 加入失败列表
 	s.FailedAccountIDs[accountID] = struct{}{}
 
-	// 检查是否耗尽
-	if s.SwitchCount >= s.MaxSwitches {
+	// 检查是否耗尽（MaxSwitchOverride > 0 时使用更小的上限）
+	maxSwitches := s.MaxSwitches
+	if failoverErr.MaxSwitchOverride > 0 && failoverErr.MaxSwitchOverride < maxSwitches {
+		maxSwitches = failoverErr.MaxSwitchOverride
+	}
+	if s.SwitchCount >= maxSwitches {
 		return FailoverExhausted
 	}
 

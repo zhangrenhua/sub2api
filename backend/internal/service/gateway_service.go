@@ -478,6 +478,7 @@ type UpstreamFailoverError struct {
 	ResponseHeaders        http.Header // 上游响应头，用于透传 cf-ray/cf-mitigated/content-type 等诊断信息
 	ForceCacheBilling      bool        // Antigravity 粘性会话切换时设为 true
 	RetryableOnSameAccount bool        // 临时性错误（如 Google 间歇性 400、空响应），应在同一账号上重试 N 次再切换
+	MaxSwitchOverride      int         // >0 时覆盖 FailoverState.MaxSwitches（如连接错误只需切换 1 次）
 }
 
 func (e *UpstreamFailoverError) Error() string {
@@ -4046,7 +4047,6 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 			if resp != nil && resp.Body != nil {
 				_ = resp.Body.Close()
 			}
-			// Ensure the client receives an error response (handlers assume Forward writes on non-failover errors).
 			safeErr := sanitizeUpstreamErrorMessage(err.Error())
 			setOpsUpstreamError(c, 0, safeErr, "")
 			appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
@@ -4057,14 +4057,8 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 				Kind:               "request_error",
 				Message:            safeErr,
 			})
-			c.JSON(http.StatusBadGateway, gin.H{
-				"type": "error",
-				"error": gin.H{
-					"type":    "upstream_error",
-					"message": "Upstream request failed",
-				},
-			})
-			return nil, fmt.Errorf("upstream request failed: %s", safeErr)
+			// 连接错误触发 failover，切换到其他账号重试（最多 1 次）
+			return nil, &UpstreamFailoverError{StatusCode: http.StatusBadGateway, MaxSwitchOverride: 1}
 		}
 
 		// 优先检测thinking block签名错误（400）并重试一次
@@ -4505,14 +4499,8 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthrough(
 				Kind:               "request_error",
 				Message:            safeErr,
 			})
-			c.JSON(http.StatusBadGateway, gin.H{
-				"type": "error",
-				"error": gin.H{
-					"type":    "upstream_error",
-					"message": "Upstream request failed",
-				},
-			})
-			return nil, fmt.Errorf("upstream request failed: %s", safeErr)
+			// 连接错误触发 failover，切换到其他账号重试（最多 1 次）
+			return nil, &UpstreamFailoverError{StatusCode: http.StatusBadGateway, MaxSwitchOverride: 1}
 		}
 
 		// 透传分支禁止 400 请求体降级重试（该重试会改写请求体）
