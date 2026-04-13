@@ -59,6 +59,12 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 		return
 	}
 
+	// 请求内容大小软限制：提前拦截过大请求，减少无效上游流量开销
+	if msg, exceeded := exceedsContentSizeLimit(h.cfg, body); exceeded {
+		h.responsesErrorResponse(c, http.StatusRequestEntityTooLarge, "invalid_request_error", msg)
+		return
+	}
+
 	setOpsRequestContext(c, "", false, body)
 
 	// Validate JSON

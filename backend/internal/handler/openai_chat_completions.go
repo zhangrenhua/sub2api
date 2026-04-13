@@ -61,6 +61,12 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 		return
 	}
 
+	// 请求内容大小软限制：提前拦截过大请求，减少无效上游流量开销
+	if msg, exceeded := exceedsContentSizeLimit(h.cfg, body); exceeded {
+		h.errorResponse(c, http.StatusRequestEntityTooLarge, "invalid_request_error", msg)
+		return
+	}
+
 	if !gjson.ValidBytes(body) {
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to parse request body")
 		return
