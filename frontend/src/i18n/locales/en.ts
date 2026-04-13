@@ -4467,6 +4467,8 @@ export default {
         minAmount: 'Minimum Amount',
         maxAmount: 'Maximum Amount',
         dailyLimit: 'Daily Limit',
+        rechargeRatio: 'Recharge Ratio',
+        rechargeRatioHint: 'Balance multiplier, e.g. 12.82 means paying 78 credits 1000',
         orderTimeout: 'Order Timeout',
         orderTimeoutHint: 'In minutes, minimum 1',
         maxPendingOrders: 'Max Pending Orders',

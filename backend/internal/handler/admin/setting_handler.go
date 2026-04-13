@@ -183,6 +183,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		PaymentMaxPendingOrders:              paymentCfg.MaxPendingOrders,
 		PaymentEnabledTypes:                  paymentCfg.EnabledTypes,
 		PaymentBalanceDisabled:               paymentCfg.BalanceDisabled,
+		PaymentRechargeRatio:                 paymentCfg.RechargeRatio,
 		PaymentLoadBalanceStrat:              paymentCfg.LoadBalanceStrategy,
 		PaymentProductNamePrefix:             paymentCfg.ProductNamePrefix,
 		PaymentProductNameSuffix:             paymentCfg.ProductNameSuffix,
@@ -312,8 +313,9 @@ type UpdateSettingsRequest struct {
 	PaymentOrderTimeoutMin   *int     `json:"payment_order_timeout_minutes"`
 	PaymentMaxPendingOrders  *int     `json:"payment_max_pending_orders"`
 	PaymentEnabledTypes      []string `json:"payment_enabled_types"`
-	PaymentBalanceDisabled   *bool    `json:"payment_balance_disabled"`
-	PaymentLoadBalanceStrat  *string  `json:"payment_load_balance_strategy"`
+	PaymentBalanceDisabled   *bool     `json:"payment_balance_disabled"`
+	PaymentRechargeRatio     *float64  `json:"payment_recharge_ratio"`
+	PaymentLoadBalanceStrat  *string   `json:"payment_load_balance_strategy"`
 	PaymentProductNamePrefix *string  `json:"payment_product_name_prefix"`
 	PaymentProductNameSuffix *string  `json:"payment_product_name_suffix"`
 	PaymentHelpImageURL      *string  `json:"payment_help_image_url"`
@@ -900,6 +902,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			MaxPendingOrders:       req.PaymentMaxPendingOrders,
 			EnabledTypes:           req.PaymentEnabledTypes,
 			BalanceDisabled:        req.PaymentBalanceDisabled,
+			RechargeRatio:          req.PaymentRechargeRatio,
 			LoadBalanceStrategy:    req.PaymentLoadBalanceStrat,
 			ProductNamePrefix:      req.PaymentProductNamePrefix,
 			ProductNameSuffix:      req.PaymentProductNameSuffix,
@@ -1054,7 +1057,7 @@ func hasPaymentFields(req UpdateSettingsRequest) bool {
 		req.PaymentMaxAmount != nil || req.PaymentDailyLimit != nil ||
 		req.PaymentOrderTimeoutMin != nil || req.PaymentMaxPendingOrders != nil ||
 		req.PaymentEnabledTypes != nil || req.PaymentBalanceDisabled != nil ||
-		req.PaymentLoadBalanceStrat != nil || req.PaymentProductNamePrefix != nil ||
+		req.PaymentRechargeRatio != nil || req.PaymentLoadBalanceStrat != nil || req.PaymentProductNamePrefix != nil ||
 		req.PaymentProductNameSuffix != nil || req.PaymentHelpImageURL != nil ||
 		req.PaymentHelpText != nil || req.PaymentCancelRateLimitEnabled != nil ||
 		req.PaymentCancelRateLimitMax != nil || req.PaymentCancelRateLimitWindow != nil ||

@@ -25,6 +25,7 @@ const (
 	SettingProductNameSuffix   = "PRODUCT_NAME_SUFFIX"
 	SettingHelpImageURL        = "PAYMENT_HELP_IMAGE_URL"
 	SettingHelpText            = "PAYMENT_HELP_TEXT"
+	SettingRechargeRatio       = "BALANCE_RECHARGE_RATIO"
 	SettingCancelRateLimitOn   = "CANCEL_RATE_LIMIT_ENABLED"
 	SettingCancelRateLimitMax  = "CANCEL_RATE_LIMIT_MAX"
 	SettingCancelWindowSize    = "CANCEL_RATE_LIMIT_WINDOW"
@@ -53,6 +54,7 @@ type PaymentConfig struct {
 	ProductNameSuffix    string   `json:"product_name_suffix"`
 	HelpImageURL         string   `json:"help_image_url"`
 	HelpText             string   `json:"help_text"`
+	RechargeRatio        float64  `json:"recharge_ratio"`
 	StripePublishableKey string   `json:"stripe_publishable_key,omitempty"`
 
 	// Cancel rate limit settings
@@ -73,6 +75,7 @@ type UpdatePaymentConfigRequest struct {
 	MaxPendingOrders    *int     `json:"max_pending_orders"`
 	EnabledTypes        []string `json:"enabled_payment_types"`
 	BalanceDisabled     *bool    `json:"balance_disabled"`
+	RechargeRatio       *float64 `json:"recharge_ratio"`
 	LoadBalanceStrategy *string  `json:"load_balance_strategy"`
 	ProductNamePrefix   *string  `json:"product_name_prefix"`
 	ProductNameSuffix   *string  `json:"product_name_suffix"`
@@ -181,7 +184,7 @@ func (s *PaymentConfigService) GetPaymentConfig(ctx context.Context) (*PaymentCo
 	keys := []string{
 		SettingPaymentEnabled, SettingMinRechargeAmount, SettingMaxRechargeAmount,
 		SettingDailyRechargeLimit, SettingOrderTimeoutMinutes, SettingMaxPendingOrders,
-		SettingEnabledPaymentTypes, SettingBalancePayDisabled, SettingLoadBalanceStrategy,
+		SettingEnabledPaymentTypes, SettingBalancePayDisabled, SettingRechargeRatio, SettingLoadBalanceStrategy,
 		SettingProductNamePrefix, SettingProductNameSuffix,
 		SettingHelpImageURL, SettingHelpText,
 		SettingCancelRateLimitOn, SettingCancelRateLimitMax,
@@ -206,6 +209,7 @@ func (s *PaymentConfigService) parsePaymentConfig(vals map[string]string) *Payme
 		OrderTimeoutMin:     pcParseInt(vals[SettingOrderTimeoutMinutes], defaultOrderTimeoutMin),
 		MaxPendingOrders:    pcParseInt(vals[SettingMaxPendingOrders], defaultMaxPendingOrders),
 		BalanceDisabled:     vals[SettingBalancePayDisabled] == "true",
+		RechargeRatio:       pcParseFloat(vals[SettingRechargeRatio], 1),
 		LoadBalanceStrategy: vals[SettingLoadBalanceStrategy],
 		ProductNamePrefix:   vals[SettingProductNamePrefix],
 		ProductNameSuffix:   vals[SettingProductNameSuffix],
@@ -262,6 +266,7 @@ func (s *PaymentConfigService) UpdatePaymentConfig(ctx context.Context, req Upda
 		SettingOrderTimeoutMinutes: formatPositiveInt(req.OrderTimeoutMin),
 		SettingMaxPendingOrders:    formatPositiveInt(req.MaxPendingOrders),
 		SettingBalancePayDisabled:  formatBoolOrEmpty(req.BalanceDisabled),
+		SettingRechargeRatio:       formatPositiveFloat(req.RechargeRatio),
 		SettingLoadBalanceStrategy: derefStr(req.LoadBalanceStrategy),
 		SettingProductNamePrefix:   derefStr(req.ProductNamePrefix),
 		SettingProductNameSuffix:   derefStr(req.ProductNameSuffix),

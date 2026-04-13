@@ -133,6 +133,7 @@ type SystemSettings struct {
 	PaymentMaxPendingOrders  int      `json:"payment_max_pending_orders"`
 	PaymentEnabledTypes      []string `json:"payment_enabled_types"`
 	PaymentBalanceDisabled   bool     `json:"payment_balance_disabled"`
+	PaymentRechargeRatio     float64  `json:"payment_recharge_ratio"`
 	PaymentLoadBalanceStrat  string   `json:"payment_load_balance_strategy"`
 	PaymentProductNamePrefix string   `json:"payment_product_name_prefix"`
 	PaymentProductNameSuffix string   `json:"payment_product_name_suffix"`

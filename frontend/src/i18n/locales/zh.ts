@@ -4631,6 +4631,8 @@ export default {
         minAmount: '最低金额',
         maxAmount: '最高金额',
         dailyLimit: '每日限额',
+        rechargeRatio: '充值比例',
+        rechargeRatioHint: '充值到账倍率，如 12.82 表示充 78 到账 1000',
         orderTimeout: '订单超时时间',
         orderTimeoutHint: '单位：分钟，至少 1 分钟',
         maxPendingOrders: '最大待支付订单数',
