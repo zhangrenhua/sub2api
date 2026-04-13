@@ -209,7 +209,7 @@ func (s *PaymentConfigService) parsePaymentConfig(vals map[string]string) *Payme
 		OrderTimeoutMin:     pcParseInt(vals[SettingOrderTimeoutMinutes], defaultOrderTimeoutMin),
 		MaxPendingOrders:    pcParseInt(vals[SettingMaxPendingOrders], defaultMaxPendingOrders),
 		BalanceDisabled:     vals[SettingBalancePayDisabled] == "true",
-		RechargeRatio:       pcParseFloat(vals[SettingRechargeRatio], 1),
+		RechargeRatio:       pcParseFloat(vals[SettingRechargeRatio], 12),
 		LoadBalanceStrategy: vals[SettingLoadBalanceStrategy],
 		ProductNamePrefix:   vals[SettingProductNamePrefix],
 		ProductNameSuffix:   vals[SettingProductNameSuffix],

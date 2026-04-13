@@ -595,7 +595,7 @@ func TestAPIContracts(t *testing.T) {
 					"payment_max_pending_orders": 0,
 					"payment_enabled_types": null,
 					"payment_balance_disabled": false,
-					"payment_recharge_ratio": 1,
+					"payment_recharge_ratio": 12,
 					"payment_load_balance_strategy": "",
 					"payment_product_name_prefix": "",
 					"payment_product_name_suffix": "",
