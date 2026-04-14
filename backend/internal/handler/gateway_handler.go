@@ -254,6 +254,9 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 		return
 	}
 
+	// 设置请求所属分组 ID（用于渠道级功能判断，如 WebSearch 模拟）
+	parsedReq.GroupID = apiKey.GroupID
+
 	// 计算粘性会话hash
 	parsedReq.SessionContext = &service.SessionContext{
 		ClientIP:  ip.GetClientIP(c),
@@ -476,6 +479,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			h.submitUsageRecordTask(func(ctx context.Context) {
 				if err := h.gatewayService.RecordUsage(ctx, &service.RecordUsageInput{
 					Result:             result,
+					ParsedRequest:      parsedReq,
 					APIKey:             apiKey,
 					User:               apiKey.User,
 					Account:            account,
@@ -524,7 +528,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 
 		for {
 			// 选择支持该模型的账号
-			selection, err := h.gatewayService.SelectAccountWithLoadAwareness(c.Request.Context(), currentAPIKey.GroupID, sessionKey, reqModel, fs.FailedAccountIDs, parsedReq.MetadataUserID, int64(0))
+			selection, err := h.gatewayService.SelectAccountWithLoadAwareness(c.Request.Context(), currentAPIKey.GroupID, sessionKey, reqModel, fs.FailedAccountIDs, parsedReq.MetadataUserID, subject.UserID)
 			if err != nil {
 				if len(fs.FailedAccountIDs) == 0 {
 					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "No available accounts: "+err.Error(), streamStarted)
@@ -678,6 +682,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			}
 
 			// 转发请求 - 根据账号平台分流
+			c.Set("parsed_request", parsedReq)
 			var result *service.ForwardResult
 			requestCtx := c.Request.Context()
 			if fs.SwitchCount > 0 {
@@ -816,6 +821,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			h.submitUsageRecordTask(func(ctx context.Context) {
 				if err := h.gatewayService.RecordUsage(ctx, &service.RecordUsageInput{
 					Result:             result,
+					ParsedRequest:      parsedReq,
 					APIKey:             currentAPIKey,
 					User:               currentAPIKey.User,
 					Account:            account,
