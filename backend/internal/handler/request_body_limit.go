@@ -39,6 +39,7 @@ func buildContentTooLargeMessage(estimatedTokens, limit int64) string {
 
 // estimateRequestTokens 从请求体的文本内容中估算token数量。
 // 支持 OpenAI、Anthropic 和 Gemini 请求格式。
+// 仅提取主要文本字段，对 thinking/tool_result 等不做深度提取，宁可低估不误杀。
 // 使用启发式算法：约3个UTF-8字符对应1个token。
 func estimateRequestTokens(body []byte) int64 {
 	var totalRunes int64
