@@ -182,6 +182,44 @@ func TestEstimateRequestTokens_LargeBase64Image(t *testing.T) {
 	assert.Empty(t, msg)
 }
 
+func TestEstimateRequestTokens_5MBImageOnly(t *testing.T) {
+	// 模拟5MB base64图片，完全没有文本内容
+	base64Data := strings.Repeat("iVBORw0KGgoAAAANSUhEUgAA", 250000) // ~5MB base64
+	body := []byte(`{"messages":[{"role":"user","content":[` +
+		`{"type":"image_url","image_url":{"url":"data:image/png;base64,` + base64Data + `"}}` +
+		`]}]}`)
+
+	// 识别到 messages 结构但没有 text 字段，不应触发兜底，token 估算应为 0
+	tokens := estimateRequestTokens(body)
+	assert.Equal(t, int64(0), tokens, "image-only request should estimate 0 tokens")
+
+	// 300k limit 下不应被拦截
+	cfg := &config.Config{}
+	cfg.Gateway.MaxRequestContentSize = 300000
+	msg, exceeded := exceedsContentSizeLimit(cfg, body)
+	assert.False(t, exceeded, "5MB image-only request should pass 300k token limit")
+	assert.Empty(t, msg)
+}
+
+func TestEstimateRequestTokens_AnthropicPDFBase64(t *testing.T) {
+	// 模拟 Anthropic 格式的 5MB PDF base64
+	base64Data := strings.Repeat("JVBERi0xLjQKMSAwIG9iago", 250000) // ~5MB
+	body := []byte(`{"model":"claude-3-opus","messages":[{"role":"user","content":[` +
+		`{"type":"document","source":{"type":"base64","media_type":"application/pdf","data":"` + base64Data + `"}},` +
+		`{"type":"text","text":"Summarize this PDF"}` +
+		`]}]}`)
+
+	tokens := estimateRequestTokens(body)
+	// 只计 "Summarize this PDF" (18 runes ≈ 6 tokens)
+	assert.Less(t, tokens, int64(100), "PDF base64 data should not be counted as tokens")
+
+	cfg := &config.Config{}
+	cfg.Gateway.MaxRequestContentSize = 300000
+	msg, exceeded := exceedsContentSizeLimit(cfg, body)
+	assert.False(t, exceeded, "5MB PDF request should pass 300k token limit")
+	assert.Empty(t, msg)
+}
+
 func TestExceedsContentSizeLimit_NilConfig(t *testing.T) {
 	msg, exceeded := exceedsContentSizeLimit(nil, []byte(`{}`))
 	assert.False(t, exceeded)

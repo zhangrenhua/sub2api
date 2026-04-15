@@ -42,10 +42,12 @@ func buildContentTooLargeMessage(estimatedTokens, limit int64) string {
 // 使用启发式算法：约3个UTF-8字符对应1个token。
 func estimateRequestTokens(body []byte) int64 {
 	var totalRunes int64
+	structuredFound := false // 是否识别到已知请求结构
 
 	// OpenAI/Anthropic: messages[].content（字符串或内容数组）
 	messages := gjson.GetBytes(body, "messages")
 	if messages.Exists() && messages.IsArray() {
+		structuredFound = true
 		messages.ForEach(func(_, msg gjson.Result) bool {
 			content := msg.Get("content")
 			if content.Type == gjson.String {
@@ -80,6 +82,7 @@ func estimateRequestTokens(body []byte) int64 {
 	// Gemini: contents[].parts[].text
 	contents := gjson.GetBytes(body, "contents")
 	if contents.Exists() && contents.IsArray() {
+		structuredFound = true
 		contents.ForEach(func(_, content gjson.Result) bool {
 			parts := content.Get("parts")
 			if parts.IsArray() {
@@ -109,6 +112,9 @@ func estimateRequestTokens(body []byte) int64 {
 
 	// OpenAI Responses API: input（字符串或消息对象数组）
 	input := gjson.GetBytes(body, "input")
+	if input.Exists() {
+		structuredFound = true
+	}
 	if input.Type == gjson.String {
 		totalRunes += int64(utf8.RuneCountInString(input.Str))
 	} else if input.IsArray() {
@@ -135,8 +141,9 @@ func estimateRequestTokens(body []byte) int64 {
 		totalRunes += int64(utf8.RuneCountInString(instructions.Str))
 	}
 
-	// 兜底：如果没有提取到结构化内容，用整个body估算
-	if totalRunes == 0 {
+	// 兜底：仅当完全未识别到已知请求结构时，用整个body估算。
+	// 如果识别到了结构（如messages/contents/input）但文本为空（如纯图片），不触发兜底。
+	if totalRunes == 0 && !structuredFound {
 		totalRunes = int64(utf8.RuneCount(body))
 	}
 
