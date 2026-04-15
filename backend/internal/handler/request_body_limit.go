@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"unicode/utf8"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/tidwall/gjson"
 )
 
 func extractMaxBytesError(err error) (*http.MaxBytesError, bool) {
@@ -28,14 +30,121 @@ func buildBodyTooLargeMessage(limit int64) string {
 	return fmt.Sprintf("Request body too large, limit is %s", formatBodyLimit(limit))
 }
 
-func buildContentTooLargeMessage(bodySize int, limit int64) string {
+func buildContentTooLargeMessage(estimatedTokens, limit int64) string {
 	return fmt.Sprintf(
-		"Request content too large (current %dKB, limit %dKB). Please compress the content or start a new conversation. 请求内容过大，请压缩内容或重建对话窗口。",
-		bodySize/1024, limit/1024,
+		"Request content too large (estimated %dk tokens, limit %dk tokens). Please compress the content or start a new conversation. 请求内容过大（预估%dk tokens，限制%dk tokens），请压缩内容或重建对话窗口。",
+		estimatedTokens/1000, limit/1000, estimatedTokens/1000, limit/1000,
 	)
 }
 
-// exceedsContentSizeLimit 检查请求体是否超过内容大小软限制。
+// estimateRequestTokens 从请求体的文本内容中估算token数量。
+// 支持 OpenAI、Anthropic 和 Gemini 请求格式。
+// 使用启发式算法：约3个UTF-8字符对应1个token。
+func estimateRequestTokens(body []byte) int64 {
+	var totalRunes int64
+
+	// OpenAI/Anthropic: messages[].content（字符串或内容数组）
+	messages := gjson.GetBytes(body, "messages")
+	if messages.Exists() && messages.IsArray() {
+		messages.ForEach(func(_, msg gjson.Result) bool {
+			content := msg.Get("content")
+			if content.Type == gjson.String {
+				totalRunes += int64(utf8.RuneCountInString(content.Str))
+			} else if content.IsArray() {
+				content.ForEach(func(_, part gjson.Result) bool {
+					text := part.Get("text")
+					if text.Type == gjson.String {
+						totalRunes += int64(utf8.RuneCountInString(text.Str))
+					}
+					return true
+				})
+			}
+			return true
+		})
+	}
+
+	// Anthropic: system（字符串或内容数组）
+	system := gjson.GetBytes(body, "system")
+	if system.Type == gjson.String {
+		totalRunes += int64(utf8.RuneCountInString(system.Str))
+	} else if system.IsArray() {
+		system.ForEach(func(_, part gjson.Result) bool {
+			text := part.Get("text")
+			if text.Type == gjson.String {
+				totalRunes += int64(utf8.RuneCountInString(text.Str))
+			}
+			return true
+		})
+	}
+
+	// Gemini: contents[].parts[].text
+	contents := gjson.GetBytes(body, "contents")
+	if contents.Exists() && contents.IsArray() {
+		contents.ForEach(func(_, content gjson.Result) bool {
+			parts := content.Get("parts")
+			if parts.IsArray() {
+				parts.ForEach(func(_, part gjson.Result) bool {
+					text := part.Get("text")
+					if text.Type == gjson.String {
+						totalRunes += int64(utf8.RuneCountInString(text.Str))
+					}
+					return true
+				})
+			}
+			return true
+		})
+	}
+
+	// Gemini: systemInstruction.parts[].text
+	sysInstr := gjson.GetBytes(body, "systemInstruction.parts")
+	if sysInstr.IsArray() {
+		sysInstr.ForEach(func(_, part gjson.Result) bool {
+			text := part.Get("text")
+			if text.Type == gjson.String {
+				totalRunes += int64(utf8.RuneCountInString(text.Str))
+			}
+			return true
+		})
+	}
+
+	// OpenAI Responses API: input（字符串或消息对象数组）
+	input := gjson.GetBytes(body, "input")
+	if input.Type == gjson.String {
+		totalRunes += int64(utf8.RuneCountInString(input.Str))
+	} else if input.IsArray() {
+		input.ForEach(func(_, item gjson.Result) bool {
+			content := item.Get("content")
+			if content.Type == gjson.String {
+				totalRunes += int64(utf8.RuneCountInString(content.Str))
+			} else if content.IsArray() {
+				content.ForEach(func(_, part gjson.Result) bool {
+					text := part.Get("text")
+					if text.Type == gjson.String {
+						totalRunes += int64(utf8.RuneCountInString(text.Str))
+					}
+					return true
+				})
+			}
+			return true
+		})
+	}
+
+	// OpenAI Responses API: instructions
+	instructions := gjson.GetBytes(body, "instructions")
+	if instructions.Type == gjson.String {
+		totalRunes += int64(utf8.RuneCountInString(instructions.Str))
+	}
+
+	// 兜底：如果没有提取到结构化内容，用整个body估算
+	if totalRunes == 0 {
+		totalRunes = int64(utf8.RuneCount(body))
+	}
+
+	// 启发式估算：约3个rune对应1个token（适用于中英混合内容）
+	return (totalRunes + 2) / 3
+}
+
+// exceedsContentSizeLimit 检查请求的预估token数是否超过配置的token限制。
 // 超限时返回提示消息和 true，未超限或未配置时返回空字符串和 false。
 func exceedsContentSizeLimit(cfg *config.Config, body []byte) (string, bool) {
 	if cfg == nil {
@@ -45,8 +154,9 @@ func exceedsContentSizeLimit(cfg *config.Config, body []byte) (string, bool) {
 	if limit <= 0 {
 		return "", false
 	}
-	if int64(len(body)) > limit {
-		return buildContentTooLargeMessage(len(body), limit), true
+	estimated := estimateRequestTokens(body)
+	if estimated > limit {
+		return buildContentTooLargeMessage(estimated, limit), true
 	}
 	return "", false
 }

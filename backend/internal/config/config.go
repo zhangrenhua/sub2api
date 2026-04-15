@@ -336,8 +336,8 @@ type GatewayConfig struct {
 	ResponseHeaderTimeout int `mapstructure:"response_header_timeout"`
 	// 请求体最大字节数，用于网关请求体大小限制
 	MaxBodySize int64 `mapstructure:"max_body_size"`
-	// 请求内容大小软限制（字节），超过此值直接拒绝并提示用户压缩内容或重建窗口。
-	// 用于在上游限制之前提前拦截过大请求，减少无效流量开销。0 表示不限制。
+	// 请求内容token数量软限制，超过此值直接拒绝并提示用户压缩内容或重建窗口。
+	// 通过启发式算法从请求体中提取文本内容并估算token数。0 表示不限制。
 	MaxRequestContentSize int64 `mapstructure:"max_request_content_size"`
 	// 非流式上游响应体读取上限（字节），用于防止无界读取导致内存放大
 	UpstreamResponseReadMaxBytes int64 `mapstructure:"upstream_response_read_max_bytes"`
@@ -1410,7 +1410,7 @@ func setDefaults() {
 	viper.SetDefault("gateway.antigravity_fallback_cooldown_minutes", 1)
 	viper.SetDefault("gateway.antigravity_extra_retries", 10)
 	viper.SetDefault("gateway.max_body_size", int64(256*1024*1024))
-	viper.SetDefault("gateway.max_request_content_size", int64(1536*1024))
+	viper.SetDefault("gateway.max_request_content_size", int64(300000))
 	viper.SetDefault("gateway.upstream_response_read_max_bytes", int64(8*1024*1024))
 	viper.SetDefault("gateway.proxy_probe_response_read_max_bytes", int64(1024*1024))
 	viper.SetDefault("gateway.gemini_debug_response_headers", false)
