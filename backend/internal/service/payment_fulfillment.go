@@ -192,18 +192,12 @@ func (s *PaymentService) doBalance(ctx context.Context, o *dbent.PaymentOrder) e
 	existing, lookupErr := s.redeemService.GetByCode(ctx, o.RechargeCode)
 	action := resolveRedeemAction(existing, lookupErr)
 
-	// 应用充值比例：支付金额 * 比例 = 到账余额（默认 1:1）
-	creditAmount := o.Amount
-	if cfg, cfgErr := s.configService.GetPaymentConfig(ctx); cfgErr == nil && cfg.RechargeRatio > 0 && cfg.RechargeRatio != 1 {
-		creditAmount = math.Round(o.Amount*cfg.RechargeRatio*100) / 100
-	}
-
 	switch action {
 	case redeemActionSkipCompleted:
 		// Code already created and redeemed — just mark completed
 		return s.markCompleted(ctx, o, "RECHARGE_SUCCESS")
 	case redeemActionCreate:
-		rc := &RedeemCode{Code: o.RechargeCode, Type: RedeemTypeBalance, Value: creditAmount, Status: StatusUnused}
+		rc := &RedeemCode{Code: o.RechargeCode, Type: RedeemTypeBalance, Value: o.Amount, Status: StatusUnused}
 		if err := s.redeemService.CreateCode(ctx, rc); err != nil {
 			return fmt.Errorf("create redeem code: %w", err)
 		}

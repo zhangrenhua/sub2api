@@ -29,7 +29,6 @@ const (
 	SettingProductNameSuffix   = "PRODUCT_NAME_SUFFIX"
 	SettingHelpImageURL        = "PAYMENT_HELP_IMAGE_URL"
 	SettingHelpText            = "PAYMENT_HELP_TEXT"
-	SettingRechargeRatio       = "BALANCE_RECHARGE_RATIO"
 	SettingCancelRateLimitOn   = "CANCEL_RATE_LIMIT_ENABLED"
 	SettingCancelRateLimitMax  = "CANCEL_RATE_LIMIT_MAX"
 	SettingCancelWindowSize    = "CANCEL_RATE_LIMIT_WINDOW"
