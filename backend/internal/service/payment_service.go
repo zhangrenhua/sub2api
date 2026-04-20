@@ -78,6 +78,7 @@ type CreateOrderRequest struct {
 
 type CreateOrderResponse struct {
 	OrderID      int64     `json:"order_id"`
+	OutTradeNo   string    `json:"out_trade_no"`
 	Amount       float64   `json:"amount"`
 	PayAmount    float64   `json:"pay_amount"`
 	FeeRate      float64   `json:"fee_rate"`
@@ -97,6 +98,10 @@ type OrderListParams struct {
 	OrderType   string
 	PaymentType string
 	Keyword     string
+	// PaidAtFrom and PaidAtTo bound the order's paid_at window. Zero values are ignored.
+	// Used by downstream agent sidecars to cursor-poll newly-paid orders per user.
+	PaidAtFrom time.Time
+	PaidAtTo   time.Time
 }
 
 type RefundPlan struct {

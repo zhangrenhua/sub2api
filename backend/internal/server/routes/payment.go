@@ -76,6 +76,7 @@ func RegisterPaymentRoutes(
 		// Orders
 		adminOrders := adminGroup.Group("/orders")
 		{
+			adminOrders.POST("", adminPaymentHandler.CreateOrder)
 			adminOrders.GET("", adminPaymentHandler.ListOrders)
 			adminOrders.GET("/:id", adminPaymentHandler.GetOrderDetail)
 			adminOrders.POST("/:id/cancel", adminPaymentHandler.CancelOrder)

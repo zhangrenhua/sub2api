@@ -228,7 +228,7 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 		"paymentType":    req.PaymentType,
 		"orderType":      req.OrderType,
 	})
-	return &CreateOrderResponse{OrderID: order.ID, Amount: order.Amount, PayAmount: payAmount, FeeRate: order.FeeRate, Status: OrderStatusPending, PaymentType: req.PaymentType, PayURL: pr.PayURL, QRCode: pr.QRCode, ClientSecret: pr.ClientSecret, ExpiresAt: order.ExpiresAt, PaymentMode: sel.PaymentMode}, nil
+	return &CreateOrderResponse{OrderID: order.ID, OutTradeNo: order.OutTradeNo, Amount: order.Amount, PayAmount: payAmount, FeeRate: order.FeeRate, Status: OrderStatusPending, PaymentType: req.PaymentType, PayURL: pr.PayURL, QRCode: pr.QRCode, ClientSecret: pr.ClientSecret, ExpiresAt: order.ExpiresAt, PaymentMode: sel.PaymentMode}, nil
 }
 
 func (s *PaymentService) buildPaymentSubject(plan *dbent.SubscriptionPlan, limitAmount float64, cfg *PaymentConfig) string {
@@ -312,6 +312,12 @@ func (s *PaymentService) AdminListOrders(ctx context.Context, userID int64, p Or
 			paymentorder.UserEmailContainsFold(p.Keyword),
 			paymentorder.UserNameContainsFold(p.Keyword),
 		))
+	}
+	if !p.PaidAtFrom.IsZero() {
+		q = q.Where(paymentorder.PaidAtGTE(p.PaidAtFrom))
+	}
+	if !p.PaidAtTo.IsZero() {
+		q = q.Where(paymentorder.PaidAtLTE(p.PaidAtTo))
 	}
 	total, err := q.Clone().Count(ctx)
 	if err != nil {

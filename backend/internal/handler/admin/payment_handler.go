@@ -2,6 +2,7 @@ package admin
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -44,6 +45,50 @@ func (h *PaymentHandler) GetDashboard(c *gin.Context) {
 
 // --- Orders ---
 
+// AdminCreateOrderRequest is the request body for admin-initiated order creation.
+// UserID must be supplied explicitly since the caller is an admin, not the end user.
+type AdminCreateOrderRequest struct {
+	UserID      int64   `json:"user_id" binding:"required"`
+	Amount      float64 `json:"amount"`
+	PaymentType string  `json:"payment_type" binding:"required"`
+	OrderType   string  `json:"order_type"`
+	PlanID      int64   `json:"plan_id"`
+	IsMobile    bool    `json:"is_mobile"`
+	SrcHost     string  `json:"src_host"`
+}
+
+// CreateOrder creates a payment order on behalf of the given user.
+// Used by internal integrations (e.g., agent sidecar topup) that hold an admin
+// API key and need to initiate payment without going through user JWT auth.
+// POST /api/v1/admin/payment/orders
+func (h *PaymentHandler) CreateOrder(c *gin.Context) {
+	var req AdminCreateOrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	srcHost := req.SrcHost
+	if srcHost == "" {
+		srcHost = c.Request.Host
+	}
+	result, err := h.paymentService.CreateOrder(c.Request.Context(), service.CreateOrderRequest{
+		UserID:      req.UserID,
+		Amount:      req.Amount,
+		PaymentType: req.PaymentType,
+		ClientIP:    c.ClientIP(),
+		IsMobile:    req.IsMobile,
+		SrcHost:     srcHost,
+		OrderType:   req.OrderType,
+		PlanID:      req.PlanID,
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, result)
+}
+
 // ListOrders returns a paginated list of all payment orders.
 // GET /api/v1/admin/payment/orders
 func (h *PaymentHandler) ListOrders(c *gin.Context) {
@@ -54,6 +99,17 @@ func (h *PaymentHandler) ListOrders(c *gin.Context) {
 			userID = v
 		}
 	}
+	var paidFrom, paidTo time.Time
+	if v := c.Query("paid_at_from"); v != "" {
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
+			paidFrom = t
+		}
+	}
+	if v := c.Query("paid_at_to"); v != "" {
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
+			paidTo = t
+		}
+	}
 	orders, total, err := h.paymentService.AdminListOrders(c.Request.Context(), userID, service.OrderListParams{
 		Page:        page,
 		PageSize:    pageSize,
@@ -61,6 +117,8 @@ func (h *PaymentHandler) ListOrders(c *gin.Context) {
 		OrderType:   c.Query("order_type"),
 		PaymentType: c.Query("payment_type"),
 		Keyword:     c.Query("keyword"),
+		PaidAtFrom:  paidFrom,
+		PaidAtTo:    paidTo,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
