@@ -67,6 +67,11 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 		return
 	}
 
+	if _, hit := containsSensitiveWord(h.cfg, body); hit {
+		h.errorResponse(c, http.StatusForbidden, "invalid_request_error", sensitiveWordRejectionMessage)
+		return
+	}
+
 	if !gjson.ValidBytes(body) {
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to parse request body")
 		return

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/sensitiveword"
 	"github.com/spf13/viper"
 )
 
@@ -361,6 +362,12 @@ type GatewayConfig struct {
 	// ForcedCodexInstructionsTemplate: 启动时从模板文件读取并缓存的模板内容。
 	// 该字段不直接参与配置反序列化，仅用于请求热路径避免重复读盘。
 	ForcedCodexInstructionsTemplate string `mapstructure:"-"`
+	// SensitiveWordFile: 敏感词清单文件路径（每行一个词，支持 # 开头行作为注释）。
+	// 为空或文件不存在时不启用敏感词过滤。
+	SensitiveWordFile string `mapstructure:"sensitive_word_file"`
+	// SensitiveWordMatcher: 启动时由 SensitiveWordFile 构建的 AC 自动机匹配器。
+	// 该字段不直接参与配置反序列化，命中时请求以 403 拦截。
+	SensitiveWordMatcher *sensitiveword.Matcher `mapstructure:"-"`
 	// OpenAIPassthroughAllowTimeoutHeaders: OpenAI 透传模式是否放行客户端超时头
 	// 关闭（默认）可避免 x-stainless-timeout 等头导致上游提前断流。
 	OpenAIPassthroughAllowTimeoutHeaders bool `mapstructure:"openai_passthrough_allow_timeout_headers"`
@@ -1052,6 +1059,29 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 		cfg.Gateway.ForcedCodexInstructionsTemplate = string(content)
 	}
 
+	// 敏感词清单：可选项。文件不存在时静默跳过（便于默认部署无该文件也能启动）。
+	cfg.Gateway.SensitiveWordFile = strings.TrimSpace(cfg.Gateway.SensitiveWordFile)
+	if cfg.Gateway.SensitiveWordFile != "" {
+		content, err := os.ReadFile(cfg.Gateway.SensitiveWordFile)
+		switch {
+		case err == nil:
+			lines := strings.Split(string(content), "\n")
+			patterns := make([]string, 0, len(lines))
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line == "" || strings.HasPrefix(line, "#") {
+					continue
+				}
+				patterns = append(patterns, line)
+			}
+			cfg.Gateway.SensitiveWordMatcher = sensitiveword.NewMatcher(patterns)
+		case os.IsNotExist(err):
+			// 默认路径文件缺失时不报错；非默认路径由部署方负责。
+		default:
+			return nil, fmt.Errorf("read sensitive word file %q: %w", cfg.Gateway.SensitiveWordFile, err)
+		}
+	}
+
 	// 兼容旧键 gateway.openai_ws.sticky_previous_response_ttl_seconds。
 	// 新键未配置（<=0）时回退旧键；新键优先。
 	if cfg.Gateway.OpenAIWS.StickyResponseIDTTLSeconds <= 0 && cfg.Gateway.OpenAIWS.StickyPreviousResponseTTLSeconds > 0 {
@@ -1366,6 +1396,7 @@ func setDefaults() {
 	viper.SetDefault("gateway.max_account_switches_gemini", 3)
 	viper.SetDefault("gateway.force_codex_cli", false)
 	viper.SetDefault("gateway.openai_passthrough_allow_timeout_headers", false)
+	viper.SetDefault("gateway.sensitive_word_file", "./resources/sensitive_word.txt")
 	// OpenAI Responses WebSocket（默认开启；可通过 force_http 紧急回滚）
 	viper.SetDefault("gateway.openai_ws.enabled", true)
 	viper.SetDefault("gateway.openai_ws.mode_router_v2_enabled", false)

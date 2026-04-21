@@ -141,6 +141,11 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		return
 	}
 
+	if _, hit := containsSensitiveWord(h.cfg, body); hit {
+		h.errorResponse(c, http.StatusForbidden, "invalid_request_error", sensitiveWordRejectionMessage)
+		return
+	}
+
 	setOpsRequestContext(c, "", false, body)
 	sessionHashBody := body
 	if service.IsOpenAIResponsesCompactPathForTest(c) {
@@ -555,6 +560,11 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 	// 请求内容大小软限制：提前拦截过大请求，减少无效上游流量开销
 	if msg, exceeded := exceedsContentSizeLimit(h.cfg, body); exceeded {
 		h.anthropicErrorResponse(c, http.StatusRequestEntityTooLarge, "invalid_request_error", msg)
+		return
+	}
+
+	if _, hit := containsSensitiveWord(h.cfg, body); hit {
+		h.anthropicErrorResponse(c, http.StatusForbidden, "invalid_request_error", sensitiveWordRejectionMessage)
 		return
 	}
 
