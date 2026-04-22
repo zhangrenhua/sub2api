@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
@@ -124,7 +125,7 @@ func (h *PaymentHandler) ListOrders(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Paginated(c, orders, int64(total), page, pageSize)
+	response.Paginated(c, sanitizeAdminPaymentOrdersForResponse(orders), int64(total), page, pageSize)
 }
 
 // GetOrderDetail returns detailed information about a single order.
@@ -140,7 +141,7 @@ func (h *PaymentHandler) GetOrderDetail(c *gin.Context) {
 		return
 	}
 	auditLogs, _ := h.paymentService.GetOrderAuditLogs(c.Request.Context(), orderID)
-	response.Success(c, gin.H{"order": order, "auditLogs": auditLogs})
+	response.Success(c, gin.H{"order": sanitizeAdminPaymentOrderForResponse(order), "auditLogs": auditLogs})
 }
 
 // CancelOrder cancels a pending order (admin).
@@ -170,6 +171,26 @@ func (h *PaymentHandler) RetryFulfillment(c *gin.Context) {
 		return
 	}
 	response.Success(c, gin.H{"message": "fulfillment retried"})
+}
+
+func sanitizeAdminPaymentOrdersForResponse(orders []*dbent.PaymentOrder) []*dbent.PaymentOrder {
+	if len(orders) == 0 {
+		return orders
+	}
+	out := make([]*dbent.PaymentOrder, 0, len(orders))
+	for _, order := range orders {
+		out = append(out, sanitizeAdminPaymentOrderForResponse(order))
+	}
+	return out
+}
+
+func sanitizeAdminPaymentOrderForResponse(order *dbent.PaymentOrder) *dbent.PaymentOrder {
+	if order == nil {
+		return nil
+	}
+	cloned := *order
+	cloned.ProviderSnapshot = nil
+	return &cloned
 }
 
 // AdminProcessRefundRequest is the request body for admin refund processing.
