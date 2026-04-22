@@ -112,6 +112,10 @@ type OrderListParams struct {
 	OrderType   string
 	PaymentType string
 	Keyword     string
+	// PaidAtFrom and PaidAtTo bound the order's paid_at window. Zero values are ignored.
+	// Used by downstream agent sidecars to cursor-poll newly-paid orders per user.
+	PaidAtFrom time.Time
+	PaidAtTo   time.Time
 }
 
 type RefundPlan struct {

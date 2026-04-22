@@ -735,6 +735,12 @@ func (s *PaymentService) AdminListOrders(ctx context.Context, userID int64, p Or
 			paymentorder.UserNameContainsFold(p.Keyword),
 		))
 	}
+	if !p.PaidAtFrom.IsZero() {
+		q = q.Where(paymentorder.PaidAtGTE(p.PaidAtFrom))
+	}
+	if !p.PaidAtTo.IsZero() {
+		q = q.Where(paymentorder.PaidAtLTE(p.PaidAtTo))
+	}
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count admin orders: %w", err)
