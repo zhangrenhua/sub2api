@@ -99,6 +99,32 @@ export default {
       antigravity: 'Antigravity',
       more: '更多'
     },
+    // 顶部促销横幅（人民币 1 元 = $12 USD 额度）
+    promo: {
+      tag: '限时优惠',
+      from: '¥1 RMB',
+      to: '$12 USD',
+      tagline: '美金额度',
+      subtitle: '人民币 1 元 即可获得 $12 USD 等值 API 额度，超 85 倍价值'
+    },
+    // 模型展示区
+    models: {
+      eyebrow: '多模型 AI 网关',
+      title: '支持的 AI 模型',
+      description: '一个密钥，畅用业界领先的大模型',
+      viewDocs: '查看文档',
+      list: {
+        claudeOpus: { name: 'Claude Opus 4.5', desc: 'Anthropic 旗舰推理模型' },
+        claudeSonnet: { name: 'Claude Sonnet 4.6', desc: '强大且经济的全能模型' },
+        claudeHaiku: { name: 'Claude Haiku 4.5', desc: '极速响应、低成本' },
+        gpt5: { name: 'GPT-5', desc: 'OpenAI 最新一代模型' },
+        gpt41: { name: 'GPT-4.1', desc: '稳定高性能通用模型' },
+        o3: { name: 'o3', desc: 'OpenAI 深度推理模型' },
+        geminiPro: { name: 'Gemini 2.5 Pro', desc: 'Google 顶级多模态模型' },
+        geminiFlash: { name: 'Gemini 2.5 Flash', desc: '快速高效的多模态模型' },
+        antigravity: { name: 'Antigravity', desc: '面向 Agent 的开发平台' }
+      }
+    },
     // CTA 区块
     cta: {
       title: '准备好开始了吗？',

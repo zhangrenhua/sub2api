@@ -303,10 +303,10 @@ async function handleLogout() {
   try {
     await authStore.logout()
   } catch (error) {
-    // Ignore logout errors - still redirect to login
     console.error('Logout error:', error)
   }
-  await router.push('/login')
+  // Backend mode hides the public home page, so fall back to /login there.
+  await router.push(appStore.backendModeEnabled ? '/login' : '/home')
 }
 
 function handleReplayGuide() {

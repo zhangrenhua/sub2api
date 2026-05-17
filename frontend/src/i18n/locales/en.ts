@@ -99,6 +99,33 @@ export default {
       antigravity: 'Antigravity',
       more: 'More'
     },
+    // Top promo banner — USD framing for English audience
+    // Math: 1 RMB ≈ $0.14 USD, and 1 RMB buys $12 of credit, so $1 USD ≈ $85 of credit
+    promo: {
+      tag: 'Limited Offer',
+      from: '$1 USD',
+      to: '$85 USD',
+      tagline: 'in API Credits',
+      subtitle: 'Pay $1, get $85 worth of API usage — over 85x value vs. official pricing'
+    },
+    // Model showcase section
+    models: {
+      eyebrow: 'Multi-Model AI Gateway',
+      title: 'Supported AI Models',
+      description: 'One key, access the leading large language models',
+      viewDocs: 'View Docs',
+      list: {
+        claudeOpus: { name: 'Claude Opus 4.5', desc: "Anthropic's flagship reasoning model" },
+        claudeSonnet: { name: 'Claude Sonnet 4.6', desc: 'Powerful and cost-effective all-rounder' },
+        claudeHaiku: { name: 'Claude Haiku 4.5', desc: 'Blazing-fast, low-cost' },
+        gpt5: { name: 'GPT-5', desc: "OpenAI's latest generation model" },
+        gpt41: { name: 'GPT-4.1', desc: 'Reliable high-performance model' },
+        o3: { name: 'o3', desc: "OpenAI's deep reasoning model" },
+        geminiPro: { name: 'Gemini 2.5 Pro', desc: "Google's top multimodal model" },
+        geminiFlash: { name: 'Gemini 2.5 Flash', desc: 'Fast and efficient multimodal model' },
+        antigravity: { name: 'Antigravity', desc: 'Agent-oriented development platform' }
+      }
+    },
     // CTA section
     cta: {
       title: 'Ready to Get Started?',
