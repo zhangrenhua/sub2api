@@ -71,6 +71,15 @@
         <div class="flex items-center gap-3">
           <LocaleSwitcher />
 
+          <router-link
+            to="/help"
+            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-300 dark:hover:bg-dark-800 dark:hover:text-white"
+            :title="t('home.help')"
+          >
+            <Icon name="questionCircle" size="sm" />
+            <span class="hidden sm:inline">{{ t('home.help') }}</span>
+          </router-link>
+
           <a
             v-if="docUrl"
             :href="docUrl"

@@ -3,6 +3,7 @@ export default {
   home: {
     viewOnGithub: 'View on GitHub',
     viewDocs: 'View Documentation',
+    help: 'Help',
     docs: 'Docs',
     switchToLight: 'Switch to Light Mode',
     switchToDark: 'Switch to Dark Mode',
@@ -115,12 +116,12 @@ export default {
       description: 'One key, access the leading large language models',
       viewDocs: 'View Docs',
       list: {
-        claudeOpus: { name: 'Claude Opus 4.5', desc: "Anthropic's flagship reasoning model" },
+        claudeOpus: { name: 'Claude Opus 4.7', desc: "Anthropic's flagship reasoning model" },
         claudeSonnet: { name: 'Claude Sonnet 4.6', desc: 'Powerful and cost-effective all-rounder' },
         claudeHaiku: { name: 'Claude Haiku 4.5', desc: 'Blazing-fast, low-cost' },
         gpt5: { name: 'GPT-5', desc: "OpenAI's latest generation model" },
         gpt41: { name: 'GPT-4.1', desc: 'Reliable high-performance model' },
-        o3: { name: 'o3', desc: "OpenAI's deep reasoning model" },
+        o3: { name: 'Gpt-Image2', desc: "OpenAI's image generation model" },
         geminiPro: { name: 'Gemini 2.5 Pro', desc: "Google's top multimodal model" },
         geminiFlash: { name: 'Gemini 2.5 Flash', desc: 'Fast and efficient multimodal model' },
         antigravity: { name: 'Antigravity', desc: 'Agent-oriented development platform' }

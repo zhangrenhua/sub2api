@@ -3,6 +3,7 @@ export default {
   home: {
     viewOnGithub: '在 GitHub 上查看',
     viewDocs: '查看文档',
+    help: '帮助文档',
     docs: '文档',
     switchToLight: '切换到浅色模式',
     switchToDark: '切换到深色模式',
@@ -114,12 +115,12 @@ export default {
       description: '一个密钥，畅用业界领先的大模型',
       viewDocs: '查看文档',
       list: {
-        claudeOpus: { name: 'Claude Opus 4.5', desc: 'Anthropic 旗舰推理模型' },
+        claudeOpus: { name: 'Claude Opus 4.7', desc: 'Anthropic 旗舰推理模型' },
         claudeSonnet: { name: 'Claude Sonnet 4.6', desc: '强大且经济的全能模型' },
         claudeHaiku: { name: 'Claude Haiku 4.5', desc: '极速响应、低成本' },
         gpt5: { name: 'GPT-5', desc: 'OpenAI 最新一代模型' },
         gpt41: { name: 'GPT-4.1', desc: '稳定高性能通用模型' },
-        o3: { name: 'o3', desc: 'OpenAI 深度推理模型' },
+        o3: { name: 'Gpt-Image2', desc: 'OpenAI 图像生成模型' },
         geminiPro: { name: 'Gemini 2.5 Pro', desc: 'Google 顶级多模态模型' },
         geminiFlash: { name: 'Gemini 2.5 Flash', desc: '快速高效的多模态模型' },
         antigravity: { name: 'Antigravity', desc: '面向 Agent 的开发平台' }
