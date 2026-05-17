@@ -8,6 +8,7 @@ export interface HelpChrome {
   tagline: string
   toc: string
   backHome: string
+  backDashboard: string
   backToTop: string
   intro: string
   copy: string
@@ -51,6 +52,7 @@ export const zh: HelpFactory = (base) => ({
     tagline: '零基础上手指南',
     toc: '目录',
     backHome: '返回首页',
+    backDashboard: '返回工作台',
     backToTop: '回到顶部',
     intro: '本教程面向零基础用户，手把手教你安装配置 Claude Code（终端版 + VS Code 插件）、OpenClaw、Opencode，并接入我们的 API 中转服务，支持 openai、anthropic 协议。',
     copy: '复制',
@@ -346,8 +348,60 @@ export const zh: HelpFactory = (base) => ({
       ]
     },
     {
+      id: 'image-gen',
+      title: '11. 图像生成（gpt-image-2）',
+      blocks: [
+        { t: 'h3', text: '注意事项' },
+        { t: 'callout', variant: 'warning', html: 'image-2 生图不能用于非法目的，会触发 GPT 的风控。我们这边也有自己的风控系统，部分内容会被打回要求修改提示词，我们也会定时检查各渠道的风控情况。' },
+        { t: 'p', html: 'GPT 偶尔会异常触发风控（比如某些看起来无害的提示词被拦），并不是我们系统的问题。' },
+        { t: 'h3', text: '接口示例' },
+        { t: 'p', html: '图片接口支持通过 <code>size</code> 自动推断输出档位：<code>1024x1024</code> / <code>1k</code> 为原图，<code>2048x2048</code> / <code>2k</code> 为 2K，<code>4096x4096</code> / <code>4k</code> 为 4K；也可显式传 <code>upscale</code> 覆盖。' },
+        { t: 'h4', text: 'Curl 文生图' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/images/generations \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "gpt-image-2",\n    "prompt": "A cute orange cat playing with yarn, studio ghibli style",\n    "n": 1,\n    "size": "1024x1024"\n  }'` },
+        { t: 'p', html: '图片质量参数（可选）：<code>quality</code>：<code>low</code> / <code>medium</code> / <code>high</code> / <code>auto</code>' },
+        { t: 'h4', text: 'Curl 图改图' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/images/edits \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -F model="gpt-image-2" \\\n  -F prompt="Restyle this image as a watercolor painting, soft pastel palette" \\\n  -F n=1 \\\n  -F size="1024x1024" \\\n  -F image="@cat.png"` },
+        { t: 'p', html: '图改图使用 OpenAI 兼容 <code>multipart/form-data</code>；单次最多 4 张，单张最大 20MB。' },
+        { t: 'h4', text: 'Python（OpenAI SDK）' },
+        { t: 'code', lang: 'python', code: `from openai import OpenAI\n\nclient = OpenAI(\n    base_url="${base}",\n    api_key="\${YOUR_API_KEY}",\n)\n\nresp = client.images.generate(\n    model="gpt-image-2",\n    prompt="A cute orange cat playing with yarn",\n    n=1,\n    size="1024x1024",\n)\nprint(resp.data[0].url)` },
+        { t: 'h4', text: 'Python（requests 文生图）' },
+        { t: 'code', lang: 'python', code: `import requests\n\nAPI_KEY = "\${YOUR_API_KEY}"\nBASE_URL = "${base}"\n\nresp = requests.post(\n    f"{BASE_URL}/images/generations",\n    headers={\n        "Authorization": f"Bearer {API_KEY}",\n        "Content-Type": "application/json",\n    },\n    json={\n        "model": "gpt-image-2",\n        "prompt": "A cute orange cat playing with yarn",\n        "n": 1,\n        "size": "1024x1024",\n    },\n    timeout=300,\n)\nresp.raise_for_status()\ndata = resp.json()\nprint(data["data"][0]["url"])` },
+        { t: 'h4', text: 'Python（requests 图改图）' },
+        { t: 'code', lang: 'python', code: `import requests\n\nAPI_KEY = "\${YOUR_API_KEY}"\nBASE_URL = "${base}"\n\nresp = requests.post(\n    f"{BASE_URL}/images/edits",\n    headers={\n        "Authorization": f"Bearer {API_KEY}",\n    },\n    data={\n        "model": "gpt-image-2",\n        "prompt": "Turn this image into a watercolor painting",\n        "n": "1",\n        "size": "1024x1024",\n    },\n    files={\n        "image": open("cat.png", "rb"),\n    },\n    timeout=300,\n)\nresp.raise_for_status()\nitem = resp.json()["data"][0]\nprint(item["url"])` },
+        { t: 'p', html: '图改图上传字段使用 <code>image</code> / <code>image[]</code>；返回图片访问 url。' },
+        { t: 'h3', text: '尺寸说明' },
+        { t: 'h4', text: '一、OpenAI 官方常见支持尺寸' },
+        { t: 'p', html: '目前官方最稳定的是这些（兼容性最好的三组）：' },
+        { t: 'table', head: ['比例', '尺寸'], rows: [
+          ['1:1（正方形）', '<code>1024x1024</code>'],
+          ['3:2（横向）', '<code>1536x1024</code>'],
+          ['2:3（竖向）', '<code>1024x1536</code>']
+        ]},
+        { t: 'h4', text: '二、gpt-image-2 新增支持' },
+        { t: 'p', html: '相比旧模型，现在很多渠道已经支持自定义 <code>"size": "宽x高"</code>，例如：' },
+        { t: 'code', lang: 'json', code: '"size": "1920x1080"\n"size": "2048x2048"\n"size": "3840x2160"' },
+        { t: 'h4', text: '三、理论支持范围' },
+        { t: 'p', html: '宽高要求（多数兼容实现）：' },
+        { t: 'ul', items: [
+          '必须是整数',
+          '建议 64 的倍数',
+          '部分渠道要求 32 的倍数'
+        ]},
+        { t: 'p', html: '✅ 合法：<code>1024x1024</code>、<code>1536x1024</code>、<code>1920x1080</code>、<code>2048x1152</code>、<code>3840x2160</code>' },
+        { t: 'p', html: '❌ 可能失败：<code>1001x777</code>、<code>1919x1079</code>' },
+        { t: 'h4', text: '四、常见比例推荐' },
+        { t: 'table', head: ['比例', '尺寸', '适用场景'], rows: [
+          ['1:1', '<code>1024x1024</code> / <code>1536x1536</code> / <code>2048x2048</code>', 'Logo、商品图、头像'],
+          ['16:9（横）', '<code>1280x720</code> / <code>1920x1080</code> / <code>2560x1440</code> / <code>3840x2160</code>', 'PPT、Banner、视频封面'],
+          ['9:16（竖）', '<code>1080x1920</code> / <code>1440x2560</code> / <code>2160x3840</code>', '手机壁纸、小红书、抖音'],
+          ['4:3', '<code>1600x1200</code> / <code>2048x1536</code>', '传统照片'],
+          ['3:2', '<code>1536x1024</code> / <code>1920x1280</code>', '相机比例']
+        ]}
+      ]
+    },
+    {
       id: 'faq',
-      title: '11. 常见问题',
+      title: '12. 常见问题',
       blocks: [
         { t: 'h3', text: '安装相关' },
         { t: 'faq', items: [
@@ -566,6 +620,7 @@ export const en: HelpFactory = (base) => ({
     tagline: 'Beginner-friendly setup guide',
     toc: 'Contents',
     backHome: 'Back to Home',
+    backDashboard: 'Back to Dashboard',
     backToTop: 'Back to Top',
     intro: 'A step-by-step guide for installing and configuring Claude Code (terminal + VS Code extension), OpenClaw, and Opencode against our API gateway. Both OpenAI and Anthropic protocols are supported.',
     copy: 'Copy',
@@ -861,8 +916,60 @@ export const en: HelpFactory = (base) => ({
       ]
     },
     {
+      id: 'image-gen',
+      title: '11. Image generation (gpt-image-2)',
+      blocks: [
+        { t: 'h3', text: 'Caveats' },
+        { t: 'callout', variant: 'warning', html: 'Do not use image-2 for unlawful content — it will trip GPT\'s safety filters. We also run our own moderation; some prompts will be rejected with a request to rephrase. We sweep upstream channels regularly for moderation issues.' },
+        { t: 'p', html: 'GPT occasionally flags harmless prompts as a false positive — that is upstream behaviour, not our gateway.' },
+        { t: 'h3', text: 'API examples' },
+        { t: 'p', html: 'The image endpoint infers the output tier from <code>size</code>: <code>1024x1024</code> / <code>1k</code> = native, <code>2048x2048</code> / <code>2k</code> = 2K, <code>4096x4096</code> / <code>4k</code> = 4K. Pass <code>upscale</code> explicitly to override.' },
+        { t: 'h4', text: 'Curl — text to image' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/images/generations \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "gpt-image-2",\n    "prompt": "A cute orange cat playing with yarn, studio ghibli style",\n    "n": 1,\n    "size": "1024x1024"\n  }'` },
+        { t: 'p', html: 'Optional quality parameter: <code>quality</code> = <code>low</code> / <code>medium</code> / <code>high</code> / <code>auto</code>' },
+        { t: 'h4', text: 'Curl — image to image' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/images/edits \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -F model="gpt-image-2" \\\n  -F prompt="Restyle this image as a watercolor painting, soft pastel palette" \\\n  -F n=1 \\\n  -F size="1024x1024" \\\n  -F image="@cat.png"` },
+        { t: 'p', html: 'Image edits use OpenAI-compatible <code>multipart/form-data</code>. Up to 4 images per call, each ≤ 20 MB.' },
+        { t: 'h4', text: 'Python (OpenAI SDK)' },
+        { t: 'code', lang: 'python', code: `from openai import OpenAI\n\nclient = OpenAI(\n    base_url="${base}",\n    api_key="\${YOUR_API_KEY}",\n)\n\nresp = client.images.generate(\n    model="gpt-image-2",\n    prompt="A cute orange cat playing with yarn",\n    n=1,\n    size="1024x1024",\n)\nprint(resp.data[0].url)` },
+        { t: 'h4', text: 'Python (requests — text to image)' },
+        { t: 'code', lang: 'python', code: `import requests\n\nAPI_KEY = "\${YOUR_API_KEY}"\nBASE_URL = "${base}"\n\nresp = requests.post(\n    f"{BASE_URL}/images/generations",\n    headers={\n        "Authorization": f"Bearer {API_KEY}",\n        "Content-Type": "application/json",\n    },\n    json={\n        "model": "gpt-image-2",\n        "prompt": "A cute orange cat playing with yarn",\n        "n": 1,\n        "size": "1024x1024",\n    },\n    timeout=300,\n)\nresp.raise_for_status()\ndata = resp.json()\nprint(data["data"][0]["url"])` },
+        { t: 'h4', text: 'Python (requests — image to image)' },
+        { t: 'code', lang: 'python', code: `import requests\n\nAPI_KEY = "\${YOUR_API_KEY}"\nBASE_URL = "${base}"\n\nresp = requests.post(\n    f"{BASE_URL}/images/edits",\n    headers={\n        "Authorization": f"Bearer {API_KEY}",\n    },\n    data={\n        "model": "gpt-image-2",\n        "prompt": "Turn this image into a watercolor painting",\n        "n": "1",\n        "size": "1024x1024",\n    },\n    files={\n        "image": open("cat.png", "rb"),\n    },\n    timeout=300,\n)\nresp.raise_for_status()\nitem = resp.json()["data"][0]\nprint(item["url"])` },
+        { t: 'p', html: 'Upload field is <code>image</code> or <code>image[]</code>. Response contains the image URL.' },
+        { t: 'h3', text: 'Size reference' },
+        { t: 'h4', text: '1. OpenAI official supported sizes' },
+        { t: 'p', html: 'The most reliable trio:' },
+        { t: 'table', head: ['Ratio', 'Size'], rows: [
+          ['1:1 (square)', '<code>1024x1024</code>'],
+          ['3:2 (landscape)', '<code>1536x1024</code>'],
+          ['2:3 (portrait)', '<code>1024x1536</code>']
+        ]},
+        { t: 'h4', text: '2. gpt-image-2 additions' },
+        { t: 'p', html: 'Compared with the older model, many channels now accept arbitrary <code>"size": "WxH"</code>, e.g.:' },
+        { t: 'code', lang: 'json', code: '"size": "1920x1080"\n"size": "2048x2048"\n"size": "3840x2160"' },
+        { t: 'h4', text: '3. Theoretical range' },
+        { t: 'p', html: 'Width / height rules across most implementations:' },
+        { t: 'ul', items: [
+          'Must be integers',
+          'Multiples of 64 recommended',
+          'Some channels require multiples of 32'
+        ]},
+        { t: 'p', html: '✅ Valid: <code>1024x1024</code>, <code>1536x1024</code>, <code>1920x1080</code>, <code>2048x1152</code>, <code>3840x2160</code>' },
+        { t: 'p', html: '❌ May fail: <code>1001x777</code>, <code>1919x1079</code>' },
+        { t: 'h4', text: '4. Common ratios' },
+        { t: 'table', head: ['Ratio', 'Sizes', 'Use case'], rows: [
+          ['1:1', '<code>1024x1024</code> / <code>1536x1536</code> / <code>2048x2048</code>', 'Logos, product shots, avatars'],
+          ['16:9 (landscape)', '<code>1280x720</code> / <code>1920x1080</code> / <code>2560x1440</code> / <code>3840x2160</code>', 'Slides, banners, video covers'],
+          ['9:16 (portrait)', '<code>1080x1920</code> / <code>1440x2560</code> / <code>2160x3840</code>', 'Phone wallpapers, social shorts'],
+          ['4:3', '<code>1600x1200</code> / <code>2048x1536</code>', 'Classic photo'],
+          ['3:2', '<code>1536x1024</code> / <code>1920x1280</code>', 'Camera aspect ratio']
+        ]}
+      ]
+    },
+    {
       id: 'faq',
-      title: '11. FAQ',
+      title: '12. FAQ',
       blocks: [
         { t: 'h3', text: 'Install issues' },
         { t: 'faq', items: [

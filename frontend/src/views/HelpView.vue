@@ -1,6 +1,7 @@
 <template>
-  <div class="relative min-h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-white to-primary-50/30 dark:from-dark-950 dark:via-dark-900 dark:to-dark-900">
-    <div class="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+  <div class="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 dark:from-dark-950 dark:via-dark-900 dark:to-dark-900">
+    <!-- Decorative blobs: fixed so an ancestor overflow doesn't trap them and break sticky on the TOC -->
+    <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <div class="absolute -left-32 top-32 h-72 w-72 rounded-full bg-primary-300/20 blur-3xl dark:bg-primary-900/20"></div>
       <div class="absolute -right-32 top-1/3 h-72 w-72 rounded-full bg-pink-300/20 blur-3xl dark:bg-pink-900/20"></div>
     </div>
@@ -34,6 +35,16 @@
             <Icon v-else name="moon" size="md" />
           </button>
           <router-link
+            v-if="isAuthenticated"
+            :to="dashboardPath"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700"
+            :title="content.chrome.backDashboard"
+          >
+            <Icon name="grid" size="sm" />
+            <span class="hidden sm:inline">{{ content.chrome.backDashboard }}</span>
+          </router-link>
+          <router-link
+            v-else
             to="/home"
             class="hidden items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-300 dark:hover:bg-dark-800 dark:hover:text-white sm:inline-flex"
           >
@@ -163,7 +174,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAppStore } from '@/stores'
+import { useAppStore, useAuthStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import HelpBlock from './help/HelpBlock.vue'
@@ -171,6 +182,10 @@ import { zh, en, type HelpFactory, type HelpContent } from './help/content'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
+
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+const dashboardPath = computed(() => (authStore.isAdmin ? '/admin/dashboard' : '/dashboard'))
 
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API')
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
