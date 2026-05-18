@@ -63,6 +63,9 @@ func RegisterPaymentRoutes(
 		webhook.POST("/wxpay", webhookHandler.WxpayNotify)
 		webhook.POST("/stripe", webhookHandler.StripeWebhook)
 		webhook.POST("/airwallex", webhookHandler.AirwallexWebhook)
+		// Kyren callbacks: Epay-compatible, support both GET and POST.
+		webhook.GET("/kyren", webhookHandler.KyrenNotify)
+		webhook.POST("/kyren", webhookHandler.KyrenNotify)
 	}
 
 	// --- Admin payment endpoints (admin auth) ---
