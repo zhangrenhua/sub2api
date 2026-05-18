@@ -66,7 +66,7 @@ export const zh: HelpFactory = (base) => ({
         { t: 'steps', items: [
           `打开 <a href="${base}" target="_blank" rel="noopener noreferrer">${base}</a>（如在内地需开启香港等地区代理）`,
           '注册账号',
-          '输入兑换码（如有）',
+          `进入<a href="${base}/purchase" target="_blank" rel="noopener noreferrer">充值/订阅</a>界面，购买余额或者订阅套餐`,
           '生成 API 密钥 → 选择对应购买套餐的订阅（日卡 / 周卡 / 月卡）',
           '选择对应的客户端工具按照下方文档配置即可'
         ]}
@@ -634,7 +634,7 @@ export const en: HelpFactory = (base) => ({
         { t: 'steps', items: [
           `Open <a href="${base}" target="_blank" rel="noopener noreferrer">${base}</a> (use a Hong Kong / overseas proxy if you are in mainland China)`,
           'Register an account',
-          'Enter a redeem code (if you have one)',
+          `Open the <a href="${base}/purchase" target="_blank" rel="noopener noreferrer">Recharge / Subscription</a> page to top up balance or buy a subscription plan`,
           'Create an API key → pick the subscription group matching your plan (daily / weekly / monthly)',
           'Pick your client tool and follow the instructions below'
         ]}
