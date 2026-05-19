@@ -67,6 +67,12 @@ func (h *PaymentWebhookHandler) AirwallexWebhook(c *gin.Context) {
 	h.handleNotify(c, payment.TypeAirwallex)
 }
 
+// PayPalWebhook handles PayPal webhook events (JSON body, headers signed by PayPal).
+// POST /api/v1/payment/webhook/paypal
+func (h *PaymentWebhookHandler) PayPalWebhook(c *gin.Context) {
+	h.handleNotify(c, payment.TypePayPal)
+}
+
 // handleNotify is the shared logic for all provider webhook handlers.
 func (h *PaymentWebhookHandler) handleNotify(c *gin.Context, providerKey string) {
 	var rawBody string
@@ -163,6 +169,17 @@ func extractOutTradeNo(rawBody, providerKey string) string {
 		}
 		if err := json.Unmarshal([]byte(rawBody), &payload); err == nil {
 			return strings.TrimSpace(payload.Data.Object.MerchantOrderID)
+		}
+	case payment.TypePayPal:
+		// PayPal webhook body wraps the order under resource; we stored our
+		// internal order ID in resource.custom_id when creating the order.
+		var payload struct {
+			Resource struct {
+				CustomID string `json:"custom_id"`
+			} `json:"resource"`
+		}
+		if err := json.Unmarshal([]byte(rawBody), &payload); err == nil {
+			return strings.TrimSpace(payload.Resource.CustomID)
 		}
 	}
 	// For other providers (Stripe, Alipay direct, WxPay direct), the registry

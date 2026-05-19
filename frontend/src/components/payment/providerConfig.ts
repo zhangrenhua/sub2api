@@ -36,13 +36,14 @@ export const PROVIDER_SUPPORTED_TYPES: Record<string, string[]> = {
   wxpay: ['wxpay'],
   stripe: ['card', 'alipay', 'wxpay', 'link'],
   airwallex: ['airwallex'],
+  paypal: ['paypal'],
 }
 
 /** Available payment modes for EasyPay providers. */
 export const EASYPAY_PAYMENT_MODES = ['qrcode', 'popup'] as const
 
 /** Fixed display order for user-facing payment methods */
-export const METHOD_ORDER = ['alipay', 'alipay_direct', 'wxpay', 'wxpay_direct', 'stripe', 'airwallex'] as const
+export const METHOD_ORDER = ['alipay', 'alipay_direct', 'wxpay', 'wxpay_direct', 'stripe', 'airwallex', 'paypal'] as const
 
 /** Payment mode constants */
 export const PAYMENT_MODE_QRCODE = 'qrcode'
@@ -91,6 +92,7 @@ export const WEBHOOK_PATHS: Record<string, string> = {
   wxpay: '/api/v1/payment/webhook/wxpay',
   stripe: '/api/v1/payment/webhook/stripe',
   airwallex: '/api/v1/payment/webhook/airwallex',
+  paypal: '/api/v1/payment/webhook/paypal',
 }
 
 export const RETURN_PATH = '/payment/result'
@@ -141,6 +143,17 @@ export const PROVIDER_CONFIG_FIELDS: Record<string, ConfigFieldDef[]> = {
     { key: 'countryCode', label: '', sensitive: false, defaultValue: 'CN' },
     { key: 'currency', label: '', sensitive: false, defaultValue: 'CNY', hintKey: 'admin.settings.payment.field_paymentCurrencyHint', options: PAYMENT_CURRENCY_OPTIONS },
     { key: 'accountId', label: '', sensitive: false, optional: true, clearable: true, hintKey: 'admin.settings.payment.field_accountIdHint' },
+  ],
+  // PayPal Orders v2 (hosted approval flow). webhookId comes from the webhook you
+  // register in the PayPal dashboard; the gateway uses it to verify signatures
+  // server-side. apiBase: api-m.paypal.com (prod) or api-m.sandbox.paypal.com.
+  paypal: [
+    { key: 'clientId', label: 'Client ID', sensitive: false },
+    { key: 'clientSecret', label: 'Client Secret', sensitive: true },
+    { key: 'webhookId', label: 'Webhook ID', sensitive: false },
+    { key: 'apiBase', label: '', sensitive: false, defaultValue: 'https://api-m.paypal.com' },
+    { key: 'currency', label: '', sensitive: false, defaultValue: 'USD', hintKey: 'admin.settings.payment.field_paymentCurrencyHint', options: PAYMENT_CURRENCY_OPTIONS },
+    { key: 'brandName', label: 'Brand Name', sensitive: false, optional: true, clearable: true },
   ],
 }
 
