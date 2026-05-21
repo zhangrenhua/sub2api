@@ -13,6 +13,13 @@ if [ "$(id -u)" = "0" ]; then
     exec su-exec sub2api "$0" "$@"
 fi
 
+# Seed the sensitive-word list into the data volume on first boot.
+# Lets operators edit /app/data/sensitive_word.txt at runtime while still
+# getting the shipped default when the file has never been provided.
+if [ ! -f /app/data/sensitive_word.txt ] && [ -f /app/resources/sensitive_word.txt ]; then
+    cp /app/resources/sensitive_word.txt /app/data/sensitive_word.txt 2>/dev/null || true
+fi
+
 # Compatibility: if the first arg looks like a flag (e.g. --help),
 # prepend the default binary so it behaves the same as the old
 # ENTRYPOINT ["/app/sub2api"] style.
