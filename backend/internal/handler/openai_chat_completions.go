@@ -70,8 +70,7 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 	}
 
 	if word, hit := containsSensitiveWord(h.cfg, body); hit {
-		h.errorResponse(c, http.StatusForbidden, "invalid_request_error", sensitiveWordRejection(word))
-		return
+		logSensitiveWordHit(c, h.cfg, word)
 	}
 
 	if !gjson.ValidBytes(body) {

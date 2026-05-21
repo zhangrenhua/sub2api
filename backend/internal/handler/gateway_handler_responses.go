@@ -67,8 +67,7 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 	}
 
 	if word, hit := containsSensitiveWord(h.cfg, body); hit {
-		h.responsesErrorResponse(c, http.StatusForbidden, "invalid_request_error", sensitiveWordRejection(word))
-		return
+		logSensitiveWordHit(c, h.cfg, word)
 	}
 
 	setOpsRequestContext(c, "", false)
