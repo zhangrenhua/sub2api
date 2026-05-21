@@ -67,8 +67,7 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 	}
 
 	if word, hit := containsSensitiveWord(h.cfg, body); hit {
-		h.chatCompletionsErrorResponse(c, http.StatusForbidden, "invalid_request_error", sensitiveWordRejection(word))
-		return
+		logSensitiveWordHit(c, h.cfg, word)
 	}
 
 	setOpsRequestContext(c, "", false)
