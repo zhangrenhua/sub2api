@@ -190,8 +190,8 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		return
 	}
 
-	if _, hit := containsSensitiveWord(h.cfg, body); hit {
-		googleError(c, http.StatusForbidden, sensitiveWordRejectionMessage)
+	if word, hit := containsSensitiveWord(h.cfg, body); hit {
+		googleError(c, http.StatusForbidden, sensitiveWordRejection(word))
 		return
 	}
 

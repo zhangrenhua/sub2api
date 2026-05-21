@@ -6,8 +6,16 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// sensitiveWordRejectionMessage 被返回给客户端的统一提示语。
+// sensitiveWordRejectionMessage 被返回给客户端的统一提示语前缀。
 const sensitiveWordRejectionMessage = "请求内容不合规"
+
+// sensitiveWordRejection 拼接命中词到统一提示语后返回。命中词为空时退化为前缀。
+func sensitiveWordRejection(word string) string {
+	if word == "" {
+		return sensitiveWordRejectionMessage
+	}
+	return sensitiveWordRejectionMessage + "：" + word
+}
 
 // containsSensitiveWord 扫描请求体中的用户可见文本字段（兼容 Anthropic /
 // OpenAI Chat/Responses / Gemini 四种协议），命中任一配置的敏感词即返回该词。
