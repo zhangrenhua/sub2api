@@ -191,7 +191,8 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 	}
 
 	if word, hit := containsSensitiveWord(h.cfg, body); hit {
-		logSensitiveWordHit(c, h.cfg, word)
+		googleError(c, http.StatusForbidden, sensitiveWordRejection(word))
+		return
 	}
 
 	setOpsRequestContext(c, modelName, stream)

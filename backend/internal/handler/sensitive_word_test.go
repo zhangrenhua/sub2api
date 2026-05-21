@@ -120,3 +120,8 @@ func TestContainsSensitiveWord_ShortCircuitOnFirstHit(t *testing.T) {
 	}
 }
 
+func TestSensitiveWordRejectionMessage(t *testing.T) {
+	if sensitiveWordRejectionMessage != "请求内容不合规" {
+		t.Fatalf("rejection message changed unexpectedly: %q", sensitiveWordRejectionMessage)
+	}
+}

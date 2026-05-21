@@ -14,7 +14,6 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/sensitiveword"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 const (
@@ -711,14 +710,8 @@ type GatewayConfig struct {
 	// 为空或文件不存在时不启用敏感词过滤。
 	SensitiveWordFile string `mapstructure:"sensitive_word_file"`
 	// SensitiveWordMatcher: 启动时由 SensitiveWordFile 构建的 AC 自动机匹配器。
-	// 该字段不直接参与配置反序列化，命中时仅记录日志、不拦截请求。
+	// 该字段不直接参与配置反序列化，命中时请求以 403 拦截。
 	SensitiveWordMatcher *sensitiveword.Matcher `mapstructure:"-"`
-	// SensitiveWordLog: 敏感词命中事件的独立日志文件路径。
-	// 为空时即便 matcher 启用也不记录。matcher 未启用时该字段被忽略。
-	SensitiveWordLog string `mapstructure:"sensitive_word_log"`
-	// SensitiveWordLogger: 启动时根据 SensitiveWordLog 构建的独立 zap.Logger，
-	// 仅供命中事件写入（lumberjack 轮转）。matcher/path 任一缺失时为 nil。
-	SensitiveWordLogger *zap.Logger `mapstructure:"-"`
 	// OpenAIPassthroughAllowTimeoutHeaders: OpenAI 透传模式是否放行客户端超时头
 	// 关闭（默认）可避免 x-stainless-timeout 等头导致上游提前断流。
 	OpenAIPassthroughAllowTimeoutHeaders bool `mapstructure:"openai_passthrough_allow_timeout_headers"`
@@ -1444,15 +1437,6 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 		}
 	}
 
-	// 敏感词命中日志：仅在 matcher 启用且配置了日志路径时构建。
-	if cfg.Gateway.SensitiveWordMatcher != nil {
-		logger, err := sensitiveword.NewLogger(strings.TrimSpace(cfg.Gateway.SensitiveWordLog))
-		if err != nil {
-			return nil, fmt.Errorf("init sensitive word logger: %w", err)
-		}
-		cfg.Gateway.SensitiveWordLogger = logger
-	}
-
 	// 兼容旧键 gateway.openai_ws.sticky_previous_response_ttl_seconds。
 	// 新键未配置（<=0）时回退旧键；新键优先。
 	if cfg.Gateway.OpenAIWS.StickyResponseIDTTLSeconds <= 0 && cfg.Gateway.OpenAIWS.StickyPreviousResponseTTLSeconds > 0 {
@@ -1801,7 +1785,6 @@ func setDefaults() {
 	viper.SetDefault("gateway.codex_image_generation_bridge_enabled", false)
 	viper.SetDefault("gateway.openai_passthrough_allow_timeout_headers", false)
 	viper.SetDefault("gateway.sensitive_word_file", "./resources/sensitive_word.txt")
-	viper.SetDefault("gateway.sensitive_word_log", "./logs/sensitive_word.log")
 	// OpenAI Responses WebSocket（默认开启；可通过 force_http 紧急回滚）
 	viper.SetDefault("gateway.openai_ws.enabled", true)
 	viper.SetDefault("gateway.openai_ws.mode_router_v2_enabled", false)
