@@ -1804,7 +1804,7 @@ func setDefaults() {
 	viper.SetDefault("gateway.codex_image_generation_bridge_enabled", false)
 	viper.SetDefault("gateway.openai_passthrough_allow_timeout_headers", false)
 	viper.SetDefault("gateway.sensitive_word_file", "/app/data/sensitive_word.txt")
-	viper.SetDefault("gateway.sensitive_word_log", "/app/data/sensitive_word.log")
+	viper.SetDefault("gateway.sensitive_word_log", "/app/data/logs/sensitive_word.log")
 	// OpenAI Responses WebSocket（默认开启；可通过 force_http 紧急回滚）
 	viper.SetDefault("gateway.openai_ws.enabled", true)
 	viper.SetDefault("gateway.openai_ws.mode_router_v2_enabled", false)
