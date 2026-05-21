@@ -1445,12 +1445,15 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 	}
 
 	// 敏感词命中日志：仅在 matcher 启用且配置了日志路径时构建。
+	// 创建日志目录/文件失败（如无权限）时只告警、不阻塞启动 —— 这是观测特性而非关键路径。
 	if cfg.Gateway.SensitiveWordMatcher != nil {
 		logger, err := sensitiveword.NewLogger(strings.TrimSpace(cfg.Gateway.SensitiveWordLog))
 		if err != nil {
-			return nil, fmt.Errorf("init sensitive word logger: %w", err)
+			slog.Warn("sensitive word logger disabled; hits will not be recorded",
+				"path", cfg.Gateway.SensitiveWordLog, "error", err)
+		} else {
+			cfg.Gateway.SensitiveWordLogger = logger
 		}
-		cfg.Gateway.SensitiveWordLogger = logger
 	}
 
 	// 兼容旧键 gateway.openai_ws.sticky_previous_response_ttl_seconds。
