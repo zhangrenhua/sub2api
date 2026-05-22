@@ -711,7 +711,7 @@ type GatewayConfig struct {
 	// 为空或文件不存在时不启用敏感词过滤。
 	SensitiveWordFile string `mapstructure:"sensitive_word_file"`
 	// SensitiveWordMatcher: 启动时由 SensitiveWordFile 构建的 AC 自动机匹配器。
-	// 该字段不直接参与配置反序列化，命中时仅记录日志、不拦截请求。
+	// 该字段不直接参与配置反序列化，命中时记录独立日志并以 403 拦截请求。
 	SensitiveWordMatcher *sensitiveword.Matcher `mapstructure:"-"`
 	// SensitiveWordLog: 敏感词命中事件的独立日志文件路径。
 	// 为空时即便 matcher 启用也不记录。matcher 未启用时该字段被忽略。

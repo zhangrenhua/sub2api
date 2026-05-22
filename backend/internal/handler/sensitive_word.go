@@ -9,8 +9,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// logSensitiveWordHit 把命中事件写到独立日志文件。当前阶段命中后不拦截请求，
-// 仅采样观察。logger 未配置（matcher 未启用或路径未配置）时直接返回，零开销。
+// sensitiveWordRejectionMessage 命中敏感词时返回给客户端的统一提示语前缀。
+const sensitiveWordRejectionMessage = "请求内容不合规"
+
+// sensitiveWordRejection 拼接命中词到统一提示语后返回。命中词为空时退化为前缀。
+func sensitiveWordRejection(word string) string {
+	if word == "" {
+		return sensitiveWordRejectionMessage
+	}
+	return sensitiveWordRejectionMessage + "：" + word
+}
+
+// logSensitiveWordHit 把命中事件写到独立日志文件，作为拦截前的审计记录。
+// logger 未配置（matcher 未启用或路径未配置）时直接返回，零开销。
 func logSensitiveWordHit(c *gin.Context, cfg *config.Config, word string) {
 	if cfg == nil || cfg.Gateway.SensitiveWordLogger == nil {
 		return

@@ -159,6 +159,8 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 
 	if word, hit := containsSensitiveWord(h.cfg, body); hit {
 		logSensitiveWordHit(c, h.cfg, word)
+		h.errorResponse(c, http.StatusForbidden, "invalid_request_error", sensitiveWordRejection(word))
+		return
 	}
 
 	setOpsRequestContext(c, "", false)
@@ -1557,6 +1559,8 @@ func (h *GatewayHandler) CountTokens(c *gin.Context) {
 
 	if word, hit := containsSensitiveWord(h.cfg, body); hit {
 		logSensitiveWordHit(c, h.cfg, word)
+		h.errorResponse(c, http.StatusForbidden, "invalid_request_error", sensitiveWordRejection(word))
+		return
 	}
 
 	setOpsRequestContext(c, "", false)
