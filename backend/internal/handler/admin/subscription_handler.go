@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"log/slog"
 	"strconv"
 
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
@@ -29,12 +30,14 @@ func toResponsePagination(p *pagination.PaginationResult) *response.PaginationRe
 // SubscriptionHandler handles admin subscription management
 type SubscriptionHandler struct {
 	subscriptionService *service.SubscriptionService
+	affiliateService    *service.AffiliateService
 }
 
 // NewSubscriptionHandler creates a new admin subscription handler
-func NewSubscriptionHandler(subscriptionService *service.SubscriptionService) *SubscriptionHandler {
+func NewSubscriptionHandler(subscriptionService *service.SubscriptionService, affiliateService *service.AffiliateService) *SubscriptionHandler {
 	return &SubscriptionHandler{
 		subscriptionService: subscriptionService,
+		affiliateService:    affiliateService,
 	}
 }
 
@@ -258,10 +261,40 @@ func (h *SubscriptionHandler) Revoke(c *gin.Context) {
 		return
 	}
 
-	err = h.subscriptionService.RevokeSubscription(c.Request.Context(), subscriptionID)
-	if err != nil {
+	ctx := c.Request.Context()
+
+	// 撤销前捕获 用户+分组，供撤销后尽力冲销返利（订阅删除后这两个值就取不到了）。
+	var (
+		inviteeUserID int64
+		groupID       int64
+		clawbackReady bool
+	)
+	if h.affiliateService != nil {
+		if sub, subErr := h.subscriptionService.GetByID(ctx, subscriptionID); subErr == nil {
+			inviteeUserID, groupID, clawbackReady = sub.UserID, sub.GroupID, true
+		} else {
+			// 拿不到订阅信息只能跳过冲销（不阻断撤销），但要留痕便于人工补冲。
+			slog.Warn("could not load subscription for rebate clawback; skipping clawback",
+				"subscriptionID", subscriptionID,
+				"error", subErr)
+		}
+	}
+
+	// 主流程：撤销订阅。撤销失败照常返回错误。
+	if err := h.subscriptionService.RevokeSubscription(ctx, subscriptionID); err != nil {
 		response.ErrorFrom(c, err)
 		return
+	}
+
+	// 尽力冲销对应的邀请返利：扣款失败只记日志，不影响正常的撤销结果。
+	if clawbackReady {
+		if _, err := h.affiliateService.ReverseSubscriptionRebateOnRevoke(ctx, inviteeUserID, groupID); err != nil {
+			slog.Error("affiliate rebate clawback failed after subscription revoke",
+				"subscriptionID", subscriptionID,
+				"userID", inviteeUserID,
+				"groupID", groupID,
+				"error", err)
+		}
 	}
 
 	response.Success(c, gin.H{"message": "Subscription revoked successfully"})

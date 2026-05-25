@@ -5437,6 +5437,8 @@ export default {
           durationDaysDesc: '被邀请用户注册后多少天内的充值产生返利。0 = 永久有效。',
           perInviteeCap: '单人返利上限',
           perInviteeCapDesc: '每个被邀请用户最多产生的返利总额。0 = 无上限。',
+          includeSubscription: '订阅订单参与返利',
+          includeSubscriptionHint: '开启后，订阅购买/续费订单也按上述返利比例和规则计返利；关闭时仅余额充值产生返利。',
           customUsers: {
             title: '专属用户配置',
             description: '为指定用户设置专属邀请码或专属返利比例。仅展示已设置过专属配置的用户。',

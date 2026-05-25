@@ -189,6 +189,67 @@ func TestResolveRedeemAction_IsUsedCanUseConsistency(t *testing.T) {
 	assert.Equal(t, redeemActionRedeem, resolveRedeemAction(unusedCode, nil))
 }
 
+// ---------------------------------------------------------------------------
+// affiliateRebateOrderEligible — order-type rebate gate (subscription support)
+// ---------------------------------------------------------------------------
+
+func TestAffiliateRebateOrderEligible(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		orderType string
+		subFlag   bool
+		want      bool
+	}{
+		{"balance always eligible, sub-flag off", payment.OrderTypeBalance, false, true},
+		{"balance always eligible, sub-flag on", payment.OrderTypeBalance, true, true},
+		{"subscription excluded when sub-flag off", payment.OrderTypeSubscription, false, false},
+		{"subscription eligible when sub-flag on", payment.OrderTypeSubscription, true, true},
+		{"unknown order type never eligible (flag off)", "mystery", false, false},
+		{"unknown order type never eligible (flag on)", "mystery", true, false},
+		{"empty order type never eligible", "", true, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tt.want, affiliateRebateOrderEligible(tt.orderType, tt.subFlag))
+		})
+	}
+}
+
+// TestAffiliateRebateBaseAmount verifies that subscription orders gross the
+// rebate base up by the balance recharge multiplier (to match balance orders,
+// whose o.Amount already includes it), while balance orders pass through
+// unchanged and the multiplier is normalized for invalid values.
+func TestAffiliateRebateBaseAmount(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		orderType  string
+		orderAmt   float64
+		multiplier float64
+		want       float64
+	}{
+		{"balance passes through (multiplier ignored)", payment.OrderTypeBalance, 100, 1.2, 100},
+		{"balance passes through at multiplier 1", payment.OrderTypeBalance, 59, 1.0, 59},
+		{"subscription grossed up by 1.2", payment.OrderTypeSubscription, 99, 1.2, 118.8},
+		{"subscription at multiplier 1 unchanged", payment.OrderTypeSubscription, 299, 1.0, 299},
+		{"subscription rounds to 2 decimals", payment.OrderTypeSubscription, 29, 1.15, 33.35},
+		{"subscription invalid multiplier falls back to 1.0", payment.OrderTypeSubscription, 199, 0, 199},
+		{"subscription negative multiplier falls back to 1.0", payment.OrderTypeSubscription, 199, -3, 199},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			assert.InDelta(t, tt.want, affiliateRebateBaseAmount(tt.orderType, tt.orderAmt, tt.multiplier), 1e-9)
+		})
+	}
+}
+
 func TestExpectedNotificationProviderKeyPrefersOrderInstanceProvider(t *testing.T) {
 	t.Parallel()
 

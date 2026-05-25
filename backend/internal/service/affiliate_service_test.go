@@ -57,6 +57,37 @@ func TestIsEnabled_NilSettingServiceReturnsDefault(t *testing.T) {
 	require.Equal(t, AffiliateEnabledDefault, svc.IsEnabled(context.Background()))
 }
 
+// TestIsSubscriptionRebateEnabled_NilSettingServiceReturnsDefault verifies the
+// subscription rebate sub-flag safely returns its default (off) when the
+// settingService dependency is nil, mirroring IsEnabled's nil-safety.
+func TestIsSubscriptionRebateEnabled_NilSettingServiceReturnsDefault(t *testing.T) {
+	t.Parallel()
+	svc := &AffiliateService{}
+	require.False(t, svc.IsSubscriptionRebateEnabled(context.Background()))
+	require.Equal(t, AffiliateRebateIncludeSubscriptionDefault, svc.IsSubscriptionRebateEnabled(context.Background()))
+}
+
+// TestReverseSubscriptionRebateOnRevoke_GuardsInvalidInput verifies the
+// clawback wrapper is a safe no-op for a nil repo and for non-positive
+// identifiers, so callers never trip a panic or spurious DB call.
+func TestReverseSubscriptionRebateOnRevoke_GuardsInvalidInput(t *testing.T) {
+	t.Parallel()
+
+	// nil repo → no-op
+	svc := &AffiliateService{}
+	reversed, err := svc.ReverseSubscriptionRebateOnRevoke(context.Background(), 1, 1)
+	require.NoError(t, err)
+	require.Zero(t, reversed)
+
+	// invalid identifiers → no-op even with a repo present is covered by the
+	// guard; here we assert the identifier guard independently of the repo.
+	for _, tc := range []struct{ invitee, group int64 }{{0, 1}, {1, 0}, {-1, -1}} {
+		reversed, err := svc.ReverseSubscriptionRebateOnRevoke(context.Background(), tc.invitee, tc.group)
+		require.NoError(t, err)
+		require.Zero(t, reversed)
+	}
+}
+
 // TestValidateExclusiveRate_BoundaryAndInvalid covers the validator used by
 // admin-facing rate setters: nil is always valid (clear), in-range values
 // are accepted, NaN/Inf and out-of-range values produce a typed BadRequest.

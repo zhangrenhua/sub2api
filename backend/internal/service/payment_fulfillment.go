@@ -433,12 +433,19 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 	// Prevents double-extension on retry after markCompleted fails.
 	if s.hasAuditLog(ctx, o.ID, "SUBSCRIPTION_SUCCESS") {
 		slog.Info("subscription already assigned for order, skipping", "orderID", o.ID, "groupID", gid)
+		// 返利按订单号幂等（tryClaimAffiliateRebateAudit），重入安全。
+		if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
+			return err
+		}
 		return s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS")
 	}
 	orderNote := fmt.Sprintf("payment order %d", o.ID)
 	_, _, err = s.subscriptionSvc.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote})
 	if err != nil {
 		return fmt.Errorf("assign subscription: %w", err)
+	}
+	if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
+		return err
 	}
 	return s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS")
 }
@@ -451,11 +458,69 @@ func (s *PaymentService) hasAuditLog(ctx context.Context, orderID int64, action 
 	return c > 0
 }
 
+// affiliateRebateOrderEligible reports whether an order of the given type may
+// accrue invite rebate. Balance (top-up) orders always qualify; subscription
+// orders qualify only when the subscription sub-flag is enabled. Any other
+// order type is excluded.
+func affiliateRebateOrderEligible(orderType string, subscriptionRebateEnabled bool) bool {
+	switch orderType {
+	case payment.OrderTypeBalance:
+		return true
+	case payment.OrderTypeSubscription:
+		return subscriptionRebateEnabled
+	default:
+		return false
+	}
+}
+
+// affiliateRebateBaseAmount returns the amount that invite rebate is computed
+// against for the given order.
+//
+// Balance orders persist their *credited* amount (paid × balance recharge
+// multiplier) in o.Amount, so the multiplier is already baked in. Subscription
+// orders persist the plan price, so the same balance-recharge multiplier is
+// applied here — rebate is granted as balance-equivalent quota, so both order
+// types must rebate on the multiplier-grossed amount to stay consistent.
+func affiliateRebateBaseAmount(orderType string, orderAmount, balanceRechargeMultiplier float64) float64 {
+	if orderType == payment.OrderTypeSubscription {
+		return calculateCreditedBalance(orderAmount, balanceRechargeMultiplier)
+	}
+	return orderAmount
+}
+
+// balanceRechargeMultiplier reads the configured balance recharge multiplier,
+// falling back to the neutral default (1.0) when config is unavailable.
+func (s *PaymentService) balanceRechargeMultiplier(ctx context.Context) float64 {
+	if s.configService == nil {
+		return defaultBalanceRechargeMultiplier
+	}
+	cfg, err := s.configService.GetPaymentConfig(ctx)
+	if err != nil || cfg == nil {
+		return defaultBalanceRechargeMultiplier
+	}
+	return cfg.BalanceRechargeMultiplier
+}
+
 func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *dbent.PaymentOrder) error {
-	if o == nil || o.OrderType != payment.OrderTypeBalance || o.Amount <= 0 {
+	if o == nil || o.Amount <= 0 {
 		return nil
 	}
 	if s.affiliateService == nil {
+		return nil
+	}
+	// 余额充值始终参与返利；订阅订单仅在子开关开启时参与。
+	// 总开关 (affiliate_enabled) 仍由下游 AccrueInviteRebateForOrder 统一兜底。
+	if !affiliateRebateOrderEligible(o.OrderType, s.affiliateService.IsSubscriptionRebateEnabled(ctx)) {
+		return nil
+	}
+
+	// 返利基数：余额单 o.Amount 已含充值倍率；订阅单按 plan.Price 存储，
+	// 此处补乘同一充值倍率，使两类订单的返利口径一致。
+	rebateBase := o.Amount
+	if o.OrderType == payment.OrderTypeSubscription {
+		rebateBase = affiliateRebateBaseAmount(o.OrderType, o.Amount, s.balanceRechargeMultiplier(ctx))
+	}
+	if rebateBase <= 0 {
 		return nil
 	}
 
@@ -469,7 +534,7 @@ func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *db
 	defer func() { _ = tx.Rollback() }()
 
 	txCtx := dbent.NewTxContext(ctx, tx)
-	claimed, err := s.tryClaimAffiliateRebateAudit(txCtx, tx.Client(), o.ID, o.Amount)
+	claimed, err := s.tryClaimAffiliateRebateAudit(txCtx, tx.Client(), o.ID, rebateBase)
 	if err != nil {
 		s.writeAuditLog(ctx, o.ID, "AFFILIATE_REBATE_FAILED", "system", map[string]any{
 			"error": err.Error(),
@@ -481,7 +546,7 @@ func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *db
 	}
 
 	sourceOrderID := o.ID
-	rebateAmount, err := s.affiliateService.AccrueInviteRebateForOrder(txCtx, o.UserID, o.Amount, &sourceOrderID)
+	rebateAmount, err := s.affiliateService.AccrueInviteRebateForOrder(txCtx, o.UserID, rebateBase, &sourceOrderID)
 	if err != nil {
 		s.writeAuditLog(ctx, o.ID, "AFFILIATE_REBATE_FAILED", "system", map[string]any{
 			"error": err.Error(),
@@ -491,7 +556,7 @@ func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *db
 
 	if rebateAmount <= 0 {
 		if err := s.updateClaimedAffiliateRebateAudit(txCtx, tx.Client(), o.ID, "AFFILIATE_REBATE_SKIPPED", map[string]any{
-			"baseAmount": o.Amount,
+			"baseAmount": rebateBase,
 			"reason":     "no inviter bound or rebate amount <= 0",
 		}); err != nil {
 			s.writeAuditLog(ctx, o.ID, "AFFILIATE_REBATE_FAILED", "system", map[string]any{
@@ -509,7 +574,8 @@ func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *db
 	}
 
 	if err := s.updateClaimedAffiliateRebateAudit(txCtx, tx.Client(), o.ID, "AFFILIATE_REBATE_APPLIED", map[string]any{
-		"baseAmount":   o.Amount,
+		"baseAmount":   rebateBase,
+		"orderAmount":  o.Amount,
 		"rebateAmount": rebateAmount,
 	}); err != nil {
 		s.writeAuditLog(ctx, o.ID, "AFFILIATE_REBATE_FAILED", "system", map[string]any{

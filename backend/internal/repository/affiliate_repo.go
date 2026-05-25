@@ -164,8 +164,11 @@ VALUES ($1, 'accrue', $2, $3, $4, NOW(), NOW())`, inviterID, amount, inviteeUser
 
 func (r *affiliateRepository) GetAccruedRebateFromInvitee(ctx context.Context, inviterID, inviteeUserID int64) (float64, error) {
 	client := clientFromContext(ctx, r.client)
+	// 净额 = 已计提 - 已反向冲销，使单人返利上限在撤销订阅冲销后仍准确。
 	rows, err := client.QueryContext(ctx,
-		`SELECT COALESCE(SUM(amount), 0)::double precision FROM user_affiliate_ledger WHERE user_id = $1 AND source_user_id = $2 AND action = 'accrue'`,
+		`SELECT COALESCE(SUM(CASE WHEN action = 'accrue' THEN amount WHEN action = 'reverse' THEN -amount ELSE 0 END), 0)::double precision
+FROM user_affiliate_ledger
+WHERE user_id = $1 AND source_user_id = $2 AND action IN ('accrue', 'reverse')`,
 		inviterID, inviteeUserID)
 	if err != nil {
 		return 0, fmt.Errorf("query accrued rebate from invitee: %w", err)
@@ -178,6 +181,115 @@ func (r *affiliateRepository) GetAccruedRebateFromInvitee(ctx context.Context, i
 		}
 	}
 	return total, rows.Close()
+}
+
+// ReverseSubscriptionRebate 反向冲销某被邀请人在某订阅分组下、所有订阅订单已计提
+// 的邀请返利（撤销订阅时调用）。返回实际冲销总额。
+//
+// 规则：
+//   - 仅冲销尚未冲销过的部分（按订单聚合 accrue - reverse），重入幂等。
+//   - 冻结中的部分先从邀请人 aff_frozen_quota 撤回；已释放/已提现的部分从
+//     aff_quota 扣减，允许 aff_quota 变为负数（佣金允许为负）。
+//   - aff_history_quota 同步按净额回退；每笔被冲销订单写一条 action='reverse' 流水。
+func (r *affiliateRepository) ReverseSubscriptionRebate(ctx context.Context, inviteeUserID, groupID int64) (float64, error) {
+	var totalReversed float64
+	err := r.withTx(ctx, func(txCtx context.Context, txClient *dbent.Client) error {
+		rows, err := txClient.QueryContext(txCtx, `
+WITH sub_orders AS (
+    SELECT id FROM payment_orders
+    WHERE user_id = $1 AND order_type = 'subscription' AND subscription_group_id = $2
+),
+per_order AS (
+    SELECT ual.source_order_id AS order_id,
+           ual.user_id AS inviter_id,
+           COALESCE(SUM(ual.amount) FILTER (WHERE ual.action = 'accrue'), 0) AS accrued,
+           COALESCE(SUM(ual.amount) FILTER (WHERE ual.action = 'accrue' AND ual.frozen_until IS NOT NULL), 0) AS frozen,
+           COALESCE(SUM(ual.amount) FILTER (WHERE ual.action = 'reverse'), 0) AS reversed
+    FROM user_affiliate_ledger ual
+    WHERE ual.source_user_id = $1
+      AND ual.source_order_id IN (SELECT id FROM sub_orders)
+      AND ual.action IN ('accrue', 'reverse')
+    GROUP BY ual.source_order_id, ual.user_id
+)
+SELECT order_id,
+       inviter_id,
+       (accrued - reversed) AS net,
+       LEAST(frozen, accrued - reversed) AS frozen_net
+FROM per_order
+WHERE (accrued - reversed) > 0`, inviteeUserID, groupID)
+		if err != nil {
+			return fmt.Errorf("query reversible subscription rebate: %w", err)
+		}
+
+		type reversal struct {
+			orderID   int64
+			inviterID int64
+			net       float64
+			frozen    float64
+		}
+		var reversals []reversal
+		netByInviter := map[int64]float64{}
+		frozenByInviter := map[int64]float64{}
+		for rows.Next() {
+			var rev reversal
+			if err := rows.Scan(&rev.orderID, &rev.inviterID, &rev.net, &rev.frozen); err != nil {
+				_ = rows.Close()
+				return err
+			}
+			reversals = append(reversals, rev)
+			netByInviter[rev.inviterID] += rev.net
+			frozenByInviter[rev.inviterID] += rev.frozen
+		}
+		if err := rows.Err(); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		if err := rows.Close(); err != nil {
+			return err
+		}
+		if len(reversals) == 0 {
+			return nil
+		}
+
+		// 按邀请人回退额度：冻结部分撤 aff_frozen_quota，其余从 aff_quota 扣（允许负）。
+		for inviterID, net := range netByInviter {
+			frozen := frozenByInviter[inviterID]
+			available := net - frozen
+			// aff_quota 允许变负（佣金可为负）；aff_frozen_quota 不应为负，
+			// 用 GREATEST 兜底防止数据异常下穿透（与 thawFrozenQuotaTx 一致）。
+			if _, err := txClient.ExecContext(txCtx, `
+UPDATE user_affiliates
+SET aff_frozen_quota = GREATEST(aff_frozen_quota - $1, 0),
+    aff_quota = aff_quota - $2,
+    aff_history_quota = aff_history_quota - $3,
+    updated_at = NOW()
+WHERE user_id = $4`, frozen, available, net, inviterID); err != nil {
+				return fmt.Errorf("deduct reversed affiliate quota: %w", err)
+			}
+			totalReversed += net
+		}
+
+		// 每笔被冲销订单写一条 reverse 流水（金额为正，方向由 action 区分）。
+		for _, rev := range reversals {
+			snapshot, err := queryAffiliateTransferSnapshot(txCtx, txClient, rev.inviterID)
+			if err != nil {
+				return err
+			}
+			orderID := rev.orderID
+			if _, err := txClient.ExecContext(txCtx, `
+INSERT INTO user_affiliate_ledger (
+    user_id, action, amount, source_user_id, source_order_id,
+    aff_quota_after, aff_frozen_quota_after, aff_history_quota_after, created_at, updated_at
+)
+VALUES ($1, 'reverse', $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+				rev.inviterID, rev.net, inviteeUserID, orderID,
+				snapshot.AvailableQuotaAfter, snapshot.FrozenQuotaAfter, snapshot.HistoryQuotaAfter); err != nil {
+				return fmt.Errorf("insert affiliate reverse ledger: %w", err)
+			}
+		}
+		return nil
+	})
+	return totalReversed, err
 }
 
 func (r *affiliateRepository) ThawFrozenQuota(ctx context.Context, userID int64) (float64, error) {

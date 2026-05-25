@@ -100,6 +100,7 @@ type AffiliateRepository interface {
 	BindInviter(ctx context.Context, userID, inviterID int64) (bool, error)
 	AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int, sourceOrderID *int64) (bool, error)
 	GetAccruedRebateFromInvitee(ctx context.Context, inviterID, inviteeUserID int64) (float64, error)
+	ReverseSubscriptionRebate(ctx context.Context, inviteeUserID, groupID int64) (float64, error)
 	ThawFrozenQuota(ctx context.Context, userID int64) (float64, error)
 	TransferQuotaToBalance(ctx context.Context, userID int64) (float64, float64, error)
 	ListInvitees(ctx context.Context, inviterID int64, limit int) ([]AffiliateInvitee, error)
@@ -226,6 +227,29 @@ func (s *AffiliateService) IsEnabled(ctx context.Context) bool {
 		return AffiliateEnabledDefault
 	}
 	return s.settingService.IsAffiliateEnabled(ctx)
+}
+
+// IsSubscriptionRebateEnabled 报告订阅订单是否参与邀请返利。
+// 这是总开关 IsEnabled 之下的子开关；总开关关闭时返利逻辑本就不会执行，
+// 此处仅决定在总开关开启时订阅订单是否一并计返利（默认关闭）。
+func (s *AffiliateService) IsSubscriptionRebateEnabled(ctx context.Context) bool {
+	if s == nil || s.settingService == nil {
+		return AffiliateRebateIncludeSubscriptionDefault
+	}
+	return s.settingService.IsAffiliateSubscriptionRebateEnabled(ctx)
+}
+
+// ReverseSubscriptionRebateOnRevoke 在撤销订阅时反向冲销该被邀请人在该分组下
+// 全部订阅订单已计提的返利。无论返利总开关当前是否开启都执行——冲销的是当初
+// 实际发放过的额度（账本为准）；若从未产生过返利则为无操作。重入幂等。
+func (s *AffiliateService) ReverseSubscriptionRebateOnRevoke(ctx context.Context, inviteeUserID, groupID int64) (float64, error) {
+	if s == nil || s.repo == nil {
+		return 0, nil
+	}
+	if inviteeUserID <= 0 || groupID <= 0 {
+		return 0, nil
+	}
+	return s.repo.ReverseSubscriptionRebate(ctx, inviteeUserID, groupID)
 }
 
 func (s *AffiliateService) EnsureUserAffiliate(ctx context.Context, userID int64) (*AffiliateSummary, error) {

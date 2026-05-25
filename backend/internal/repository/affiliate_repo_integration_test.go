@@ -170,6 +170,100 @@ func TestAffiliateRepository_AccrueQuota_ReusesOuterTransaction(t *testing.T) {
 		"AccrueQuota must propagate the outer tx — found persisted rows after rollback")
 }
 
+// TestAffiliateRepository_ReverseSubscriptionRebate_AllowsNegativeAndIdempotent
+// verifies clawback on subscription revoke: the inviter's already-withdrawn
+// rebate is reversed (aff_quota goes negative), aff_history_quota rolls back,
+// a single 'reverse' ledger row is written, and a repeat call is a no-op.
+func TestAffiliateRepository_ReverseSubscriptionRebate_AllowsNegativeAndIdempotent(t *testing.T) {
+	ctx := context.Background()
+	tx := testEntTx(t)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	client := tx.Client()
+
+	repo := NewAffiliateRepository(client, integrationDB)
+
+	now := time.Now()
+	inviter := mustCreateUser(t, client, &service.User{
+		Email:        fmt.Sprintf("aff-rev-inviter-%d@example.com", now.UnixNano()),
+		PasswordHash: "hash",
+		Role:         service.RoleUser,
+		Status:       service.StatusActive,
+		Concurrency:  5,
+	})
+	invitee := mustCreateUser(t, client, &service.User{
+		Email:        fmt.Sprintf("aff-rev-invitee-%d@example.com", now.UnixNano()+1),
+		PasswordHash: "hash",
+		Role:         service.RoleUser,
+		Status:       service.StatusActive,
+		Concurrency:  5,
+	})
+
+	const groupID = int64(987654)
+
+	// Inviter affiliate: quota already withdrawn (aff_quota=0) but 20 was historically granted.
+	affCode := fmt.Sprintf("AFR%09d", now.UnixNano()%1_000_000_000)
+	_, err := client.ExecContext(txCtx, `
+INSERT INTO user_affiliates (user_id, aff_code, aff_quota, aff_frozen_quota, aff_history_quota, created_at, updated_at)
+VALUES ($1, $2, 0, 0, 20, NOW(), NOW())`, inviter.ID, affCode)
+	require.NoError(t, err)
+	affCode2 := fmt.Sprintf("AFE%09d", now.UnixNano()%1_000_000_000)
+	_, err = client.ExecContext(txCtx, `
+INSERT INTO user_affiliates (user_id, aff_code, inviter_id, created_at, updated_at)
+VALUES ($1, $2, $3, NOW(), NOW())`, invitee.ID, affCode2, inviter.ID)
+	require.NoError(t, err)
+
+	// Subscription order for invitee in the group.
+	order, err := client.PaymentOrder.Create().
+		SetUserID(invitee.ID).
+		SetUserEmail(invitee.Email).
+		SetUserName("invitee").
+		SetAmount(100).
+		SetPayAmount(100).
+		SetRechargeCode(fmt.Sprintf("PAY-%d", now.UnixNano())).
+		SetPaymentType("alipay").
+		SetPaymentTradeNo("").
+		SetOrderType("subscription").
+		SetSubscriptionGroupID(groupID).
+		SetStatus("COMPLETED").
+		SetExpiresAt(now.Add(time.Hour)).
+		SetClientIP("127.0.0.1").
+		SetSrcHost("test").
+		Save(txCtx)
+	require.NoError(t, err)
+
+	// Accrued (available, not frozen) rebate tied to that order.
+	_, err = client.ExecContext(txCtx, `
+INSERT INTO user_affiliate_ledger (user_id, action, amount, source_user_id, source_order_id, created_at, updated_at)
+VALUES ($1, 'accrue', 20, $2, $3, NOW(), NOW())`, inviter.ID, invitee.ID, order.ID)
+	require.NoError(t, err)
+
+	reversed, err := repo.ReverseSubscriptionRebate(txCtx, invitee.ID, groupID)
+	require.NoError(t, err)
+	require.InDelta(t, 20.0, reversed, 1e-9)
+
+	affQuota := querySingleFloat(t, txCtx, client,
+		"SELECT aff_quota::double precision FROM user_affiliates WHERE user_id = $1", inviter.ID)
+	require.InDelta(t, -20.0, affQuota, 1e-9, "aff_quota must be allowed to go negative")
+	history := querySingleFloat(t, txCtx, client,
+		"SELECT aff_history_quota::double precision FROM user_affiliates WHERE user_id = $1", inviter.ID)
+	require.InDelta(t, 0.0, history, 1e-9)
+
+	reverseCount := querySingleInt(t, txCtx, client,
+		"SELECT COUNT(*) FROM user_affiliate_ledger WHERE user_id = $1 AND action = 'reverse'", inviter.ID)
+	require.Equal(t, 1, reverseCount)
+
+	// Idempotent: a repeat reversal changes nothing.
+	reversedAgain, err := repo.ReverseSubscriptionRebate(txCtx, invitee.ID, groupID)
+	require.NoError(t, err)
+	require.InDelta(t, 0.0, reversedAgain, 1e-9)
+	affQuotaAgain := querySingleFloat(t, txCtx, client,
+		"SELECT aff_quota::double precision FROM user_affiliates WHERE user_id = $1", inviter.ID)
+	require.InDelta(t, -20.0, affQuotaAgain, 1e-9)
+	reverseCountAgain := querySingleInt(t, txCtx, client,
+		"SELECT COUNT(*) FROM user_affiliate_ledger WHERE user_id = $1 AND action = 'reverse'", inviter.ID)
+	require.Equal(t, 1, reverseCountAgain)
+}
+
 func TestAffiliateRepository_TransferQuotaToBalance_EmptyQuota(t *testing.T) {
 	ctx := context.Background()
 	tx := testEntTx(t)
