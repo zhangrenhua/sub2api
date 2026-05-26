@@ -1,8 +1,8 @@
 <template>
-  <div class="space-y-4">
+  <div class="space-y-3">
     <!-- Quick Amount Buttons -->
     <div>
-      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
         {{ t('payment.quickAmounts') }}
       </label>
       <div class="grid grid-cols-3 gap-2">
@@ -25,7 +25,7 @@
 
     <!-- Custom Amount Input -->
     <div>
-      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
         {{ t('payment.customAmount') }}
       </label>
       <div class="relative">
@@ -37,7 +37,7 @@
           inputmode="decimal"
           :value="customText"
           :placeholder="placeholderText"
-          class="input w-full py-3 pl-8 pr-4"
+          class="input w-full py-2 pl-8 pr-4"
           @input="handleInput"
         />
       </div>
