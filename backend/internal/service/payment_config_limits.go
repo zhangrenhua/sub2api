@@ -34,8 +34,8 @@ func (s *PaymentConfigService) GetAvailableMethodLimits(ctx context.Context) (*M
 		}
 		ml := pcAggregateMethodLimits(pt, insts)
 		ml.Currency = currency
-		if pt == payment.TypeTRC20 {
-			ml.Rate = trc20CNYPerUSDT(insts)
+		if pt == payment.TypeTRC20 || pt == payment.TypeERC20 {
+			ml.Rate = cryptoCNYPerUSDT(insts)
 		}
 		resp.Methods[ml.PaymentType] = ml
 	}
@@ -172,9 +172,9 @@ func (s *PaymentConfigService) pcInstancePaymentCurrency(inst *dbent.PaymentProv
 // For Stripe providers, ALL sub-types (card, link, alipay, wxpay) map to "stripe"
 // because the user sees a single "Stripe" button, not individual sub-methods.
 // Uses a seen set to avoid counting one instance twice.
-// trc20CNYPerUSDT extracts the configured CNY→USDT rate from the first TRC20
-// instance that has one. Returns 0 when unconfigured.
-func trc20CNYPerUSDT(instances []*dbent.PaymentProviderInstance) float64 {
+// cryptoCNYPerUSDT extracts the configured CNY→USDT rate from the first crypto
+// (TRC20/ERC20) instance that has one. Returns 0 when unconfigured.
+func cryptoCNYPerUSDT(instances []*dbent.PaymentProviderInstance) float64 {
 	for _, inst := range instances {
 		if strings.TrimSpace(inst.Config) == "" {
 			continue
