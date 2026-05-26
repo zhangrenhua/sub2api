@@ -650,6 +650,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/orders/crypto-wallet',
+    name: 'AdminCryptoWallet',
+    component: () => import('@/views/admin/orders/AdminCryptoWalletView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'USDT/TRC20 Wallet',
+      titleKey: 'nav.cryptoWallet',
+      requiresPayment: true
+    }
+  },
+  {
     path: '/admin/orders/plans',
     name: 'AdminPaymentPlans',
     component: () => import('@/views/admin/orders/AdminPaymentPlansView.vue'),

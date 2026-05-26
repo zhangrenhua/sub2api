@@ -16,6 +16,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
+	"github.com/Wei-Shaw/sub2api/ent/cryptosweepjob"
+	"github.com/Wei-Shaw/sub2api/ent/cryptosweeptask"
+	"github.com/Wei-Shaw/sub2api/ent/cryptowalletconfig"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
@@ -33,12 +36,14 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/trc20consumedtx"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/usercryptoaddress"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
@@ -689,6 +694,128 @@ func init() {
 	channelmonitorrequesttemplate.DefaultBodyOverrideMode = channelmonitorrequesttemplateDescBodyOverrideMode.Default.(string)
 	// channelmonitorrequesttemplate.BodyOverrideModeValidator is a validator for the "body_override_mode" field. It is called by the builders before save.
 	channelmonitorrequesttemplate.BodyOverrideModeValidator = channelmonitorrequesttemplateDescBodyOverrideMode.Validators[0].(func(string) error)
+	cryptosweepjobFields := schema.CryptoSweepJob{}.Fields()
+	_ = cryptosweepjobFields
+	// cryptosweepjobDescStatus is the schema descriptor for status field.
+	cryptosweepjobDescStatus := cryptosweepjobFields[0].Descriptor()
+	// cryptosweepjob.DefaultStatus holds the default value on creation for the status field.
+	cryptosweepjob.DefaultStatus = cryptosweepjobDescStatus.Default.(string)
+	// cryptosweepjob.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	cryptosweepjob.StatusValidator = cryptosweepjobDescStatus.Validators[0].(func(string) error)
+	// cryptosweepjobDescCreatedBy is the schema descriptor for created_by field.
+	cryptosweepjobDescCreatedBy := cryptosweepjobFields[1].Descriptor()
+	// cryptosweepjob.DefaultCreatedBy holds the default value on creation for the created_by field.
+	cryptosweepjob.DefaultCreatedBy = cryptosweepjobDescCreatedBy.Default.(string)
+	// cryptosweepjob.CreatedByValidator is a validator for the "created_by" field. It is called by the builders before save.
+	cryptosweepjob.CreatedByValidator = cryptosweepjobDescCreatedBy.Validators[0].(func(string) error)
+	// cryptosweepjobDescTotalTasks is the schema descriptor for total_tasks field.
+	cryptosweepjobDescTotalTasks := cryptosweepjobFields[2].Descriptor()
+	// cryptosweepjob.DefaultTotalTasks holds the default value on creation for the total_tasks field.
+	cryptosweepjob.DefaultTotalTasks = cryptosweepjobDescTotalTasks.Default.(int)
+	// cryptosweepjobDescCompletedTasks is the schema descriptor for completed_tasks field.
+	cryptosweepjobDescCompletedTasks := cryptosweepjobFields[3].Descriptor()
+	// cryptosweepjob.DefaultCompletedTasks holds the default value on creation for the completed_tasks field.
+	cryptosweepjob.DefaultCompletedTasks = cryptosweepjobDescCompletedTasks.Default.(int)
+	// cryptosweepjobDescTotalSwept is the schema descriptor for total_swept field.
+	cryptosweepjobDescTotalSwept := cryptosweepjobFields[4].Descriptor()
+	// cryptosweepjob.DefaultTotalSwept holds the default value on creation for the total_swept field.
+	cryptosweepjob.DefaultTotalSwept = cryptosweepjobDescTotalSwept.Default.(float64)
+	// cryptosweepjobDescCollectionAddress is the schema descriptor for collection_address field.
+	cryptosweepjobDescCollectionAddress := cryptosweepjobFields[5].Descriptor()
+	// cryptosweepjob.CollectionAddressValidator is a validator for the "collection_address" field. It is called by the builders before save.
+	cryptosweepjob.CollectionAddressValidator = cryptosweepjobDescCollectionAddress.Validators[0].(func(string) error)
+	// cryptosweepjobDescError is the schema descriptor for error field.
+	cryptosweepjobDescError := cryptosweepjobFields[6].Descriptor()
+	// cryptosweepjob.DefaultError holds the default value on creation for the error field.
+	cryptosweepjob.DefaultError = cryptosweepjobDescError.Default.(string)
+	// cryptosweepjobDescCreatedAt is the schema descriptor for created_at field.
+	cryptosweepjobDescCreatedAt := cryptosweepjobFields[7].Descriptor()
+	// cryptosweepjob.DefaultCreatedAt holds the default value on creation for the created_at field.
+	cryptosweepjob.DefaultCreatedAt = cryptosweepjobDescCreatedAt.Default.(func() time.Time)
+	// cryptosweepjobDescUpdatedAt is the schema descriptor for updated_at field.
+	cryptosweepjobDescUpdatedAt := cryptosweepjobFields[8].Descriptor()
+	// cryptosweepjob.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	cryptosweepjob.DefaultUpdatedAt = cryptosweepjobDescUpdatedAt.Default.(func() time.Time)
+	// cryptosweepjob.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	cryptosweepjob.UpdateDefaultUpdatedAt = cryptosweepjobDescUpdatedAt.UpdateDefault.(func() time.Time)
+	cryptosweeptaskFields := schema.CryptoSweepTask{}.Fields()
+	_ = cryptosweeptaskFields
+	// cryptosweeptaskDescUserID is the schema descriptor for user_id field.
+	cryptosweeptaskDescUserID := cryptosweeptaskFields[1].Descriptor()
+	// cryptosweeptask.DefaultUserID holds the default value on creation for the user_id field.
+	cryptosweeptask.DefaultUserID = cryptosweeptaskDescUserID.Default.(int64)
+	// cryptosweeptaskDescAddress is the schema descriptor for address field.
+	cryptosweeptaskDescAddress := cryptosweeptaskFields[2].Descriptor()
+	// cryptosweeptask.AddressValidator is a validator for the "address" field. It is called by the builders before save.
+	cryptosweeptask.AddressValidator = cryptosweeptaskDescAddress.Validators[0].(func(string) error)
+	// cryptosweeptaskDescStatus is the schema descriptor for status field.
+	cryptosweeptaskDescStatus := cryptosweeptaskFields[5].Descriptor()
+	// cryptosweeptask.DefaultStatus holds the default value on creation for the status field.
+	cryptosweeptask.DefaultStatus = cryptosweeptaskDescStatus.Default.(string)
+	// cryptosweeptask.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	cryptosweeptask.StatusValidator = cryptosweeptaskDescStatus.Validators[0].(func(string) error)
+	// cryptosweeptaskDescGasFundTx is the schema descriptor for gas_fund_tx field.
+	cryptosweeptaskDescGasFundTx := cryptosweeptaskFields[6].Descriptor()
+	// cryptosweeptask.DefaultGasFundTx holds the default value on creation for the gas_fund_tx field.
+	cryptosweeptask.DefaultGasFundTx = cryptosweeptaskDescGasFundTx.Default.(string)
+	// cryptosweeptask.GasFundTxValidator is a validator for the "gas_fund_tx" field. It is called by the builders before save.
+	cryptosweeptask.GasFundTxValidator = cryptosweeptaskDescGasFundTx.Validators[0].(func(string) error)
+	// cryptosweeptaskDescSweepTx is the schema descriptor for sweep_tx field.
+	cryptosweeptaskDescSweepTx := cryptosweeptaskFields[7].Descriptor()
+	// cryptosweeptask.DefaultSweepTx holds the default value on creation for the sweep_tx field.
+	cryptosweeptask.DefaultSweepTx = cryptosweeptaskDescSweepTx.Default.(string)
+	// cryptosweeptask.SweepTxValidator is a validator for the "sweep_tx" field. It is called by the builders before save.
+	cryptosweeptask.SweepTxValidator = cryptosweeptaskDescSweepTx.Validators[0].(func(string) error)
+	// cryptosweeptaskDescError is the schema descriptor for error field.
+	cryptosweeptaskDescError := cryptosweeptaskFields[8].Descriptor()
+	// cryptosweeptask.DefaultError holds the default value on creation for the error field.
+	cryptosweeptask.DefaultError = cryptosweeptaskDescError.Default.(string)
+	// cryptosweeptaskDescCreatedAt is the schema descriptor for created_at field.
+	cryptosweeptaskDescCreatedAt := cryptosweeptaskFields[9].Descriptor()
+	// cryptosweeptask.DefaultCreatedAt holds the default value on creation for the created_at field.
+	cryptosweeptask.DefaultCreatedAt = cryptosweeptaskDescCreatedAt.Default.(func() time.Time)
+	// cryptosweeptaskDescUpdatedAt is the schema descriptor for updated_at field.
+	cryptosweeptaskDescUpdatedAt := cryptosweeptaskFields[10].Descriptor()
+	// cryptosweeptask.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	cryptosweeptask.DefaultUpdatedAt = cryptosweeptaskDescUpdatedAt.Default.(func() time.Time)
+	// cryptosweeptask.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	cryptosweeptask.UpdateDefaultUpdatedAt = cryptosweeptaskDescUpdatedAt.UpdateDefault.(func() time.Time)
+	cryptowalletconfigFields := schema.CryptoWalletConfig{}.Fields()
+	_ = cryptowalletconfigFields
+	// cryptowalletconfigDescEncryptedMnemonic is the schema descriptor for encrypted_mnemonic field.
+	cryptowalletconfigDescEncryptedMnemonic := cryptowalletconfigFields[0].Descriptor()
+	// cryptowalletconfig.DefaultEncryptedMnemonic holds the default value on creation for the encrypted_mnemonic field.
+	cryptowalletconfig.DefaultEncryptedMnemonic = cryptowalletconfigDescEncryptedMnemonic.Default.(string)
+	// cryptowalletconfigDescNextDerivationIndex is the schema descriptor for next_derivation_index field.
+	cryptowalletconfigDescNextDerivationIndex := cryptowalletconfigFields[1].Descriptor()
+	// cryptowalletconfig.DefaultNextDerivationIndex holds the default value on creation for the next_derivation_index field.
+	cryptowalletconfig.DefaultNextDerivationIndex = cryptowalletconfigDescNextDerivationIndex.Default.(int64)
+	// cryptowalletconfigDescCollectionAddress is the schema descriptor for collection_address field.
+	cryptowalletconfigDescCollectionAddress := cryptowalletconfigFields[2].Descriptor()
+	// cryptowalletconfig.DefaultCollectionAddress holds the default value on creation for the collection_address field.
+	cryptowalletconfig.DefaultCollectionAddress = cryptowalletconfigDescCollectionAddress.Default.(string)
+	// cryptowalletconfig.CollectionAddressValidator is a validator for the "collection_address" field. It is called by the builders before save.
+	cryptowalletconfig.CollectionAddressValidator = cryptowalletconfigDescCollectionAddress.Validators[0].(func(string) error)
+	// cryptowalletconfigDescFeeAddress is the schema descriptor for fee_address field.
+	cryptowalletconfigDescFeeAddress := cryptowalletconfigFields[3].Descriptor()
+	// cryptowalletconfig.DefaultFeeAddress holds the default value on creation for the fee_address field.
+	cryptowalletconfig.DefaultFeeAddress = cryptowalletconfigDescFeeAddress.Default.(string)
+	// cryptowalletconfig.FeeAddressValidator is a validator for the "fee_address" field. It is called by the builders before save.
+	cryptowalletconfig.FeeAddressValidator = cryptowalletconfigDescFeeAddress.Validators[0].(func(string) error)
+	// cryptowalletconfigDescInitialized is the schema descriptor for initialized field.
+	cryptowalletconfigDescInitialized := cryptowalletconfigFields[4].Descriptor()
+	// cryptowalletconfig.DefaultInitialized holds the default value on creation for the initialized field.
+	cryptowalletconfig.DefaultInitialized = cryptowalletconfigDescInitialized.Default.(bool)
+	// cryptowalletconfigDescCreatedAt is the schema descriptor for created_at field.
+	cryptowalletconfigDescCreatedAt := cryptowalletconfigFields[5].Descriptor()
+	// cryptowalletconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
+	cryptowalletconfig.DefaultCreatedAt = cryptowalletconfigDescCreatedAt.Default.(func() time.Time)
+	// cryptowalletconfigDescUpdatedAt is the schema descriptor for updated_at field.
+	cryptowalletconfigDescUpdatedAt := cryptowalletconfigFields[6].Descriptor()
+	// cryptowalletconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	cryptowalletconfig.DefaultUpdatedAt = cryptowalletconfigDescUpdatedAt.Default.(func() time.Time)
+	// cryptowalletconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	cryptowalletconfig.UpdateDefaultUpdatedAt = cryptowalletconfigDescUpdatedAt.UpdateDefault.(func() time.Time)
 	errorpassthroughruleMixin := schema.ErrorPassthroughRule{}.Mixin()
 	errorpassthroughruleMixinFields0 := errorpassthroughruleMixin[0].Fields()
 	_ = errorpassthroughruleMixinFields0
@@ -1563,6 +1690,20 @@ func init() {
 	tlsfingerprintprofileDescEnableGrease := tlsfingerprintprofileFields[2].Descriptor()
 	// tlsfingerprintprofile.DefaultEnableGrease holds the default value on creation for the enable_grease field.
 	tlsfingerprintprofile.DefaultEnableGrease = tlsfingerprintprofileDescEnableGrease.Default.(bool)
+	trc20consumedtxFields := schema.TRC20ConsumedTx{}.Fields()
+	_ = trc20consumedtxFields
+	// trc20consumedtxDescTxHash is the schema descriptor for tx_hash field.
+	trc20consumedtxDescTxHash := trc20consumedtxFields[0].Descriptor()
+	// trc20consumedtx.TxHashValidator is a validator for the "tx_hash" field. It is called by the builders before save.
+	trc20consumedtx.TxHashValidator = trc20consumedtxDescTxHash.Validators[0].(func(string) error)
+	// trc20consumedtxDescAddress is the schema descriptor for address field.
+	trc20consumedtxDescAddress := trc20consumedtxFields[2].Descriptor()
+	// trc20consumedtx.AddressValidator is a validator for the "address" field. It is called by the builders before save.
+	trc20consumedtx.AddressValidator = trc20consumedtxDescAddress.Validators[0].(func(string) error)
+	// trc20consumedtxDescCreatedAt is the schema descriptor for created_at field.
+	trc20consumedtxDescCreatedAt := trc20consumedtxFields[5].Descriptor()
+	// trc20consumedtx.DefaultCreatedAt holds the default value on creation for the created_at field.
+	trc20consumedtx.DefaultCreatedAt = trc20consumedtxDescCreatedAt.Default.(func() time.Time)
 	usagecleanuptaskMixin := schema.UsageCleanupTask{}.Mixin()
 	usagecleanuptaskMixinFields0 := usagecleanuptaskMixin[0].Fields()
 	_ = usagecleanuptaskMixinFields0
@@ -1997,6 +2138,32 @@ func init() {
 	userattributevalueDescValue := userattributevalueFields[2].Descriptor()
 	// userattributevalue.DefaultValue holds the default value on creation for the value field.
 	userattributevalue.DefaultValue = userattributevalueDescValue.Default.(string)
+	usercryptoaddressFields := schema.UserCryptoAddress{}.Fields()
+	_ = usercryptoaddressFields
+	// usercryptoaddressDescNetwork is the schema descriptor for network field.
+	usercryptoaddressDescNetwork := usercryptoaddressFields[1].Descriptor()
+	// usercryptoaddress.DefaultNetwork holds the default value on creation for the network field.
+	usercryptoaddress.DefaultNetwork = usercryptoaddressDescNetwork.Default.(string)
+	// usercryptoaddress.NetworkValidator is a validator for the "network" field. It is called by the builders before save.
+	usercryptoaddress.NetworkValidator = usercryptoaddressDescNetwork.Validators[0].(func(string) error)
+	// usercryptoaddressDescAddress is the schema descriptor for address field.
+	usercryptoaddressDescAddress := usercryptoaddressFields[2].Descriptor()
+	// usercryptoaddress.AddressValidator is a validator for the "address" field. It is called by the builders before save.
+	usercryptoaddress.AddressValidator = usercryptoaddressDescAddress.Validators[0].(func(string) error)
+	// usercryptoaddressDescLastBalance is the schema descriptor for last_balance field.
+	usercryptoaddressDescLastBalance := usercryptoaddressFields[4].Descriptor()
+	// usercryptoaddress.DefaultLastBalance holds the default value on creation for the last_balance field.
+	usercryptoaddress.DefaultLastBalance = usercryptoaddressDescLastBalance.Default.(float64)
+	// usercryptoaddressDescCreatedAt is the schema descriptor for created_at field.
+	usercryptoaddressDescCreatedAt := usercryptoaddressFields[6].Descriptor()
+	// usercryptoaddress.DefaultCreatedAt holds the default value on creation for the created_at field.
+	usercryptoaddress.DefaultCreatedAt = usercryptoaddressDescCreatedAt.Default.(func() time.Time)
+	// usercryptoaddressDescUpdatedAt is the schema descriptor for updated_at field.
+	usercryptoaddressDescUpdatedAt := usercryptoaddressFields[7].Descriptor()
+	// usercryptoaddress.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	usercryptoaddress.DefaultUpdatedAt = usercryptoaddressDescUpdatedAt.Default.(func() time.Time)
+	// usercryptoaddress.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	usercryptoaddress.UpdateDefaultUpdatedAt = usercryptoaddressDescUpdatedAt.UpdateDefault.(func() time.Time)
 	usersubscriptionMixin := schema.UserSubscription{}.Mixin()
 	usersubscriptionMixinHooks1 := usersubscriptionMixin[1].Hooks()
 	usersubscription.Hooks[0] = usersubscriptionMixinHooks1[0]

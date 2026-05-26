@@ -16,6 +16,7 @@ func RegisterPaymentRoutes(
 	paymentHandler *handler.PaymentHandler,
 	webhookHandler *handler.PaymentWebhookHandler,
 	adminPaymentHandler *admin.PaymentHandler,
+	adminCryptoWalletHandler *admin.CryptoWalletHandler,
 	jwtAuth middleware.JWTAuthMiddleware,
 	adminAuth middleware.AdminAuthMiddleware,
 	settingService *service.SettingService,
@@ -104,6 +105,20 @@ func RegisterPaymentRoutes(
 			providers.POST("", adminPaymentHandler.CreateProvider)
 			providers.PUT("/:id", adminPaymentHandler.UpdateProvider)
 			providers.DELETE("/:id", adminPaymentHandler.DeleteProvider)
+		}
+
+		// Crypto (TRC20) HD wallet: balances, addresses, and TOTP-gated
+		// initialization + one-click sweep.
+		crypto := adminGroup.Group("/crypto")
+		{
+			crypto.GET("/overview", adminCryptoWalletHandler.GetOverview)
+			crypto.GET("/addresses", adminCryptoWalletHandler.ListAddresses)
+			crypto.POST("/refresh-balances", adminCryptoWalletHandler.RefreshBalances)
+			crypto.POST("/wallet/init", adminCryptoWalletHandler.InitWallet)
+			crypto.PUT("/wallet/collection-address", adminCryptoWalletHandler.SetCollectionAddress)
+			crypto.POST("/sweep", adminCryptoWalletHandler.StartSweep)
+			crypto.GET("/sweep/:jobId", adminCryptoWalletHandler.GetSweepJob)
+			crypto.GET("/sweeps", adminCryptoWalletHandler.ListSweepJobs)
 		}
 	}
 }

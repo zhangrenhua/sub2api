@@ -26,6 +26,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
+	"github.com/Wei-Shaw/sub2api/ent/cryptosweepjob"
+	"github.com/Wei-Shaw/sub2api/ent/cryptosweeptask"
+	"github.com/Wei-Shaw/sub2api/ent/cryptowalletconfig"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
@@ -42,12 +45,14 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/trc20consumedtx"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/usercryptoaddress"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 
 	stdsql "database/sql"
@@ -80,6 +85,12 @@ type Client struct {
 	ChannelMonitorHistory *ChannelMonitorHistoryClient
 	// ChannelMonitorRequestTemplate is the client for interacting with the ChannelMonitorRequestTemplate builders.
 	ChannelMonitorRequestTemplate *ChannelMonitorRequestTemplateClient
+	// CryptoSweepJob is the client for interacting with the CryptoSweepJob builders.
+	CryptoSweepJob *CryptoSweepJobClient
+	// CryptoSweepTask is the client for interacting with the CryptoSweepTask builders.
+	CryptoSweepTask *CryptoSweepTaskClient
+	// CryptoWalletConfig is the client for interacting with the CryptoWalletConfig builders.
+	CryptoWalletConfig *CryptoWalletConfigClient
 	// ErrorPassthroughRule is the client for interacting with the ErrorPassthroughRule builders.
 	ErrorPassthroughRule *ErrorPassthroughRuleClient
 	// Group is the client for interacting with the Group builders.
@@ -112,6 +123,8 @@ type Client struct {
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
 	TLSFingerprintProfile *TLSFingerprintProfileClient
+	// TRC20ConsumedTx is the client for interacting with the TRC20ConsumedTx builders.
+	TRC20ConsumedTx *TRC20ConsumedTxClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
 	UsageCleanupTask *UsageCleanupTaskClient
 	// UsageLog is the client for interacting with the UsageLog builders.
@@ -124,6 +137,8 @@ type Client struct {
 	UserAttributeDefinition *UserAttributeDefinitionClient
 	// UserAttributeValue is the client for interacting with the UserAttributeValue builders.
 	UserAttributeValue *UserAttributeValueClient
+	// UserCryptoAddress is the client for interacting with the UserCryptoAddress builders.
+	UserCryptoAddress *UserCryptoAddressClient
 	// UserSubscription is the client for interacting with the UserSubscription builders.
 	UserSubscription *UserSubscriptionClient
 }
@@ -148,6 +163,9 @@ func (c *Client) init() {
 	c.ChannelMonitorDailyRollup = NewChannelMonitorDailyRollupClient(c.config)
 	c.ChannelMonitorHistory = NewChannelMonitorHistoryClient(c.config)
 	c.ChannelMonitorRequestTemplate = NewChannelMonitorRequestTemplateClient(c.config)
+	c.CryptoSweepJob = NewCryptoSweepJobClient(c.config)
+	c.CryptoSweepTask = NewCryptoSweepTaskClient(c.config)
+	c.CryptoWalletConfig = NewCryptoWalletConfigClient(c.config)
 	c.ErrorPassthroughRule = NewErrorPassthroughRuleClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.IdempotencyRecord = NewIdempotencyRecordClient(c.config)
@@ -164,12 +182,14 @@ func (c *Client) init() {
 	c.Setting = NewSettingClient(c.config)
 	c.SubscriptionPlan = NewSubscriptionPlanClient(c.config)
 	c.TLSFingerprintProfile = NewTLSFingerprintProfileClient(c.config)
+	c.TRC20ConsumedTx = NewTRC20ConsumedTxClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
 	c.UsageLog = NewUsageLogClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UserAllowedGroup = NewUserAllowedGroupClient(c.config)
 	c.UserAttributeDefinition = NewUserAttributeDefinitionClient(c.config)
 	c.UserAttributeValue = NewUserAttributeValueClient(c.config)
+	c.UserCryptoAddress = NewUserCryptoAddressClient(c.config)
 	c.UserSubscription = NewUserSubscriptionClient(c.config)
 }
 
@@ -274,6 +294,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ChannelMonitorDailyRollup:     NewChannelMonitorDailyRollupClient(cfg),
 		ChannelMonitorHistory:         NewChannelMonitorHistoryClient(cfg),
 		ChannelMonitorRequestTemplate: NewChannelMonitorRequestTemplateClient(cfg),
+		CryptoSweepJob:                NewCryptoSweepJobClient(cfg),
+		CryptoSweepTask:               NewCryptoSweepTaskClient(cfg),
+		CryptoWalletConfig:            NewCryptoWalletConfigClient(cfg),
 		ErrorPassthroughRule:          NewErrorPassthroughRuleClient(cfg),
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
@@ -290,12 +313,14 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
+		TRC20ConsumedTx:               NewTRC20ConsumedTxClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
 		User:                          NewUserClient(cfg),
 		UserAllowedGroup:              NewUserAllowedGroupClient(cfg),
 		UserAttributeDefinition:       NewUserAttributeDefinitionClient(cfg),
 		UserAttributeValue:            NewUserAttributeValueClient(cfg),
+		UserCryptoAddress:             NewUserCryptoAddressClient(cfg),
 		UserSubscription:              NewUserSubscriptionClient(cfg),
 	}, nil
 }
@@ -327,6 +352,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ChannelMonitorDailyRollup:     NewChannelMonitorDailyRollupClient(cfg),
 		ChannelMonitorHistory:         NewChannelMonitorHistoryClient(cfg),
 		ChannelMonitorRequestTemplate: NewChannelMonitorRequestTemplateClient(cfg),
+		CryptoSweepJob:                NewCryptoSweepJobClient(cfg),
+		CryptoSweepTask:               NewCryptoSweepTaskClient(cfg),
+		CryptoWalletConfig:            NewCryptoWalletConfigClient(cfg),
 		ErrorPassthroughRule:          NewErrorPassthroughRuleClient(cfg),
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
@@ -343,12 +371,14 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
+		TRC20ConsumedTx:               NewTRC20ConsumedTxClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
 		User:                          NewUserClient(cfg),
 		UserAllowedGroup:              NewUserAllowedGroupClient(cfg),
 		UserAttributeDefinition:       NewUserAttributeDefinitionClient(cfg),
 		UserAttributeValue:            NewUserAttributeValueClient(cfg),
+		UserCryptoAddress:             NewUserCryptoAddressClient(cfg),
 		UserSubscription:              NewUserSubscriptionClient(cfg),
 	}, nil
 }
@@ -382,13 +412,14 @@ func (c *Client) Use(hooks ...Hook) {
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
-		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
-		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
-		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.ChannelMonitorRequestTemplate, c.CryptoSweepJob, c.CryptoSweepTask,
+		c.CryptoWalletConfig, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
+		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
+		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
+		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
+		c.TLSFingerprintProfile, c.TRC20ConsumedTx, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserSubscription,
+		c.UserCryptoAddress, c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -401,13 +432,14 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
-		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
-		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
-		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.ChannelMonitorRequestTemplate, c.CryptoSweepJob, c.CryptoSweepTask,
+		c.CryptoWalletConfig, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
+		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
+		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
+		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
+		c.TLSFingerprintProfile, c.TRC20ConsumedTx, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserSubscription,
+		c.UserCryptoAddress, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -438,6 +470,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ChannelMonitorHistory.mutate(ctx, m)
 	case *ChannelMonitorRequestTemplateMutation:
 		return c.ChannelMonitorRequestTemplate.mutate(ctx, m)
+	case *CryptoSweepJobMutation:
+		return c.CryptoSweepJob.mutate(ctx, m)
+	case *CryptoSweepTaskMutation:
+		return c.CryptoSweepTask.mutate(ctx, m)
+	case *CryptoWalletConfigMutation:
+		return c.CryptoWalletConfig.mutate(ctx, m)
 	case *ErrorPassthroughRuleMutation:
 		return c.ErrorPassthroughRule.mutate(ctx, m)
 	case *GroupMutation:
@@ -470,6 +508,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SubscriptionPlan.mutate(ctx, m)
 	case *TLSFingerprintProfileMutation:
 		return c.TLSFingerprintProfile.mutate(ctx, m)
+	case *TRC20ConsumedTxMutation:
+		return c.TRC20ConsumedTx.mutate(ctx, m)
 	case *UsageCleanupTaskMutation:
 		return c.UsageCleanupTask.mutate(ctx, m)
 	case *UsageLogMutation:
@@ -482,6 +522,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UserAttributeDefinition.mutate(ctx, m)
 	case *UserAttributeValueMutation:
 		return c.UserAttributeValue.mutate(ctx, m)
+	case *UserCryptoAddressMutation:
+		return c.UserCryptoAddress.mutate(ctx, m)
 	case *UserSubscriptionMutation:
 		return c.UserSubscription.mutate(ctx, m)
 	default:
@@ -2256,6 +2298,405 @@ func (c *ChannelMonitorRequestTemplateClient) mutate(ctx context.Context, m *Cha
 		return (&ChannelMonitorRequestTemplateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ChannelMonitorRequestTemplate mutation op: %q", m.Op())
+	}
+}
+
+// CryptoSweepJobClient is a client for the CryptoSweepJob schema.
+type CryptoSweepJobClient struct {
+	config
+}
+
+// NewCryptoSweepJobClient returns a client for the CryptoSweepJob from the given config.
+func NewCryptoSweepJobClient(c config) *CryptoSweepJobClient {
+	return &CryptoSweepJobClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `cryptosweepjob.Hooks(f(g(h())))`.
+func (c *CryptoSweepJobClient) Use(hooks ...Hook) {
+	c.hooks.CryptoSweepJob = append(c.hooks.CryptoSweepJob, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `cryptosweepjob.Intercept(f(g(h())))`.
+func (c *CryptoSweepJobClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CryptoSweepJob = append(c.inters.CryptoSweepJob, interceptors...)
+}
+
+// Create returns a builder for creating a CryptoSweepJob entity.
+func (c *CryptoSweepJobClient) Create() *CryptoSweepJobCreate {
+	mutation := newCryptoSweepJobMutation(c.config, OpCreate)
+	return &CryptoSweepJobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CryptoSweepJob entities.
+func (c *CryptoSweepJobClient) CreateBulk(builders ...*CryptoSweepJobCreate) *CryptoSweepJobCreateBulk {
+	return &CryptoSweepJobCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CryptoSweepJobClient) MapCreateBulk(slice any, setFunc func(*CryptoSweepJobCreate, int)) *CryptoSweepJobCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CryptoSweepJobCreateBulk{err: fmt.Errorf("calling to CryptoSweepJobClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CryptoSweepJobCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CryptoSweepJobCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CryptoSweepJob.
+func (c *CryptoSweepJobClient) Update() *CryptoSweepJobUpdate {
+	mutation := newCryptoSweepJobMutation(c.config, OpUpdate)
+	return &CryptoSweepJobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CryptoSweepJobClient) UpdateOne(_m *CryptoSweepJob) *CryptoSweepJobUpdateOne {
+	mutation := newCryptoSweepJobMutation(c.config, OpUpdateOne, withCryptoSweepJob(_m))
+	return &CryptoSweepJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CryptoSweepJobClient) UpdateOneID(id int64) *CryptoSweepJobUpdateOne {
+	mutation := newCryptoSweepJobMutation(c.config, OpUpdateOne, withCryptoSweepJobID(id))
+	return &CryptoSweepJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CryptoSweepJob.
+func (c *CryptoSweepJobClient) Delete() *CryptoSweepJobDelete {
+	mutation := newCryptoSweepJobMutation(c.config, OpDelete)
+	return &CryptoSweepJobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CryptoSweepJobClient) DeleteOne(_m *CryptoSweepJob) *CryptoSweepJobDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CryptoSweepJobClient) DeleteOneID(id int64) *CryptoSweepJobDeleteOne {
+	builder := c.Delete().Where(cryptosweepjob.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CryptoSweepJobDeleteOne{builder}
+}
+
+// Query returns a query builder for CryptoSweepJob.
+func (c *CryptoSweepJobClient) Query() *CryptoSweepJobQuery {
+	return &CryptoSweepJobQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCryptoSweepJob},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CryptoSweepJob entity by its id.
+func (c *CryptoSweepJobClient) Get(ctx context.Context, id int64) (*CryptoSweepJob, error) {
+	return c.Query().Where(cryptosweepjob.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CryptoSweepJobClient) GetX(ctx context.Context, id int64) *CryptoSweepJob {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CryptoSweepJobClient) Hooks() []Hook {
+	return c.hooks.CryptoSweepJob
+}
+
+// Interceptors returns the client interceptors.
+func (c *CryptoSweepJobClient) Interceptors() []Interceptor {
+	return c.inters.CryptoSweepJob
+}
+
+func (c *CryptoSweepJobClient) mutate(ctx context.Context, m *CryptoSweepJobMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CryptoSweepJobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CryptoSweepJobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CryptoSweepJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CryptoSweepJobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CryptoSweepJob mutation op: %q", m.Op())
+	}
+}
+
+// CryptoSweepTaskClient is a client for the CryptoSweepTask schema.
+type CryptoSweepTaskClient struct {
+	config
+}
+
+// NewCryptoSweepTaskClient returns a client for the CryptoSweepTask from the given config.
+func NewCryptoSweepTaskClient(c config) *CryptoSweepTaskClient {
+	return &CryptoSweepTaskClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `cryptosweeptask.Hooks(f(g(h())))`.
+func (c *CryptoSweepTaskClient) Use(hooks ...Hook) {
+	c.hooks.CryptoSweepTask = append(c.hooks.CryptoSweepTask, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `cryptosweeptask.Intercept(f(g(h())))`.
+func (c *CryptoSweepTaskClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CryptoSweepTask = append(c.inters.CryptoSweepTask, interceptors...)
+}
+
+// Create returns a builder for creating a CryptoSweepTask entity.
+func (c *CryptoSweepTaskClient) Create() *CryptoSweepTaskCreate {
+	mutation := newCryptoSweepTaskMutation(c.config, OpCreate)
+	return &CryptoSweepTaskCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CryptoSweepTask entities.
+func (c *CryptoSweepTaskClient) CreateBulk(builders ...*CryptoSweepTaskCreate) *CryptoSweepTaskCreateBulk {
+	return &CryptoSweepTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CryptoSweepTaskClient) MapCreateBulk(slice any, setFunc func(*CryptoSweepTaskCreate, int)) *CryptoSweepTaskCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CryptoSweepTaskCreateBulk{err: fmt.Errorf("calling to CryptoSweepTaskClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CryptoSweepTaskCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CryptoSweepTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CryptoSweepTask.
+func (c *CryptoSweepTaskClient) Update() *CryptoSweepTaskUpdate {
+	mutation := newCryptoSweepTaskMutation(c.config, OpUpdate)
+	return &CryptoSweepTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CryptoSweepTaskClient) UpdateOne(_m *CryptoSweepTask) *CryptoSweepTaskUpdateOne {
+	mutation := newCryptoSweepTaskMutation(c.config, OpUpdateOne, withCryptoSweepTask(_m))
+	return &CryptoSweepTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CryptoSweepTaskClient) UpdateOneID(id int64) *CryptoSweepTaskUpdateOne {
+	mutation := newCryptoSweepTaskMutation(c.config, OpUpdateOne, withCryptoSweepTaskID(id))
+	return &CryptoSweepTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CryptoSweepTask.
+func (c *CryptoSweepTaskClient) Delete() *CryptoSweepTaskDelete {
+	mutation := newCryptoSweepTaskMutation(c.config, OpDelete)
+	return &CryptoSweepTaskDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CryptoSweepTaskClient) DeleteOne(_m *CryptoSweepTask) *CryptoSweepTaskDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CryptoSweepTaskClient) DeleteOneID(id int64) *CryptoSweepTaskDeleteOne {
+	builder := c.Delete().Where(cryptosweeptask.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CryptoSweepTaskDeleteOne{builder}
+}
+
+// Query returns a query builder for CryptoSweepTask.
+func (c *CryptoSweepTaskClient) Query() *CryptoSweepTaskQuery {
+	return &CryptoSweepTaskQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCryptoSweepTask},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CryptoSweepTask entity by its id.
+func (c *CryptoSweepTaskClient) Get(ctx context.Context, id int64) (*CryptoSweepTask, error) {
+	return c.Query().Where(cryptosweeptask.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CryptoSweepTaskClient) GetX(ctx context.Context, id int64) *CryptoSweepTask {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CryptoSweepTaskClient) Hooks() []Hook {
+	return c.hooks.CryptoSweepTask
+}
+
+// Interceptors returns the client interceptors.
+func (c *CryptoSweepTaskClient) Interceptors() []Interceptor {
+	return c.inters.CryptoSweepTask
+}
+
+func (c *CryptoSweepTaskClient) mutate(ctx context.Context, m *CryptoSweepTaskMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CryptoSweepTaskCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CryptoSweepTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CryptoSweepTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CryptoSweepTaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CryptoSweepTask mutation op: %q", m.Op())
+	}
+}
+
+// CryptoWalletConfigClient is a client for the CryptoWalletConfig schema.
+type CryptoWalletConfigClient struct {
+	config
+}
+
+// NewCryptoWalletConfigClient returns a client for the CryptoWalletConfig from the given config.
+func NewCryptoWalletConfigClient(c config) *CryptoWalletConfigClient {
+	return &CryptoWalletConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `cryptowalletconfig.Hooks(f(g(h())))`.
+func (c *CryptoWalletConfigClient) Use(hooks ...Hook) {
+	c.hooks.CryptoWalletConfig = append(c.hooks.CryptoWalletConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `cryptowalletconfig.Intercept(f(g(h())))`.
+func (c *CryptoWalletConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CryptoWalletConfig = append(c.inters.CryptoWalletConfig, interceptors...)
+}
+
+// Create returns a builder for creating a CryptoWalletConfig entity.
+func (c *CryptoWalletConfigClient) Create() *CryptoWalletConfigCreate {
+	mutation := newCryptoWalletConfigMutation(c.config, OpCreate)
+	return &CryptoWalletConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CryptoWalletConfig entities.
+func (c *CryptoWalletConfigClient) CreateBulk(builders ...*CryptoWalletConfigCreate) *CryptoWalletConfigCreateBulk {
+	return &CryptoWalletConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CryptoWalletConfigClient) MapCreateBulk(slice any, setFunc func(*CryptoWalletConfigCreate, int)) *CryptoWalletConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CryptoWalletConfigCreateBulk{err: fmt.Errorf("calling to CryptoWalletConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CryptoWalletConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CryptoWalletConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CryptoWalletConfig.
+func (c *CryptoWalletConfigClient) Update() *CryptoWalletConfigUpdate {
+	mutation := newCryptoWalletConfigMutation(c.config, OpUpdate)
+	return &CryptoWalletConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CryptoWalletConfigClient) UpdateOne(_m *CryptoWalletConfig) *CryptoWalletConfigUpdateOne {
+	mutation := newCryptoWalletConfigMutation(c.config, OpUpdateOne, withCryptoWalletConfig(_m))
+	return &CryptoWalletConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CryptoWalletConfigClient) UpdateOneID(id int64) *CryptoWalletConfigUpdateOne {
+	mutation := newCryptoWalletConfigMutation(c.config, OpUpdateOne, withCryptoWalletConfigID(id))
+	return &CryptoWalletConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CryptoWalletConfig.
+func (c *CryptoWalletConfigClient) Delete() *CryptoWalletConfigDelete {
+	mutation := newCryptoWalletConfigMutation(c.config, OpDelete)
+	return &CryptoWalletConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CryptoWalletConfigClient) DeleteOne(_m *CryptoWalletConfig) *CryptoWalletConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CryptoWalletConfigClient) DeleteOneID(id int64) *CryptoWalletConfigDeleteOne {
+	builder := c.Delete().Where(cryptowalletconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CryptoWalletConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for CryptoWalletConfig.
+func (c *CryptoWalletConfigClient) Query() *CryptoWalletConfigQuery {
+	return &CryptoWalletConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCryptoWalletConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CryptoWalletConfig entity by its id.
+func (c *CryptoWalletConfigClient) Get(ctx context.Context, id int64) (*CryptoWalletConfig, error) {
+	return c.Query().Where(cryptowalletconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CryptoWalletConfigClient) GetX(ctx context.Context, id int64) *CryptoWalletConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CryptoWalletConfigClient) Hooks() []Hook {
+	return c.hooks.CryptoWalletConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *CryptoWalletConfigClient) Interceptors() []Interceptor {
+	return c.inters.CryptoWalletConfig
+}
+
+func (c *CryptoWalletConfigClient) mutate(ctx context.Context, m *CryptoWalletConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CryptoWalletConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CryptoWalletConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CryptoWalletConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CryptoWalletConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CryptoWalletConfig mutation op: %q", m.Op())
 	}
 }
 
@@ -4695,6 +5136,139 @@ func (c *TLSFingerprintProfileClient) mutate(ctx context.Context, m *TLSFingerpr
 	}
 }
 
+// TRC20ConsumedTxClient is a client for the TRC20ConsumedTx schema.
+type TRC20ConsumedTxClient struct {
+	config
+}
+
+// NewTRC20ConsumedTxClient returns a client for the TRC20ConsumedTx from the given config.
+func NewTRC20ConsumedTxClient(c config) *TRC20ConsumedTxClient {
+	return &TRC20ConsumedTxClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `trc20consumedtx.Hooks(f(g(h())))`.
+func (c *TRC20ConsumedTxClient) Use(hooks ...Hook) {
+	c.hooks.TRC20ConsumedTx = append(c.hooks.TRC20ConsumedTx, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `trc20consumedtx.Intercept(f(g(h())))`.
+func (c *TRC20ConsumedTxClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TRC20ConsumedTx = append(c.inters.TRC20ConsumedTx, interceptors...)
+}
+
+// Create returns a builder for creating a TRC20ConsumedTx entity.
+func (c *TRC20ConsumedTxClient) Create() *TRC20ConsumedTxCreate {
+	mutation := newTRC20ConsumedTxMutation(c.config, OpCreate)
+	return &TRC20ConsumedTxCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TRC20ConsumedTx entities.
+func (c *TRC20ConsumedTxClient) CreateBulk(builders ...*TRC20ConsumedTxCreate) *TRC20ConsumedTxCreateBulk {
+	return &TRC20ConsumedTxCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TRC20ConsumedTxClient) MapCreateBulk(slice any, setFunc func(*TRC20ConsumedTxCreate, int)) *TRC20ConsumedTxCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TRC20ConsumedTxCreateBulk{err: fmt.Errorf("calling to TRC20ConsumedTxClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TRC20ConsumedTxCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TRC20ConsumedTxCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TRC20ConsumedTx.
+func (c *TRC20ConsumedTxClient) Update() *TRC20ConsumedTxUpdate {
+	mutation := newTRC20ConsumedTxMutation(c.config, OpUpdate)
+	return &TRC20ConsumedTxUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TRC20ConsumedTxClient) UpdateOne(_m *TRC20ConsumedTx) *TRC20ConsumedTxUpdateOne {
+	mutation := newTRC20ConsumedTxMutation(c.config, OpUpdateOne, withTRC20ConsumedTx(_m))
+	return &TRC20ConsumedTxUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TRC20ConsumedTxClient) UpdateOneID(id int64) *TRC20ConsumedTxUpdateOne {
+	mutation := newTRC20ConsumedTxMutation(c.config, OpUpdateOne, withTRC20ConsumedTxID(id))
+	return &TRC20ConsumedTxUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TRC20ConsumedTx.
+func (c *TRC20ConsumedTxClient) Delete() *TRC20ConsumedTxDelete {
+	mutation := newTRC20ConsumedTxMutation(c.config, OpDelete)
+	return &TRC20ConsumedTxDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TRC20ConsumedTxClient) DeleteOne(_m *TRC20ConsumedTx) *TRC20ConsumedTxDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TRC20ConsumedTxClient) DeleteOneID(id int64) *TRC20ConsumedTxDeleteOne {
+	builder := c.Delete().Where(trc20consumedtx.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TRC20ConsumedTxDeleteOne{builder}
+}
+
+// Query returns a query builder for TRC20ConsumedTx.
+func (c *TRC20ConsumedTxClient) Query() *TRC20ConsumedTxQuery {
+	return &TRC20ConsumedTxQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTRC20ConsumedTx},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TRC20ConsumedTx entity by its id.
+func (c *TRC20ConsumedTxClient) Get(ctx context.Context, id int64) (*TRC20ConsumedTx, error) {
+	return c.Query().Where(trc20consumedtx.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TRC20ConsumedTxClient) GetX(ctx context.Context, id int64) *TRC20ConsumedTx {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TRC20ConsumedTxClient) Hooks() []Hook {
+	return c.hooks.TRC20ConsumedTx
+}
+
+// Interceptors returns the client interceptors.
+func (c *TRC20ConsumedTxClient) Interceptors() []Interceptor {
+	return c.inters.TRC20ConsumedTx
+}
+
+func (c *TRC20ConsumedTxClient) mutate(ctx context.Context, m *TRC20ConsumedTxMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TRC20ConsumedTxCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TRC20ConsumedTxUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TRC20ConsumedTxUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TRC20ConsumedTxDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TRC20ConsumedTx mutation op: %q", m.Op())
+	}
+}
+
 // UsageCleanupTaskClient is a client for the UsageCleanupTask schema.
 type UsageCleanupTaskClient struct {
 	config
@@ -5816,6 +6390,139 @@ func (c *UserAttributeValueClient) mutate(ctx context.Context, m *UserAttributeV
 	}
 }
 
+// UserCryptoAddressClient is a client for the UserCryptoAddress schema.
+type UserCryptoAddressClient struct {
+	config
+}
+
+// NewUserCryptoAddressClient returns a client for the UserCryptoAddress from the given config.
+func NewUserCryptoAddressClient(c config) *UserCryptoAddressClient {
+	return &UserCryptoAddressClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `usercryptoaddress.Hooks(f(g(h())))`.
+func (c *UserCryptoAddressClient) Use(hooks ...Hook) {
+	c.hooks.UserCryptoAddress = append(c.hooks.UserCryptoAddress, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `usercryptoaddress.Intercept(f(g(h())))`.
+func (c *UserCryptoAddressClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserCryptoAddress = append(c.inters.UserCryptoAddress, interceptors...)
+}
+
+// Create returns a builder for creating a UserCryptoAddress entity.
+func (c *UserCryptoAddressClient) Create() *UserCryptoAddressCreate {
+	mutation := newUserCryptoAddressMutation(c.config, OpCreate)
+	return &UserCryptoAddressCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserCryptoAddress entities.
+func (c *UserCryptoAddressClient) CreateBulk(builders ...*UserCryptoAddressCreate) *UserCryptoAddressCreateBulk {
+	return &UserCryptoAddressCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserCryptoAddressClient) MapCreateBulk(slice any, setFunc func(*UserCryptoAddressCreate, int)) *UserCryptoAddressCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserCryptoAddressCreateBulk{err: fmt.Errorf("calling to UserCryptoAddressClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserCryptoAddressCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserCryptoAddressCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserCryptoAddress.
+func (c *UserCryptoAddressClient) Update() *UserCryptoAddressUpdate {
+	mutation := newUserCryptoAddressMutation(c.config, OpUpdate)
+	return &UserCryptoAddressUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserCryptoAddressClient) UpdateOne(_m *UserCryptoAddress) *UserCryptoAddressUpdateOne {
+	mutation := newUserCryptoAddressMutation(c.config, OpUpdateOne, withUserCryptoAddress(_m))
+	return &UserCryptoAddressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserCryptoAddressClient) UpdateOneID(id int64) *UserCryptoAddressUpdateOne {
+	mutation := newUserCryptoAddressMutation(c.config, OpUpdateOne, withUserCryptoAddressID(id))
+	return &UserCryptoAddressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserCryptoAddress.
+func (c *UserCryptoAddressClient) Delete() *UserCryptoAddressDelete {
+	mutation := newUserCryptoAddressMutation(c.config, OpDelete)
+	return &UserCryptoAddressDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserCryptoAddressClient) DeleteOne(_m *UserCryptoAddress) *UserCryptoAddressDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserCryptoAddressClient) DeleteOneID(id int64) *UserCryptoAddressDeleteOne {
+	builder := c.Delete().Where(usercryptoaddress.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserCryptoAddressDeleteOne{builder}
+}
+
+// Query returns a query builder for UserCryptoAddress.
+func (c *UserCryptoAddressClient) Query() *UserCryptoAddressQuery {
+	return &UserCryptoAddressQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserCryptoAddress},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserCryptoAddress entity by its id.
+func (c *UserCryptoAddressClient) Get(ctx context.Context, id int64) (*UserCryptoAddress, error) {
+	return c.Query().Where(usercryptoaddress.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserCryptoAddressClient) GetX(ctx context.Context, id int64) *UserCryptoAddress {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UserCryptoAddressClient) Hooks() []Hook {
+	return c.hooks.UserCryptoAddress
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserCryptoAddressClient) Interceptors() []Interceptor {
+	return c.inters.UserCryptoAddress
+}
+
+func (c *UserCryptoAddressClient) mutate(ctx context.Context, m *UserCryptoAddressMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserCryptoAddressCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserCryptoAddressUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserCryptoAddressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserCryptoAddressDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserCryptoAddress mutation op: %q", m.Op())
+	}
+}
+
 // UserSubscriptionClient is a client for the UserSubscription schema.
 type UserSubscriptionClient struct {
 	config
@@ -6020,22 +6727,26 @@ type (
 	hooks struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
 		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Hook
+		ChannelMonitorHistory, ChannelMonitorRequestTemplate, CryptoSweepJob,
+		CryptoSweepTask, CryptoWalletConfig, ErrorPassthroughRule, Group,
+		IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
+		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		TRC20ConsumedTx, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserCryptoAddress,
+		UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
 		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Interceptor
+		ChannelMonitorHistory, ChannelMonitorRequestTemplate, CryptoSweepJob,
+		CryptoSweepTask, CryptoWalletConfig, ErrorPassthroughRule, Group,
+		IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
+		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		TRC20ConsumedTx, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserCryptoAddress,
+		UserSubscription []ent.Interceptor
 	}
 )
 

@@ -115,6 +115,10 @@ type MethodLimits struct {
 	DailyLimit  float64 `json:"daily_limit"`
 	SingleMin   float64 `json:"single_min"`
 	SingleMax   float64 `json:"single_max"`
+	// Rate is the CNY→token conversion rate (CNY per token) for crypto methods
+	// like USDT/TRC20; 0 for fiat methods. The frontend uses it to show the
+	// converted pay amount before an order is created.
+	Rate float64 `json:"rate,omitempty"`
 }
 
 // MethodLimitsResponse is the full response for the user-facing /limits API.

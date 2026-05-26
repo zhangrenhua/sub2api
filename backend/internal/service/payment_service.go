@@ -192,6 +192,7 @@ type PaymentService struct {
 	resumeService            *PaymentResumeService
 	affiliateService         *AffiliateService
 	notificationEmailService *NotificationEmailService
+	cryptoWalletSvc          *CryptoWalletService
 }
 
 func NewPaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService) *PaymentService {
@@ -202,6 +203,12 @@ func NewPaymentService(entClient *dbent.Client, registry *payment.Registry, load
 
 func (s *PaymentService) SetNotificationEmailService(notificationEmailService *NotificationEmailService) {
 	s.notificationEmailService = notificationEmailService
+}
+
+// SetCryptoWalletService injects the TRON HD wallet service used for TRC20
+// deposit address resolution and on-chain payment reconciliation.
+func (s *PaymentService) SetCryptoWalletService(cryptoWalletSvc *CryptoWalletService) {
+	s.cryptoWalletSvc = cryptoWalletSvc
 }
 
 // --- Provider Registry ---

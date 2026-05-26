@@ -22,6 +22,8 @@
             :pay-url="paymentState.payUrl"
             :order-type="paymentState.orderType"
             :currency="paymentState.currency || selectedCurrency"
+            :amount="paymentState.payAmount"
+            :rate="usdtRate"
             @done="onPaymentDone"
             @success="onPaymentSuccess"
             @settled="onPaymentSettled"
@@ -78,6 +80,13 @@
                 <p v-if="balanceRechargeMultiplier !== 1" class="border-t border-gray-200 pt-2 text-xs text-gray-500 dark:border-dark-600 dark:text-gray-400">
                   {{ t('payment.rechargeRatePreview', { usd: balanceRechargeMultiplier.toFixed(2) }) }}
                 </p>
+                <div v-if="isUsdtMethod && usdtRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
+                  <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.usdtPayable') }}</span>
+                  <span class="text-lg font-bold text-[#26A17B]">{{ usdtPayDisplay }} USDT</span>
+                </div>
+                <p v-if="isUsdtMethod && usdtRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('payment.usdtRateNote', { rate: usdtRate }) }}
+                </p>
               </div>
             </div>
             <button :class="['btn w-full py-3 text-base font-medium', paymentButtonClass]" :disabled="!canSubmit || submitting" @click="handleSubmitRecharge">
@@ -85,6 +94,7 @@
                 <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                 {{ t('common.processing') }}
               </span>
+              <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ usdtPayDisplay }} USDT</span>
               <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(totalAmount) }}</span>
             </button>
             </template>
@@ -160,13 +170,24 @@
                     <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.actualPay') }}</span>
                     <span class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ formatSelectedPaymentAmount(subTotalAmount) }}</span>
                   </div>
+                  <div v-if="isUsdtMethod && usdtRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.usdtPayable') }}</span>
+                    <span class="text-lg font-bold text-[#26A17B]">{{ subUsdtPayDisplay }} USDT</span>
+                  </div>
+                  <p v-if="isUsdtMethod && usdtRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('payment.usdtRateNote', { rate: usdtRate }) }}
+                  </p>
                 </div>
               </div>
+              <p v-else-if="isUsdtMethod && usdtRate > 0" class="px-1 text-center text-xs text-gray-500 dark:text-gray-400">
+                {{ t('payment.usdtPayableNote', { amount: subUsdtPayDisplay, rate: usdtRate }) }}
+              </p>
               <button :class="['btn w-full py-3 text-base font-medium', paymentButtonClass]" :disabled="!canSubmitSubscription || submitting" @click="confirmSubscribe">
                 <span v-if="submitting" class="flex items-center justify-center gap-2">
                   <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                   {{ t('common.processing') }}
                 </span>
+                <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ subUsdtPayDisplay }} USDT</span>
                 <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(feeRate > 0 ? subTotalAmount : selectedPlan.price) }}</span>
               </button>
               <button class="btn btn-secondary w-full" @click="selectedPlan = null">{{ t('common.cancel') }}</button>
@@ -611,6 +632,18 @@ const subTotalAmount = computed(() => {
   const price = selectedPlan.value?.price ?? 0
   if (feeRate.value <= 0 || price <= 0) return price
   return Math.round((price + subFeeAmount.value) * 100) / 100
+})
+
+// USDT (TRC20): plans/recharge are priced in CNY; show the converted USDT
+// amount and the rate note when this method is selected.
+const isUsdtMethod = computed(() => selectedMethod.value === 'usdt_trc20')
+const usdtRate = computed(() => selectedLimit.value?.rate ?? 0)
+const usdtPayDisplay = computed(() =>
+  usdtRate.value > 0 ? (totalAmount.value / usdtRate.value).toFixed(2) : ''
+)
+const subUsdtPayDisplay = computed(() => {
+  const cny = feeRate.value > 0 ? subTotalAmount.value : (selectedPlan.value?.price ?? 0)
+  return usdtRate.value > 0 ? (cny / usdtRate.value).toFixed(2) : ''
 })
 
 const canSubmitSubscription = computed(() =>
