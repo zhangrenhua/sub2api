@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"strings"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -97,10 +96,12 @@ func (s *PaymentService) reconcileOneTRC20(ctx context.Context, o *dbent.Payment
 	orderStart := o.CreatedAt.Add(-2 * time.Minute)
 
 	for _, tr := range transfers {
-		if !strings.EqualFold(tr.ContractAddress, contract) {
+		// TRON base58check addresses are case-sensitive with a single canonical
+		// form, so compare exactly (unlike Ethereum's case-insensitive hex).
+		if tr.ContractAddress != contract {
 			continue
 		}
-		if !strings.EqualFold(tr.To, addrRow.Address) {
+		if tr.To != addrRow.Address {
 			continue
 		}
 		if math.Abs(tr.Amount()-o.PayAmount) > trc20AmountTolerance {

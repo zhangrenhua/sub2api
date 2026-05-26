@@ -124,6 +124,21 @@ func (s *SignerClient) SuggestGasPriceWei(ctx context.Context) (*big.Int, error)
 // ChainID returns the connected network's chain id.
 func (s *SignerClient) ChainID() *big.Int { return s.chainID }
 
+// SweepGasFundingWei returns the ETH (wei) needed to cover one ERC20 transfer
+// out of a deposit address at the current gas price: gasPrice * ERC20 gas limit
+// with a 30% buffer. The sweep funds max(this, configured floor) so a fixed
+// config value can never under-fund the deposit address when gas spikes.
+func (s *SignerClient) SweepGasFundingWei(ctx context.Context) (*big.Int, error) {
+	gp, err := s.client.SuggestGasPrice(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("eth: gas price: %w", err)
+	}
+	need := new(big.Int).Mul(gp, big.NewInt(erc20TransferGas))
+	need.Mul(need, big.NewInt(13))
+	need.Div(need, big.NewInt(10))
+	return need, nil
+}
+
 func (s *SignerClient) signAndSend(ctx context.Context, tx *types.Transaction, priv *ecdsa.PrivateKey) (string, error) {
 	signed, err := types.SignTx(tx, types.LatestSignerForChainID(s.chainID), priv)
 	if err != nil {

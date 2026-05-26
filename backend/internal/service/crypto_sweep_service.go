@@ -38,7 +38,10 @@ const (
 	// tx to confirm before deferring (the task stays resumable either way).
 	confirmPollInterval = 5 * time.Second
 	confirmMaxWait      = 90 * time.Second
-	usdtBaseUnitExp     = 6
+	// ethConfirmMaxWait is longer: Ethereum blocks (~12s) and inclusion under
+	// load can take several minutes vs TRON's ~3s blocks.
+	ethConfirmMaxWait = 300 * time.Second
+	usdtBaseUnitExp   = 6
 )
 
 // StartSweep provisions a one-click consolidation job over every deposit

@@ -620,7 +620,10 @@ func (s *PaymentService) validateSelectedCreateOrderInstance(ctx context.Context
 
 // trc20DefaultMinRechargeCNY is the default minimum recharge (in CNY) for USDT
 // when the instance does not configure one.
-const trc20DefaultMinRechargeCNY = 100.0
+const (
+	trc20DefaultMinRechargeCNY = 100.0
+	erc20DefaultMinRechargeCNY = 500.0
+)
 
 // cryptoNetworkForProvider maps a provider key to its crypto network label
 // (TRC20/ERC20), or "" for non-crypto providers.
@@ -645,7 +648,11 @@ func cryptoPayAmountCNYtoUSDT(req CreateOrderRequest, limitAmount, cnyPayAmount 
 		cfg = sel.Config
 	}
 
+	// Default minimum is network-aware: ERC20 higher since ETH gas is costly.
 	minCNY := trc20DefaultMinRechargeCNY
+	if cryptoNetworkForProvider(sel.ProviderKey) == cryptoNetworkERC20 {
+		minCNY = erc20DefaultMinRechargeCNY
+	}
 	if v, err := strconv.ParseFloat(strings.TrimSpace(cfg["minRechargeCny"]), 64); err == nil && v > 0 {
 		minCNY = v
 	}

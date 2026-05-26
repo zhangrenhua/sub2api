@@ -127,8 +127,14 @@ func (s *CryptoWalletService) runEthSweepJob(ctx context.Context, jobID int64) {
 func (s *CryptoWalletService) processEthSweepTask(ctx context.Context, task *dbent.CryptoSweepTask, signer *eth.SignerClient, mgr ethKeyDeriver, feeKey *ecdsa.PrivateKey, es *ethSettings) error {
 	switch task.Status {
 	case sweepStatusPending:
+		// Fund gas as max(configured floor, live estimate) so a high gas price
+		// can't leave the deposit address unable to pay for its ERC20 transfer.
+		topUp := es.gasTopUpWei
+		if dyn, derr := signer.SweepGasFundingWei(ctx); derr == nil && dyn.Cmp(topUp) > 0 {
+			topUp = dyn
+		}
 		// The signer derives the sender (fee wallet) address from feeKey itself.
-		txid, err := signer.SendETH(ctx, feeKey, task.Address, es.gasTopUpWei)
+		txid, err := signer.SendETH(ctx, feeKey, task.Address, topUp)
 		if err != nil {
 			return fmt.Errorf("gas fund: %w", err)
 		}
@@ -172,7 +178,7 @@ func (s *CryptoWalletService) waitConfirmEth(ctx context.Context, signer *eth.Si
 	if txHash == "" {
 		return false
 	}
-	deadline := time.Now().Add(confirmMaxWait)
+	deadline := time.Now().Add(ethConfirmMaxWait)
 	for time.Now().Before(deadline) {
 		if ok, _ := signer.Confirmed(ctx, txHash); ok {
 			return true
