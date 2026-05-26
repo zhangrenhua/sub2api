@@ -50,36 +50,12 @@ func (s *CryptoWalletService) StartSweepEth(ctx context.Context, createdBy strin
 		return nil, fmt.Errorf("query sweepable erc20 addresses: %w", err)
 	}
 
-	job, err := s.entClient.CryptoSweepJob.Create().
-		SetNetwork(cryptoNetworkERC20).
-		SetStatus(jobStatusRunning).
-		SetCreatedBy(createdBy).
-		SetTotalTasks(len(rows)).
-		SetCollectionAddress(es.collectionAddr).
-		Save(ctx)
+	job, err := s.createGuardedSweepJob(ctx, cryptoNetworkERC20, createdBy, es.collectionAddr, rows)
 	if err != nil {
-		return nil, fmt.Errorf("create sweep job: %w", err)
+		return nil, err
 	}
-	for _, r := range rows {
-		if _, terr := s.entClient.CryptoSweepTask.Create().
-			SetJobID(int64(job.ID)).
-			SetNetwork(cryptoNetworkERC20).
-			SetUserID(r.UserID).
-			SetAddress(r.Address).
-			SetDerivationIndex(r.DerivationIndex).
-			SetAmount(r.LastBalance).
-			SetStatus(sweepStatusPending).
-			Save(ctx); terr != nil {
-			slog.Error("[SweepETH] failed to create task", "jobID", job.ID, "address", r.Address, "error", terr)
-		}
-	}
-
 	if len(rows) == 0 {
-		_, _ = s.entClient.CryptoSweepJob.UpdateOneID(job.ID).
-			SetStatus(jobStatusCompleted).
-			SetFinishedAt(time.Now()).
-			Save(ctx)
-		return s.entClient.CryptoSweepJob.Get(ctx, job.ID)
+		return job, nil // nothing to sweep; job already marked completed
 	}
 
 	go s.runEthSweepJob(context.Background(), int64(job.ID))

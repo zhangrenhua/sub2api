@@ -10,6 +10,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/cryptosweepjob"
 	"github.com/Wei-Shaw/sub2api/ent/cryptosweeptask"
+	"github.com/Wei-Shaw/sub2api/ent/cryptowalletconfig"
 	"github.com/Wei-Shaw/sub2api/ent/usercryptoaddress"
 	"github.com/Wei-Shaw/sub2api/internal/payment/tron"
 	"github.com/Wei-Shaw/sub2api/internal/payment/wallet"
@@ -76,38 +77,85 @@ func (s *CryptoWalletService) StartSweep(ctx context.Context, createdBy string) 
 		return nil, fmt.Errorf("query sweepable addresses: %w", err)
 	}
 
-	job, err := s.entClient.CryptoSweepJob.Create().
-		SetStatus(jobStatusRunning).
+	job, err := s.createGuardedSweepJob(ctx, cryptoNetworkTRC20, createdBy, ts.collectionAddr, rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return job, nil // nothing to sweep; job already marked completed
+	}
+
+	// Detached background processing; admin polls job progress.
+	go s.runSweepJob(context.Background(), int64(job.ID))
+	return job, nil
+}
+
+// activeSweepJobStatuses are the non-terminal job states. Only one active sweep
+// job per network is permitted at a time.
+var activeSweepJobStatuses = []string{"pending", jobStatusRunning}
+
+// createGuardedSweepJob atomically refuses to start a sweep when one is already
+// active for the network — preventing concurrent triggers (double-click / two
+// admins) from double-funding gas and double-spending the same balances — then
+// creates the job and its per-address tasks. The config-row lock serializes
+// concurrent sweep starts so the active-job check cannot race.
+func (s *CryptoWalletService) createGuardedSweepJob(ctx context.Context, network, createdBy, collectionAddr string, rows []*dbent.UserCryptoAddress) (*dbent.CryptoSweepJob, error) {
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.CryptoWalletConfig.Query().
+		Order(dbent.Asc(cryptowalletconfig.FieldID)).
+		ForUpdate().
+		First(ctx); err != nil {
+		return nil, fmt.Errorf("lock wallet config: %w", err)
+	}
+
+	active, err := tx.CryptoSweepJob.Query().
+		Where(
+			cryptosweepjob.NetworkEQ(network),
+			cryptosweepjob.StatusIn(activeSweepJobStatuses...),
+		).
+		Exist(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("check active sweep job: %w", err)
+	}
+	if active {
+		return nil, infraerrors.Conflict("SWEEP_IN_PROGRESS", "a sweep for this network is already in progress")
+	}
+
+	status := jobStatusRunning
+	create := tx.CryptoSweepJob.Create().
+		SetNetwork(network).
 		SetCreatedBy(createdBy).
 		SetTotalTasks(len(rows)).
-		SetCollectionAddress(ts.collectionAddr).
-		Save(ctx)
+		SetCollectionAddress(collectionAddr)
+	if len(rows) == 0 {
+		status = jobStatusCompleted
+		create = create.SetFinishedAt(time.Now())
+	}
+	job, err := create.SetStatus(status).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("create sweep job: %w", err)
 	}
 	for _, r := range rows {
-		if _, terr := s.entClient.CryptoSweepTask.Create().
+		if _, terr := tx.CryptoSweepTask.Create().
 			SetJobID(int64(job.ID)).
+			SetNetwork(network).
 			SetUserID(r.UserID).
 			SetAddress(r.Address).
 			SetDerivationIndex(r.DerivationIndex).
 			SetAmount(r.LastBalance).
 			SetStatus(sweepStatusPending).
 			Save(ctx); terr != nil {
-			slog.Error("[Sweep] failed to create task", "jobID", job.ID, "address", r.Address, "error", terr)
+			return nil, fmt.Errorf("create sweep task: %w", terr)
 		}
 	}
-
-	if len(rows) == 0 {
-		_, _ = s.entClient.CryptoSweepJob.UpdateOneID(job.ID).
-			SetStatus(jobStatusCompleted).
-			SetFinishedAt(time.Now()).
-			Save(ctx)
-		return s.entClient.CryptoSweepJob.Get(ctx, job.ID)
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit: %w", err)
 	}
-
-	// Detached background processing; admin polls job progress.
-	go s.runSweepJob(context.Background(), int64(job.ID))
 	return job, nil
 }
 
