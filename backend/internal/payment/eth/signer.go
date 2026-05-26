@@ -121,6 +121,9 @@ func (s *SignerClient) SuggestGasPriceWei(ctx context.Context) (*big.Int, error)
 	return s.client.SuggestGasPrice(ctx)
 }
 
+// ChainID returns the connected network's chain id.
+func (s *SignerClient) ChainID() *big.Int { return s.chainID }
+
 func (s *SignerClient) signAndSend(ctx context.Context, tx *types.Transaction, priv *ecdsa.PrivateKey) (string, error) {
 	signed, err := types.SignTx(tx, types.LatestSignerForChainID(s.chainID), priv)
 	if err != nil {
