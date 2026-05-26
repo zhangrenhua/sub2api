@@ -182,7 +182,7 @@ export const PROVIDER_CONFIG_FIELDS: Record<string, ConfigFieldDef[]> = {
   // an Ethereum JSON-RPC endpoint. ETH gas is expensive — keep the sweep min high.
   usdt_erc20: [
     { key: 'cnyPerUsdt', label: 'CNY per USDT (rate)', sensitive: false, defaultValue: '6.8', hintKey: 'admin.settings.payment.field_cnyPerUsdtHint' },
-    { key: 'minRechargeCny', label: 'Min Recharge (CNY)', sensitive: false, optional: true, defaultValue: '500' },
+    { key: 'minRechargeCny', label: 'Min Recharge (CNY)', sensitive: false, optional: true, defaultValue: '100' },
     { key: 'usdtContract', label: 'USDT Contract', sensitive: false, defaultValue: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
     { key: 'etherscanApiBase', label: 'Etherscan API Base', sensitive: false, optional: true, defaultValue: 'https://api.etherscan.io/api' },
     { key: 'etherscanApiKey', label: 'Etherscan API Key', sensitive: true, optional: true, clearable: true },

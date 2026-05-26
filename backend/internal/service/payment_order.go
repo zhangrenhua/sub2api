@@ -622,7 +622,7 @@ func (s *PaymentService) validateSelectedCreateOrderInstance(ctx context.Context
 // when the instance does not configure one.
 const (
 	trc20DefaultMinRechargeCNY = 100.0
-	erc20DefaultMinRechargeCNY = 500.0
+	erc20DefaultMinRechargeCNY = 100.0
 )
 
 // cryptoNetworkForProvider maps a provider key to its crypto network label
