@@ -34,6 +34,10 @@ func (CryptoSweepTask) Annotations() []schema.Annotation {
 func (CryptoSweepTask) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("job_id"),
+		// Network this task targets (TRC20 / ERC20).
+		field.String("network").
+			MaxLen(20).
+			Default("TRC20"),
 		field.Int64("user_id").
 			Default(0),
 		field.String("address").

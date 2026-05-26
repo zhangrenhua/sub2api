@@ -29,6 +29,10 @@ func (CryptoSweepJob) Annotations() []schema.Annotation {
 
 func (CryptoSweepJob) Fields() []ent.Field {
 	return []ent.Field{
+		// Network this sweep targets (TRC20 / ERC20).
+		field.String("network").
+			MaxLen(20).
+			Default("TRC20"),
 		// pending / running / completed / failed
 		field.String("status").
 			MaxLen(20).

@@ -599,6 +599,7 @@ var (
 	// CryptoSweepJobsColumns holds the columns for the "crypto_sweep_jobs" table.
 	CryptoSweepJobsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "network", Type: field.TypeString, Size: 20, Default: "TRC20"},
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
 		{Name: "created_by", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "total_tasks", Type: field.TypeInt, Default: 0},
@@ -619,12 +620,12 @@ var (
 			{
 				Name:    "cryptosweepjob_status",
 				Unique:  false,
-				Columns: []*schema.Column{CryptoSweepJobsColumns[1]},
+				Columns: []*schema.Column{CryptoSweepJobsColumns[2]},
 			},
 			{
 				Name:    "cryptosweepjob_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{CryptoSweepJobsColumns[8]},
+				Columns: []*schema.Column{CryptoSweepJobsColumns[9]},
 			},
 		},
 	}
@@ -632,6 +633,7 @@ var (
 	CryptoSweepTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "job_id", Type: field.TypeInt64},
+		{Name: "network", Type: field.TypeString, Size: 20, Default: "TRC20"},
 		{Name: "user_id", Type: field.TypeInt64, Default: 0},
 		{Name: "address", Type: field.TypeString, Size: 64},
 		{Name: "derivation_index", Type: field.TypeInt64},
@@ -657,7 +659,7 @@ var (
 			{
 				Name:    "cryptosweeptask_status",
 				Unique:  false,
-				Columns: []*schema.Column{CryptoSweepTasksColumns[6]},
+				Columns: []*schema.Column{CryptoSweepTasksColumns[7]},
 			},
 		},
 	}
@@ -668,6 +670,8 @@ var (
 		{Name: "next_derivation_index", Type: field.TypeInt64, Default: 1},
 		{Name: "collection_address", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "fee_address", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "eth_collection_address", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "eth_fee_address", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "initialized", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
@@ -1351,6 +1355,7 @@ var (
 	Trc20ConsumedTxsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "tx_hash", Type: field.TypeString, Size: 80},
+		{Name: "network", Type: field.TypeString, Size: 20, Default: "TRC20"},
 		{Name: "order_id", Type: field.TypeInt64},
 		{Name: "address", Type: field.TypeString, Size: 64},
 		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
@@ -1371,7 +1376,7 @@ var (
 			{
 				Name:    "trc20consumedtx_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{Trc20ConsumedTxsColumns[2]},
+				Columns: []*schema.Column{Trc20ConsumedTxsColumns[3]},
 			},
 		},
 	}

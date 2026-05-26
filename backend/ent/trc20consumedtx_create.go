@@ -28,6 +28,20 @@ func (_c *TRC20ConsumedTxCreate) SetTxHash(v string) *TRC20ConsumedTxCreate {
 	return _c
 }
 
+// SetNetwork sets the "network" field.
+func (_c *TRC20ConsumedTxCreate) SetNetwork(v string) *TRC20ConsumedTxCreate {
+	_c.mutation.SetNetwork(v)
+	return _c
+}
+
+// SetNillableNetwork sets the "network" field if the given value is not nil.
+func (_c *TRC20ConsumedTxCreate) SetNillableNetwork(v *string) *TRC20ConsumedTxCreate {
+	if v != nil {
+		_c.SetNetwork(*v)
+	}
+	return _c
+}
+
 // SetOrderID sets the "order_id" field.
 func (_c *TRC20ConsumedTxCreate) SetOrderID(v int64) *TRC20ConsumedTxCreate {
 	_c.mutation.SetOrderID(v)
@@ -109,6 +123,10 @@ func (_c *TRC20ConsumedTxCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *TRC20ConsumedTxCreate) defaults() {
+	if _, ok := _c.mutation.Network(); !ok {
+		v := trc20consumedtx.DefaultNetwork
+		_c.mutation.SetNetwork(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := trc20consumedtx.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -123,6 +141,14 @@ func (_c *TRC20ConsumedTxCreate) check() error {
 	if v, ok := _c.mutation.TxHash(); ok {
 		if err := trc20consumedtx.TxHashValidator(v); err != nil {
 			return &ValidationError{Name: "tx_hash", err: fmt.Errorf(`ent: validator failed for field "TRC20ConsumedTx.tx_hash": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Network(); !ok {
+		return &ValidationError{Name: "network", err: errors.New(`ent: missing required field "TRC20ConsumedTx.network"`)}
+	}
+	if v, ok := _c.mutation.Network(); ok {
+		if err := trc20consumedtx.NetworkValidator(v); err != nil {
+			return &ValidationError{Name: "network", err: fmt.Errorf(`ent: validator failed for field "TRC20ConsumedTx.network": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.OrderID(); !ok {
@@ -172,6 +198,10 @@ func (_c *TRC20ConsumedTxCreate) createSpec() (*TRC20ConsumedTx, *sqlgraph.Creat
 	if value, ok := _c.mutation.TxHash(); ok {
 		_spec.SetField(trc20consumedtx.FieldTxHash, field.TypeString, value)
 		_node.TxHash = value
+	}
+	if value, ok := _c.mutation.Network(); ok {
+		_spec.SetField(trc20consumedtx.FieldNetwork, field.TypeString, value)
+		_node.Network = value
 	}
 	if value, ok := _c.mutation.OrderID(); ok {
 		_spec.SetField(trc20consumedtx.FieldOrderID, field.TypeInt64, value)
@@ -254,6 +284,18 @@ func (u *TRC20ConsumedTxUpsert) SetTxHash(v string) *TRC20ConsumedTxUpsert {
 // UpdateTxHash sets the "tx_hash" field to the value that was provided on create.
 func (u *TRC20ConsumedTxUpsert) UpdateTxHash() *TRC20ConsumedTxUpsert {
 	u.SetExcluded(trc20consumedtx.FieldTxHash)
+	return u
+}
+
+// SetNetwork sets the "network" field.
+func (u *TRC20ConsumedTxUpsert) SetNetwork(v string) *TRC20ConsumedTxUpsert {
+	u.Set(trc20consumedtx.FieldNetwork, v)
+	return u
+}
+
+// UpdateNetwork sets the "network" field to the value that was provided on create.
+func (u *TRC20ConsumedTxUpsert) UpdateNetwork() *TRC20ConsumedTxUpsert {
+	u.SetExcluded(trc20consumedtx.FieldNetwork)
 	return u
 }
 
@@ -379,6 +421,20 @@ func (u *TRC20ConsumedTxUpsertOne) SetTxHash(v string) *TRC20ConsumedTxUpsertOne
 func (u *TRC20ConsumedTxUpsertOne) UpdateTxHash() *TRC20ConsumedTxUpsertOne {
 	return u.Update(func(s *TRC20ConsumedTxUpsert) {
 		s.UpdateTxHash()
+	})
+}
+
+// SetNetwork sets the "network" field.
+func (u *TRC20ConsumedTxUpsertOne) SetNetwork(v string) *TRC20ConsumedTxUpsertOne {
+	return u.Update(func(s *TRC20ConsumedTxUpsert) {
+		s.SetNetwork(v)
+	})
+}
+
+// UpdateNetwork sets the "network" field to the value that was provided on create.
+func (u *TRC20ConsumedTxUpsertOne) UpdateNetwork() *TRC20ConsumedTxUpsertOne {
+	return u.Update(func(s *TRC20ConsumedTxUpsert) {
+		s.UpdateNetwork()
 	})
 }
 
@@ -681,6 +737,20 @@ func (u *TRC20ConsumedTxUpsertBulk) SetTxHash(v string) *TRC20ConsumedTxUpsertBu
 func (u *TRC20ConsumedTxUpsertBulk) UpdateTxHash() *TRC20ConsumedTxUpsertBulk {
 	return u.Update(func(s *TRC20ConsumedTxUpsert) {
 		s.UpdateTxHash()
+	})
+}
+
+// SetNetwork sets the "network" field.
+func (u *TRC20ConsumedTxUpsertBulk) SetNetwork(v string) *TRC20ConsumedTxUpsertBulk {
+	return u.Update(func(s *TRC20ConsumedTxUpsert) {
+		s.SetNetwork(v)
+	})
+}
+
+// UpdateNetwork sets the "network" field to the value that was provided on create.
+func (u *TRC20ConsumedTxUpsertBulk) UpdateNetwork() *TRC20ConsumedTxUpsertBulk {
+	return u.Update(func(s *TRC20ConsumedTxUpsert) {
+		s.UpdateNetwork()
 	})
 }
 

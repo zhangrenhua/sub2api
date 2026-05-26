@@ -30,6 +30,11 @@ func (TRC20ConsumedTx) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("tx_hash").
 			MaxLen(80),
+		// Network label (TRC20 / ERC20). The table is shared across crypto
+		// networks; tx_hash is globally unique so the dedup guard still holds.
+		field.String("network").
+			MaxLen(20).
+			Default("TRC20"),
 		field.Int64("order_id"),
 		field.String("address").
 			MaxLen(64),

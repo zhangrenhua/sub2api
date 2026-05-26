@@ -116,7 +116,9 @@ func RegisterPaymentRoutes(
 			crypto.POST("/refresh-balances", adminCryptoWalletHandler.RefreshBalances)
 			crypto.POST("/wallet/init", adminCryptoWalletHandler.InitWallet)
 			crypto.PUT("/wallet/collection-address", adminCryptoWalletHandler.SetCollectionAddress)
+			crypto.PUT("/wallet/eth-collection-address", adminCryptoWalletHandler.SetEthCollectionAddress)
 			crypto.POST("/sweep", adminCryptoWalletHandler.StartSweep)
+			crypto.POST("/eth-sweep", adminCryptoWalletHandler.StartSweepEth)
 			crypto.GET("/sweep/:jobId", adminCryptoWalletHandler.GetSweepJob)
 			crypto.GET("/sweeps", adminCryptoWalletHandler.ListSweepJobs)
 		}

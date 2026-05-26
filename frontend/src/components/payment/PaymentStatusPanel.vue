@@ -85,8 +85,8 @@
           </div>
           <p v-if="scanHint" class="text-center text-sm text-gray-500 dark:text-gray-400">{{ scanHint }}</p>
 
-          <!-- TRC20: exact amount + receiving address + network warning -->
-          <div v-if="isTrc20" class="w-full space-y-2">
+          <!-- Crypto (TRC20/ERC20): exact amount + receiving address + network warning -->
+          <div v-if="isCrypto" class="w-full space-y-2">
             <div class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700">
               <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('payment.qr.amountUsdt') }}</span>
               <span class="font-semibold tabular-nums text-gray-900 dark:text-white">{{ usdtAmountDisplay }}</span>
@@ -101,7 +101,7 @@
                 <button class="btn btn-secondary btn-sm shrink-0" @click="copyAddress">{{ t('common.copy') }}</button>
               </div>
             </div>
-            <p class="text-center text-xs text-amber-600 dark:text-amber-400">{{ t('payment.qr.usdtNetworkWarning') }}</p>
+            <p class="text-center text-xs text-amber-600 dark:text-amber-400">{{ t('payment.qr.usdtNetworkWarning', { network: cryptoNetworkLabel }) }}</p>
           </div>
           <button v-if="payUrl" class="btn btn-secondary text-sm" @click="reopenPopup">
             {{ t('payment.qr.openPayWindow') }}
@@ -205,11 +205,14 @@ const VERIFY_RETRY_MAX_ATTEMPTS = 6
 const isAlipay = computed(() => props.paymentType.includes('alipay'))
 const isWxpay = computed(() => props.paymentType.includes('wxpay'))
 const isTrc20 = computed(() => props.paymentType === 'usdt_trc20')
+const isErc20 = computed(() => props.paymentType === 'usdt_erc20')
+const isCrypto = computed(() => isTrc20.value || isErc20.value)
+const cryptoNetworkLabel = computed(() => (isErc20.value ? 'ERC20' : 'TRC20'))
 
 const qrBorderClass = computed(() => {
   if (isAlipay.value) return 'border-[#00AEEF] bg-blue-50 dark:border-[#00AEEF]/70 dark:bg-blue-950/20'
   if (isWxpay.value) return 'border-[#2BB741] bg-green-50 dark:border-[#2BB741]/70 dark:bg-green-950/20'
-  if (isTrc20.value) return 'border-[#26A17B] bg-emerald-50 dark:border-[#26A17B]/70 dark:bg-emerald-950/20'
+  if (isCrypto.value) return 'border-[#26A17B] bg-emerald-50 dark:border-[#26A17B]/70 dark:bg-emerald-950/20'
   return 'border-gray-200 bg-white dark:border-dark-600 dark:bg-dark-800'
 })
 
@@ -226,14 +229,14 @@ const showQrLogo = computed(() => isAlipay.value || isWxpay.value)
 const scanTitle = computed(() => {
   if (isAlipay.value) return t('payment.qr.scanAlipay')
   if (isWxpay.value) return t('payment.qr.scanWxpay')
-  if (isTrc20.value) return t('payment.qr.scanUsdt')
+  if (isCrypto.value) return t('payment.qr.scanUsdt', { network: cryptoNetworkLabel.value })
   return t('payment.qr.scanToPay')
 })
 
 const scanHint = computed(() => {
   if (isAlipay.value) return t('payment.qr.scanAlipayHint')
   if (isWxpay.value) return t('payment.qr.scanWxpayHint')
-  if (isTrc20.value) return t('payment.qr.scanUsdtHint')
+  if (isCrypto.value) return t('payment.qr.scanUsdtHint')
   return ''
 })
 

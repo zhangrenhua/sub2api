@@ -49,6 +49,20 @@ func (_u *CryptoSweepTaskUpdate) AddJobID(v int64) *CryptoSweepTaskUpdate {
 	return _u
 }
 
+// SetNetwork sets the "network" field.
+func (_u *CryptoSweepTaskUpdate) SetNetwork(v string) *CryptoSweepTaskUpdate {
+	_u.mutation.SetNetwork(v)
+	return _u
+}
+
+// SetNillableNetwork sets the "network" field if the given value is not nil.
+func (_u *CryptoSweepTaskUpdate) SetNillableNetwork(v *string) *CryptoSweepTaskUpdate {
+	if v != nil {
+		_u.SetNetwork(*v)
+	}
+	return _u
+}
+
 // SetUserID sets the "user_id" field.
 func (_u *CryptoSweepTaskUpdate) SetUserID(v int64) *CryptoSweepTaskUpdate {
 	_u.mutation.ResetUserID()
@@ -231,6 +245,11 @@ func (_u *CryptoSweepTaskUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CryptoSweepTaskUpdate) check() error {
+	if v, ok := _u.mutation.Network(); ok {
+		if err := cryptosweeptask.NetworkValidator(v); err != nil {
+			return &ValidationError{Name: "network", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepTask.network": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Address(); ok {
 		if err := cryptosweeptask.AddressValidator(v); err != nil {
 			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepTask.address": %w`, err)}
@@ -271,6 +290,9 @@ func (_u *CryptoSweepTaskUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.AddedJobID(); ok {
 		_spec.AddField(cryptosweeptask.FieldJobID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.Network(); ok {
+		_spec.SetField(cryptosweeptask.FieldNetwork, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UserID(); ok {
 		_spec.SetField(cryptosweeptask.FieldUserID, field.TypeInt64, value)
@@ -346,6 +368,20 @@ func (_u *CryptoSweepTaskUpdateOne) SetNillableJobID(v *int64) *CryptoSweepTaskU
 // AddJobID adds value to the "job_id" field.
 func (_u *CryptoSweepTaskUpdateOne) AddJobID(v int64) *CryptoSweepTaskUpdateOne {
 	_u.mutation.AddJobID(v)
+	return _u
+}
+
+// SetNetwork sets the "network" field.
+func (_u *CryptoSweepTaskUpdateOne) SetNetwork(v string) *CryptoSweepTaskUpdateOne {
+	_u.mutation.SetNetwork(v)
+	return _u
+}
+
+// SetNillableNetwork sets the "network" field if the given value is not nil.
+func (_u *CryptoSweepTaskUpdateOne) SetNillableNetwork(v *string) *CryptoSweepTaskUpdateOne {
+	if v != nil {
+		_u.SetNetwork(*v)
+	}
 	return _u
 }
 
@@ -544,6 +580,11 @@ func (_u *CryptoSweepTaskUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CryptoSweepTaskUpdateOne) check() error {
+	if v, ok := _u.mutation.Network(); ok {
+		if err := cryptosweeptask.NetworkValidator(v); err != nil {
+			return &ValidationError{Name: "network", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepTask.network": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Address(); ok {
 		if err := cryptosweeptask.AddressValidator(v); err != nil {
 			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepTask.address": %w`, err)}
@@ -601,6 +642,9 @@ func (_u *CryptoSweepTaskUpdateOne) sqlSave(ctx context.Context) (_node *CryptoS
 	}
 	if value, ok := _u.mutation.AddedJobID(); ok {
 		_spec.AddField(cryptosweeptask.FieldJobID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.Network(); ok {
+		_spec.SetField(cryptosweeptask.FieldNetwork, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UserID(); ok {
 		_spec.SetField(cryptosweeptask.FieldUserID, field.TypeInt64, value)

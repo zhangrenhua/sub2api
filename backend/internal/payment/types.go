@@ -20,6 +20,7 @@ const (
 	TypeAirwallex    PaymentType = "airwallex"
 	TypePayPal       PaymentType = "paypal"
 	TypeTRC20        PaymentType = "usdt_trc20"
+	TypeERC20        PaymentType = "usdt_erc20"
 )
 
 // Order status constants shared across payment and service layers.

@@ -79,7 +79,7 @@ func (s *PaymentService) ReconcilePendingTRC20Orders(ctx context.Context) (int, 
 }
 
 func (s *PaymentService) reconcileOneTRC20(ctx context.Context, o *dbent.PaymentOrder, client *tron.Client, contract string, confirmSeconds int) (bool, error) {
-	addrRow, err := s.cryptoWalletSvc.GetUserAddress(ctx, o.UserID)
+	addrRow, err := s.cryptoWalletSvc.GetUserAddress(ctx, o.UserID, cryptoNetworkTRC20)
 	if err != nil {
 		return false, fmt.Errorf("get user address: %w", err)
 	}
@@ -115,7 +115,7 @@ func (s *PaymentService) reconcileOneTRC20(ctx context.Context, o *dbent.Payment
 		}
 
 		// Claim the tx hash; the unique constraint blocks double-crediting.
-		claimed, cerr := s.claimTRC20Tx(ctx, tr.TxID, o.ID, addrRow.Address, tr.Amount(), blockTime)
+		claimed, cerr := s.claimConsumedTx(ctx, tr.TxID, cryptoNetworkTRC20, o.ID, addrRow.Address, tr.Amount(), blockTime)
 		if cerr != nil {
 			return false, cerr
 		}
@@ -133,7 +133,7 @@ func (s *PaymentService) reconcileOneTRC20(ctx context.Context, o *dbent.Payment
 		}, payment.TypeTRC20)
 		if notifErr != nil {
 			// Release the claim so a later tick can retry fulfillment.
-			s.releaseTRC20Tx(ctx, tr.TxID)
+			s.releaseConsumedTx(ctx, tr.TxID)
 			return false, fmt.Errorf("handle notification: %w", notifErr)
 		}
 		return true, nil
@@ -141,9 +141,9 @@ func (s *PaymentService) reconcileOneTRC20(ctx context.Context, o *dbent.Payment
 	return false, nil
 }
 
-// claimTRC20Tx inserts a consumed-tx row, returning false if the tx hash was
-// already claimed (unique violation).
-func (s *PaymentService) claimTRC20Tx(ctx context.Context, txHash string, orderID int64, address string, amount float64, confirmedAt time.Time) (bool, error) {
+// claimConsumedTx inserts a consumed-tx row, returning false if the tx hash was
+// already claimed (unique violation). Shared by TRC20 and ERC20 reconcilers.
+func (s *PaymentService) claimConsumedTx(ctx context.Context, txHash, network string, orderID int64, address string, amount float64, confirmedAt time.Time) (bool, error) {
 	exists, err := s.entClient.TRC20ConsumedTx.Query().
 		Where(trc20consumedtx.TxHash(txHash)).
 		Exist(ctx)
@@ -155,6 +155,7 @@ func (s *PaymentService) claimTRC20Tx(ctx context.Context, txHash string, orderI
 	}
 	_, err = s.entClient.TRC20ConsumedTx.Create().
 		SetTxHash(txHash).
+		SetNetwork(network).
 		SetOrderID(orderID).
 		SetAddress(address).
 		SetAmount(amount).
@@ -169,10 +170,10 @@ func (s *PaymentService) claimTRC20Tx(ctx context.Context, txHash string, orderI
 	return true, nil
 }
 
-func (s *PaymentService) releaseTRC20Tx(ctx context.Context, txHash string) {
+func (s *PaymentService) releaseConsumedTx(ctx context.Context, txHash string) {
 	if _, err := s.entClient.TRC20ConsumedTx.Delete().
 		Where(trc20consumedtx.TxHash(txHash)).
 		Exec(ctx); err != nil {
-		slog.Warn("[TRC20] failed to release consumed tx claim", "txHash", txHash, "error", err)
+		slog.Warn("[Crypto] failed to release consumed tx claim", "txHash", txHash, "error", err)
 	}
 }

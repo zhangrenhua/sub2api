@@ -19,6 +19,8 @@ type CryptoSweepTask struct {
 	ID int64 `json:"id,omitempty"`
 	// JobID holds the value of the "job_id" field.
 	JobID int64 `json:"job_id,omitempty"`
+	// Network holds the value of the "network" field.
+	Network string `json:"network,omitempty"`
 	// UserID holds the value of the "user_id" field.
 	UserID int64 `json:"user_id,omitempty"`
 	// Address holds the value of the "address" field.
@@ -51,7 +53,7 @@ func (*CryptoSweepTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case cryptosweeptask.FieldID, cryptosweeptask.FieldJobID, cryptosweeptask.FieldUserID, cryptosweeptask.FieldDerivationIndex:
 			values[i] = new(sql.NullInt64)
-		case cryptosweeptask.FieldAddress, cryptosweeptask.FieldStatus, cryptosweeptask.FieldGasFundTx, cryptosweeptask.FieldSweepTx, cryptosweeptask.FieldError:
+		case cryptosweeptask.FieldNetwork, cryptosweeptask.FieldAddress, cryptosweeptask.FieldStatus, cryptosweeptask.FieldGasFundTx, cryptosweeptask.FieldSweepTx, cryptosweeptask.FieldError:
 			values[i] = new(sql.NullString)
 		case cryptosweeptask.FieldCreatedAt, cryptosweeptask.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -81,6 +83,12 @@ func (_m *CryptoSweepTask) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field job_id", values[i])
 			} else if value.Valid {
 				_m.JobID = value.Int64
+			}
+		case cryptosweeptask.FieldNetwork:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field network", values[i])
+			} else if value.Valid {
+				_m.Network = value.String
 			}
 		case cryptosweeptask.FieldUserID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -180,6 +188,9 @@ func (_m *CryptoSweepTask) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("job_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.JobID))
+	builder.WriteString(", ")
+	builder.WriteString("network=")
+	builder.WriteString(_m.Network)
 	builder.WriteString(", ")
 	builder.WriteString("user_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UserID))

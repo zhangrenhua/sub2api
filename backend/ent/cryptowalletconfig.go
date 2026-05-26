@@ -25,6 +25,10 @@ type CryptoWalletConfig struct {
 	CollectionAddress string `json:"collection_address,omitempty"`
 	// FeeAddress holds the value of the "fee_address" field.
 	FeeAddress string `json:"fee_address,omitempty"`
+	// EthCollectionAddress holds the value of the "eth_collection_address" field.
+	EthCollectionAddress string `json:"eth_collection_address,omitempty"`
+	// EthFeeAddress holds the value of the "eth_fee_address" field.
+	EthFeeAddress string `json:"eth_fee_address,omitempty"`
 	// Initialized holds the value of the "initialized" field.
 	Initialized bool `json:"initialized,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -43,7 +47,7 @@ func (*CryptoWalletConfig) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case cryptowalletconfig.FieldID, cryptowalletconfig.FieldNextDerivationIndex:
 			values[i] = new(sql.NullInt64)
-		case cryptowalletconfig.FieldEncryptedMnemonic, cryptowalletconfig.FieldCollectionAddress, cryptowalletconfig.FieldFeeAddress:
+		case cryptowalletconfig.FieldEncryptedMnemonic, cryptowalletconfig.FieldCollectionAddress, cryptowalletconfig.FieldFeeAddress, cryptowalletconfig.FieldEthCollectionAddress, cryptowalletconfig.FieldEthFeeAddress:
 			values[i] = new(sql.NullString)
 		case cryptowalletconfig.FieldCreatedAt, cryptowalletconfig.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -91,6 +95,18 @@ func (_m *CryptoWalletConfig) assignValues(columns []string, values []any) error
 				return fmt.Errorf("unexpected type %T for field fee_address", values[i])
 			} else if value.Valid {
 				_m.FeeAddress = value.String
+			}
+		case cryptowalletconfig.FieldEthCollectionAddress:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field eth_collection_address", values[i])
+			} else if value.Valid {
+				_m.EthCollectionAddress = value.String
+			}
+		case cryptowalletconfig.FieldEthFeeAddress:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field eth_fee_address", values[i])
+			} else if value.Valid {
+				_m.EthFeeAddress = value.String
 			}
 		case cryptowalletconfig.FieldInitialized:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -157,6 +173,12 @@ func (_m *CryptoWalletConfig) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("fee_address=")
 	builder.WriteString(_m.FeeAddress)
+	builder.WriteString(", ")
+	builder.WriteString("eth_collection_address=")
+	builder.WriteString(_m.EthCollectionAddress)
+	builder.WriteString(", ")
+	builder.WriteString("eth_fee_address=")
+	builder.WriteString(_m.EthFeeAddress)
 	builder.WriteString(", ")
 	builder.WriteString("initialized=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Initialized))

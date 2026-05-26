@@ -19,6 +19,8 @@ type TRC20ConsumedTx struct {
 	ID int64 `json:"id,omitempty"`
 	// TxHash holds the value of the "tx_hash" field.
 	TxHash string `json:"tx_hash,omitempty"`
+	// Network holds the value of the "network" field.
+	Network string `json:"network,omitempty"`
 	// OrderID holds the value of the "order_id" field.
 	OrderID int64 `json:"order_id,omitempty"`
 	// Address holds the value of the "address" field.
@@ -41,7 +43,7 @@ func (*TRC20ConsumedTx) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case trc20consumedtx.FieldID, trc20consumedtx.FieldOrderID:
 			values[i] = new(sql.NullInt64)
-		case trc20consumedtx.FieldTxHash, trc20consumedtx.FieldAddress:
+		case trc20consumedtx.FieldTxHash, trc20consumedtx.FieldNetwork, trc20consumedtx.FieldAddress:
 			values[i] = new(sql.NullString)
 		case trc20consumedtx.FieldConfirmedAt, trc20consumedtx.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -71,6 +73,12 @@ func (_m *TRC20ConsumedTx) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field tx_hash", values[i])
 			} else if value.Valid {
 				_m.TxHash = value.String
+			}
+		case trc20consumedtx.FieldNetwork:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field network", values[i])
+			} else if value.Valid {
+				_m.Network = value.String
 			}
 		case trc20consumedtx.FieldOrderID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -141,6 +149,9 @@ func (_m *TRC20ConsumedTx) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("tx_hash=")
 	builder.WriteString(_m.TxHash)
+	builder.WriteString(", ")
+	builder.WriteString("network=")
+	builder.WriteString(_m.Network)
 	builder.WriteString(", ")
 	builder.WriteString("order_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.OrderID))

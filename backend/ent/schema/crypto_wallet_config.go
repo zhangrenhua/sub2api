@@ -44,6 +44,13 @@ func (CryptoWalletConfig) Fields() []ent.Field {
 		field.String("fee_address").
 			MaxLen(64).
 			Default(""),
+		// ETH(ERC20) 归集地址（冷地址）与燃料地址（派生序号 0 的 ETH 地址，持有 ETH 付 gas）。
+		field.String("eth_collection_address").
+			MaxLen(64).
+			Default(""),
+		field.String("eth_fee_address").
+			MaxLen(64).
+			Default(""),
 		// 是否已完成初始化（导入/生成助记词 + 设置归集地址）。
 		field.Bool("initialized").
 			Default(false),

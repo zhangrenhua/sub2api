@@ -22,6 +22,20 @@ type CryptoSweepJobCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetNetwork sets the "network" field.
+func (_c *CryptoSweepJobCreate) SetNetwork(v string) *CryptoSweepJobCreate {
+	_c.mutation.SetNetwork(v)
+	return _c
+}
+
+// SetNillableNetwork sets the "network" field if the given value is not nil.
+func (_c *CryptoSweepJobCreate) SetNillableNetwork(v *string) *CryptoSweepJobCreate {
+	if v != nil {
+		_c.SetNetwork(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *CryptoSweepJobCreate) SetStatus(v string) *CryptoSweepJobCreate {
 	_c.mutation.SetStatus(v)
@@ -189,6 +203,10 @@ func (_c *CryptoSweepJobCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *CryptoSweepJobCreate) defaults() {
+	if _, ok := _c.mutation.Network(); !ok {
+		v := cryptosweepjob.DefaultNetwork
+		_c.mutation.SetNetwork(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := cryptosweepjob.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -225,6 +243,14 @@ func (_c *CryptoSweepJobCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *CryptoSweepJobCreate) check() error {
+	if _, ok := _c.mutation.Network(); !ok {
+		return &ValidationError{Name: "network", err: errors.New(`ent: missing required field "CryptoSweepJob.network"`)}
+	}
+	if v, ok := _c.mutation.Network(); ok {
+		if err := cryptosweepjob.NetworkValidator(v); err != nil {
+			return &ValidationError{Name: "network", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepJob.network": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "CryptoSweepJob.status"`)}
 	}
@@ -294,6 +320,10 @@ func (_c *CryptoSweepJobCreate) createSpec() (*CryptoSweepJob, *sqlgraph.CreateS
 		_spec = sqlgraph.NewCreateSpec(cryptosweepjob.Table, sqlgraph.NewFieldSpec(cryptosweepjob.FieldID, field.TypeInt64))
 	)
 	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.Network(); ok {
+		_spec.SetField(cryptosweepjob.FieldNetwork, field.TypeString, value)
+		_node.Network = value
+	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(cryptosweepjob.FieldStatus, field.TypeString, value)
 		_node.Status = value
@@ -341,7 +371,7 @@ func (_c *CryptoSweepJobCreate) createSpec() (*CryptoSweepJob, *sqlgraph.CreateS
 // of the `INSERT` statement. For example:
 //
 //	client.CryptoSweepJob.Create().
-//		SetStatus(v).
+//		SetNetwork(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -350,7 +380,7 @@ func (_c *CryptoSweepJobCreate) createSpec() (*CryptoSweepJob, *sqlgraph.CreateS
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.CryptoSweepJobUpsert) {
-//			SetStatus(v+v).
+//			SetNetwork(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *CryptoSweepJobCreate) OnConflict(opts ...sql.ConflictOption) *CryptoSweepJobUpsertOne {
@@ -385,6 +415,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetNetwork sets the "network" field.
+func (u *CryptoSweepJobUpsert) SetNetwork(v string) *CryptoSweepJobUpsert {
+	u.Set(cryptosweepjob.FieldNetwork, v)
+	return u
+}
+
+// UpdateNetwork sets the "network" field to the value that was provided on create.
+func (u *CryptoSweepJobUpsert) UpdateNetwork() *CryptoSweepJobUpsert {
+	u.SetExcluded(cryptosweepjob.FieldNetwork)
+	return u
+}
 
 // SetStatus sets the "status" field.
 func (u *CryptoSweepJobUpsert) SetStatus(v string) *CryptoSweepJobUpsert {
@@ -561,6 +603,20 @@ func (u *CryptoSweepJobUpsertOne) Update(set func(*CryptoSweepJobUpsert)) *Crypt
 		set(&CryptoSweepJobUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetNetwork sets the "network" field.
+func (u *CryptoSweepJobUpsertOne) SetNetwork(v string) *CryptoSweepJobUpsertOne {
+	return u.Update(func(s *CryptoSweepJobUpsert) {
+		s.SetNetwork(v)
+	})
+}
+
+// UpdateNetwork sets the "network" field to the value that was provided on create.
+func (u *CryptoSweepJobUpsertOne) UpdateNetwork() *CryptoSweepJobUpsertOne {
+	return u.Update(func(s *CryptoSweepJobUpsert) {
+		s.UpdateNetwork()
+	})
 }
 
 // SetStatus sets the "status" field.
@@ -852,7 +908,7 @@ func (_c *CryptoSweepJobCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.CryptoSweepJobUpsert) {
-//			SetStatus(v+v).
+//			SetNetwork(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *CryptoSweepJobCreateBulk) OnConflict(opts ...sql.ConflictOption) *CryptoSweepJobUpsertBulk {
@@ -926,6 +982,20 @@ func (u *CryptoSweepJobUpsertBulk) Update(set func(*CryptoSweepJobUpsert)) *Cryp
 		set(&CryptoSweepJobUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetNetwork sets the "network" field.
+func (u *CryptoSweepJobUpsertBulk) SetNetwork(v string) *CryptoSweepJobUpsertBulk {
+	return u.Update(func(s *CryptoSweepJobUpsert) {
+		s.SetNetwork(v)
+	})
+}
+
+// UpdateNetwork sets the "network" field to the value that was provided on create.
+func (u *CryptoSweepJobUpsertBulk) UpdateNetwork() *CryptoSweepJobUpsertBulk {
+	return u.Update(func(s *CryptoSweepJobUpsert) {
+		s.UpdateNetwork()
+	})
 }
 
 // SetStatus sets the "status" field.

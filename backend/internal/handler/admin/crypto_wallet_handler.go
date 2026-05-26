@@ -53,7 +53,8 @@ func (h *CryptoWalletHandler) GetOverview(c *gin.Context) {
 func (h *CryptoWalletHandler) ListAddresses(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
-	items, total, err := h.walletService.ListAddresses(c.Request.Context(), page, pageSize)
+	network := c.Query("network") // "" = all networks
+	items, total, err := h.walletService.ListAddresses(c.Request.Context(), network, page, pageSize)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -124,7 +125,7 @@ type sweepRequest struct {
 	TotpCode string `json:"totp_code" binding:"required"`
 }
 
-// StartSweep triggers a one-click consolidation (TOTP-gated).
+// StartSweep triggers a one-click TRC20 consolidation (TOTP-gated).
 // POST /api/v1/admin/payment/crypto/sweep
 func (h *CryptoWalletHandler) StartSweep(c *gin.Context) {
 	var req sweepRequest
@@ -137,6 +138,44 @@ func (h *CryptoWalletHandler) StartSweep(c *gin.Context) {
 		return
 	}
 	job, err := h.walletService.StartSweep(c.Request.Context(), "user:"+strconv.FormatInt(uid, 10))
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, job)
+}
+
+// SetEthCollectionAddress updates the ERC20 sweep destination (TOTP-gated).
+// PUT /api/v1/admin/payment/crypto/wallet/eth-collection-address
+func (h *CryptoWalletHandler) SetEthCollectionAddress(c *gin.Context) {
+	var req collectionAddressRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "invalid request")
+		return
+	}
+	if _, ok := h.requireTOTP(c, req.TotpCode); !ok {
+		return
+	}
+	if err := h.walletService.SetEthCollectionAddress(c.Request.Context(), req.Address); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"ok": true})
+}
+
+// StartSweepEth triggers a one-click ERC20 consolidation (TOTP-gated).
+// POST /api/v1/admin/payment/crypto/eth-sweep
+func (h *CryptoWalletHandler) StartSweepEth(c *gin.Context) {
+	var req sweepRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "invalid request")
+		return
+	}
+	uid, ok := h.requireTOTP(c, req.TotpCode)
+	if !ok {
+		return
+	}
+	job, err := h.walletService.StartSweepEth(c.Request.Context(), "user:"+strconv.FormatInt(uid, 10))
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

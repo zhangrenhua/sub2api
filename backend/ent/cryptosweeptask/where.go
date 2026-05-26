@@ -59,6 +59,11 @@ func JobID(v int64) predicate.CryptoSweepTask {
 	return predicate.CryptoSweepTask(sql.FieldEQ(FieldJobID, v))
 }
 
+// Network applies equality check predicate on the "network" field. It's identical to NetworkEQ.
+func Network(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldEQ(FieldNetwork, v))
+}
+
 // UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
 func UserID(v int64) predicate.CryptoSweepTask {
 	return predicate.CryptoSweepTask(sql.FieldEQ(FieldUserID, v))
@@ -147,6 +152,71 @@ func JobIDLT(v int64) predicate.CryptoSweepTask {
 // JobIDLTE applies the LTE predicate on the "job_id" field.
 func JobIDLTE(v int64) predicate.CryptoSweepTask {
 	return predicate.CryptoSweepTask(sql.FieldLTE(FieldJobID, v))
+}
+
+// NetworkEQ applies the EQ predicate on the "network" field.
+func NetworkEQ(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldEQ(FieldNetwork, v))
+}
+
+// NetworkNEQ applies the NEQ predicate on the "network" field.
+func NetworkNEQ(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldNEQ(FieldNetwork, v))
+}
+
+// NetworkIn applies the In predicate on the "network" field.
+func NetworkIn(vs ...string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldIn(FieldNetwork, vs...))
+}
+
+// NetworkNotIn applies the NotIn predicate on the "network" field.
+func NetworkNotIn(vs ...string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldNotIn(FieldNetwork, vs...))
+}
+
+// NetworkGT applies the GT predicate on the "network" field.
+func NetworkGT(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldGT(FieldNetwork, v))
+}
+
+// NetworkGTE applies the GTE predicate on the "network" field.
+func NetworkGTE(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldGTE(FieldNetwork, v))
+}
+
+// NetworkLT applies the LT predicate on the "network" field.
+func NetworkLT(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldLT(FieldNetwork, v))
+}
+
+// NetworkLTE applies the LTE predicate on the "network" field.
+func NetworkLTE(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldLTE(FieldNetwork, v))
+}
+
+// NetworkContains applies the Contains predicate on the "network" field.
+func NetworkContains(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldContains(FieldNetwork, v))
+}
+
+// NetworkHasPrefix applies the HasPrefix predicate on the "network" field.
+func NetworkHasPrefix(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldHasPrefix(FieldNetwork, v))
+}
+
+// NetworkHasSuffix applies the HasSuffix predicate on the "network" field.
+func NetworkHasSuffix(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldHasSuffix(FieldNetwork, v))
+}
+
+// NetworkEqualFold applies the EqualFold predicate on the "network" field.
+func NetworkEqualFold(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldEqualFold(FieldNetwork, v))
+}
+
+// NetworkContainsFold applies the ContainsFold predicate on the "network" field.
+func NetworkContainsFold(v string) predicate.CryptoSweepTask {
+	return predicate.CryptoSweepTask(sql.FieldContainsFold(FieldNetwork, v))
 }
 
 // UserIDEQ applies the EQ predicate on the "user_id" field.

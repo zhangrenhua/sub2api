@@ -15,6 +15,8 @@ const (
 	FieldID = "id"
 	// FieldTxHash holds the string denoting the tx_hash field in the database.
 	FieldTxHash = "tx_hash"
+	// FieldNetwork holds the string denoting the network field in the database.
+	FieldNetwork = "network"
 	// FieldOrderID holds the string denoting the order_id field in the database.
 	FieldOrderID = "order_id"
 	// FieldAddress holds the string denoting the address field in the database.
@@ -33,6 +35,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldTxHash,
+	FieldNetwork,
 	FieldOrderID,
 	FieldAddress,
 	FieldAmount,
@@ -53,6 +56,10 @@ func ValidColumn(column string) bool {
 var (
 	// TxHashValidator is a validator for the "tx_hash" field. It is called by the builders before save.
 	TxHashValidator func(string) error
+	// DefaultNetwork holds the default value on creation for the "network" field.
+	DefaultNetwork string
+	// NetworkValidator is a validator for the "network" field. It is called by the builders before save.
+	NetworkValidator func(string) error
 	// AddressValidator is a validator for the "address" field. It is called by the builders before save.
 	AddressValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -70,6 +77,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByTxHash orders the results by the tx_hash field.
 func ByTxHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTxHash, opts...).ToFunc()
+}
+
+// ByNetwork orders the results by the network field.
+func ByNetwork(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNetwork, opts...).ToFunc()
 }
 
 // ByOrderID orders the results by the order_id field.

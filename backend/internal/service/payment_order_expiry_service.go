@@ -60,11 +60,11 @@ func (s *PaymentOrderExpiryService) Start() {
 		ticker := time.NewTicker(trc20ReconcileInterval)
 		defer ticker.Stop()
 
-		s.runTRC20Once()
+		s.runCryptoReconcileOnce()
 		for {
 			select {
 			case <-ticker.C:
-				s.runTRC20Once()
+				s.runCryptoReconcileOnce()
 			case <-s.stopCh:
 				return
 			}
@@ -104,15 +104,24 @@ func (s *PaymentOrderExpiryService) runOnce() {
 	}
 }
 
-// runTRC20Once reconciles pending USDT/TRC20 orders against the chain. Runs on
-// its own 15s ticker.
-func (s *PaymentOrderExpiryService) runTRC20Once() {
-	ctx, cancel := context.WithTimeout(context.Background(), expiryCheckTimeout)
-	defer cancel()
-	recovered, err := s.paymentSvc.ReconcilePendingTRC20Orders(ctx)
+// runCryptoReconcileOnce reconciles pending USDT/TRC20 and USDT/ERC20 orders
+// against their chains. Runs on its own 15s ticker.
+func (s *PaymentOrderExpiryService) runCryptoReconcileOnce() {
+	trcCtx, cancel := context.WithTimeout(context.Background(), expiryCheckTimeout)
+	recovered, err := s.paymentSvc.ReconcilePendingTRC20Orders(trcCtx)
+	cancel()
 	if err != nil {
 		slog.Warn("[PaymentOrderExpiry] failed to reconcile pending trc20 orders", "error", err)
 	} else if recovered > 0 {
 		slog.Info("[PaymentOrderExpiry] reconciled paid trc20 orders", "count", recovered)
+	}
+
+	ercCtx, cancelErc := context.WithTimeout(context.Background(), expiryCheckTimeout)
+	ercRecovered, err := s.paymentSvc.ReconcilePendingERC20Orders(ercCtx)
+	cancelErc()
+	if err != nil {
+		slog.Warn("[PaymentOrderExpiry] failed to reconcile pending erc20 orders", "error", err)
+	} else if ercRecovered > 0 {
+		slog.Info("[PaymentOrderExpiry] reconciled paid erc20 orders", "count", ercRecovered)
 	}
 }

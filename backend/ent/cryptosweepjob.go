@@ -17,6 +17,8 @@ type CryptoSweepJob struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int64 `json:"id,omitempty"`
+	// Network holds the value of the "network" field.
+	Network string `json:"network,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
 	// CreatedBy holds the value of the "created_by" field.
@@ -49,7 +51,7 @@ func (*CryptoSweepJob) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case cryptosweepjob.FieldID, cryptosweepjob.FieldTotalTasks, cryptosweepjob.FieldCompletedTasks:
 			values[i] = new(sql.NullInt64)
-		case cryptosweepjob.FieldStatus, cryptosweepjob.FieldCreatedBy, cryptosweepjob.FieldCollectionAddress, cryptosweepjob.FieldError:
+		case cryptosweepjob.FieldNetwork, cryptosweepjob.FieldStatus, cryptosweepjob.FieldCreatedBy, cryptosweepjob.FieldCollectionAddress, cryptosweepjob.FieldError:
 			values[i] = new(sql.NullString)
 		case cryptosweepjob.FieldCreatedAt, cryptosweepjob.FieldUpdatedAt, cryptosweepjob.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -74,6 +76,12 @@ func (_m *CryptoSweepJob) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int64(value.Int64)
+		case cryptosweepjob.FieldNetwork:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field network", values[i])
+			} else if value.Valid {
+				_m.Network = value.String
+			}
 		case cryptosweepjob.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
@@ -171,6 +179,9 @@ func (_m *CryptoSweepJob) String() string {
 	var builder strings.Builder
 	builder.WriteString("CryptoSweepJob(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("network=")
+	builder.WriteString(_m.Network)
+	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)
 	builder.WriteString(", ")

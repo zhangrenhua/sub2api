@@ -85,6 +85,44 @@ func TestInvalidMnemonic(t *testing.T) {
 	}
 }
 
+// TestEthRoundTripConsistency is the money-safety test for Ethereum: the
+// address derived from the public key must equal the address controlled by the
+// private key we would sign the sweep with.
+func TestEthRoundTripConsistency(t *testing.T) {
+	m, err := NewFromMnemonic(testMnemonic, "")
+	if err != nil {
+		t.Fatalf("NewFromMnemonic: %v", err)
+	}
+	for _, idx := range []uint32{0, 1, 2, 7, 100, 65535} {
+		addr, err := m.EthAddress(idx)
+		if err != nil {
+			t.Fatalf("EthAddress(%d): %v", idx, err)
+		}
+		priv, err := m.EthPrivateKey(idx)
+		if err != nil {
+			t.Fatalf("EthPrivateKey(%d): %v", idx, err)
+		}
+		if got := EthAddressForPrivateKey(priv); got != addr {
+			t.Fatalf("index %d: eth address/key mismatch: pub=%s priv=%s", idx, addr, got)
+		}
+	}
+}
+
+// TestEthGoldenVector pins the derived Ethereum address for the canonical
+// mnemonic to the value produced by MetaMask / iancoleman for m/44'/60'/0'/0/0,
+// confirming external-wallet recovery compatibility.
+func TestEthGoldenVector(t *testing.T) {
+	const wantIndex0 = "0x9858EfFD232B4033E47d90003D41EC34EcaEda94"
+	m, _ := NewFromMnemonic(testMnemonic, "")
+	addr, err := m.EthAddress(0)
+	if err != nil {
+		t.Fatalf("EthAddress(0): %v", err)
+	}
+	if addr != wantIndex0 {
+		t.Fatalf("eth golden vector mismatch: got %s want %s", addr, wantIndex0)
+	}
+}
+
 // TestGoldenVector pins the derived address for the canonical mnemonic to the
 // value published by iancoleman/bip39 and produced by TronLink for the same
 // path. This both guards against derivation-path regressions and confirms

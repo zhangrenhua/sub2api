@@ -16,6 +16,13 @@ export interface CryptoWalletOverview {
   collection_balance: number
   deposit_addresses: number
   deposit_total_usdt: number
+  // ERC20 (Ethereum)
+  eth_fee_address: string
+  eth_fee_balance: number
+  eth_collection_address: string
+  eth_collection_balance: number
+  erc20_deposit_addresses: number
+  erc20_deposit_total_usdt: number
   balances_as_of: string
 }
 
@@ -79,8 +86,8 @@ export const adminCryptoWalletAPI = {
     return (await apiClient.get<CryptoWalletOverview>('/admin/payment/crypto/overview')).data
   },
 
-  /** Paged per-user deposit addresses with cached balances. */
-  async listAddresses(params?: { page?: number; page_size?: number }): Promise<{ items: CryptoDepositAddress[]; total: number }> {
+  /** Paged per-user deposit addresses with cached balances. network: ''|TRC20|ERC20. */
+  async listAddresses(params?: { page?: number; page_size?: number; network?: string }): Promise<{ items: CryptoDepositAddress[]; total: number }> {
     return (await apiClient.get<{ items: CryptoDepositAddress[]; total: number }>(
       '/admin/payment/crypto/addresses',
       { params }
@@ -100,14 +107,24 @@ export const adminCryptoWalletAPI = {
     return (await apiClient.post<InitWalletResult>('/admin/payment/crypto/wallet/init', data)).data
   },
 
-  /** Set the sweep destination (cold) address (TOTP-gated). */
+  /** Set the TRC20 sweep destination (cold) address (TOTP-gated). */
   async setCollectionAddress(data: { address: string; totp_code: string }): Promise<void> {
     await apiClient.put('/admin/payment/crypto/wallet/collection-address', data)
   },
 
-  /** Trigger a one-click consolidation (TOTP-gated). */
+  /** Set the ERC20 (ETH) sweep destination (cold) address (TOTP-gated). */
+  async setEthCollectionAddress(data: { address: string; totp_code: string }): Promise<void> {
+    await apiClient.put('/admin/payment/crypto/wallet/eth-collection-address', data)
+  },
+
+  /** Trigger a one-click TRC20 consolidation (TOTP-gated). */
   async startSweep(data: { totp_code: string }): Promise<SweepJob> {
     return (await apiClient.post<SweepJob>('/admin/payment/crypto/sweep', data)).data
+  },
+
+  /** Trigger a one-click ERC20 consolidation (TOTP-gated). */
+  async startSweepEth(data: { totp_code: string }): Promise<SweepJob> {
+    return (await apiClient.post<SweepJob>('/admin/payment/crypto/eth-sweep', data)).data
   },
 
   /** Sweep job + per-address task progress. */

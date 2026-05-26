@@ -28,6 +28,20 @@ func (_c *CryptoSweepTaskCreate) SetJobID(v int64) *CryptoSweepTaskCreate {
 	return _c
 }
 
+// SetNetwork sets the "network" field.
+func (_c *CryptoSweepTaskCreate) SetNetwork(v string) *CryptoSweepTaskCreate {
+	_c.mutation.SetNetwork(v)
+	return _c
+}
+
+// SetNillableNetwork sets the "network" field if the given value is not nil.
+func (_c *CryptoSweepTaskCreate) SetNillableNetwork(v *string) *CryptoSweepTaskCreate {
+	if v != nil {
+		_c.SetNetwork(*v)
+	}
+	return _c
+}
+
 // SetUserID sets the "user_id" field.
 func (_c *CryptoSweepTaskCreate) SetUserID(v int64) *CryptoSweepTaskCreate {
 	_c.mutation.SetUserID(v)
@@ -179,6 +193,10 @@ func (_c *CryptoSweepTaskCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *CryptoSweepTaskCreate) defaults() {
+	if _, ok := _c.mutation.Network(); !ok {
+		v := cryptosweeptask.DefaultNetwork
+		_c.mutation.SetNetwork(v)
+	}
 	if _, ok := _c.mutation.UserID(); !ok {
 		v := cryptosweeptask.DefaultUserID
 		_c.mutation.SetUserID(v)
@@ -213,6 +231,14 @@ func (_c *CryptoSweepTaskCreate) defaults() {
 func (_c *CryptoSweepTaskCreate) check() error {
 	if _, ok := _c.mutation.JobID(); !ok {
 		return &ValidationError{Name: "job_id", err: errors.New(`ent: missing required field "CryptoSweepTask.job_id"`)}
+	}
+	if _, ok := _c.mutation.Network(); !ok {
+		return &ValidationError{Name: "network", err: errors.New(`ent: missing required field "CryptoSweepTask.network"`)}
+	}
+	if v, ok := _c.mutation.Network(); ok {
+		if err := cryptosweeptask.NetworkValidator(v); err != nil {
+			return &ValidationError{Name: "network", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepTask.network": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "CryptoSweepTask.user_id"`)}
@@ -294,6 +320,10 @@ func (_c *CryptoSweepTaskCreate) createSpec() (*CryptoSweepTask, *sqlgraph.Creat
 	if value, ok := _c.mutation.JobID(); ok {
 		_spec.SetField(cryptosweeptask.FieldJobID, field.TypeInt64, value)
 		_node.JobID = value
+	}
+	if value, ok := _c.mutation.Network(); ok {
+		_spec.SetField(cryptosweeptask.FieldNetwork, field.TypeString, value)
+		_node.Network = value
 	}
 	if value, ok := _c.mutation.UserID(); ok {
 		_spec.SetField(cryptosweeptask.FieldUserID, field.TypeInt64, value)
@@ -402,6 +432,18 @@ func (u *CryptoSweepTaskUpsert) UpdateJobID() *CryptoSweepTaskUpsert {
 // AddJobID adds v to the "job_id" field.
 func (u *CryptoSweepTaskUpsert) AddJobID(v int64) *CryptoSweepTaskUpsert {
 	u.Add(cryptosweeptask.FieldJobID, v)
+	return u
+}
+
+// SetNetwork sets the "network" field.
+func (u *CryptoSweepTaskUpsert) SetNetwork(v string) *CryptoSweepTaskUpsert {
+	u.Set(cryptosweeptask.FieldNetwork, v)
+	return u
+}
+
+// UpdateNetwork sets the "network" field to the value that was provided on create.
+func (u *CryptoSweepTaskUpsert) UpdateNetwork() *CryptoSweepTaskUpsert {
+	u.SetExcluded(cryptosweeptask.FieldNetwork)
 	return u
 }
 
@@ -594,6 +636,20 @@ func (u *CryptoSweepTaskUpsertOne) AddJobID(v int64) *CryptoSweepTaskUpsertOne {
 func (u *CryptoSweepTaskUpsertOne) UpdateJobID() *CryptoSweepTaskUpsertOne {
 	return u.Update(func(s *CryptoSweepTaskUpsert) {
 		s.UpdateJobID()
+	})
+}
+
+// SetNetwork sets the "network" field.
+func (u *CryptoSweepTaskUpsertOne) SetNetwork(v string) *CryptoSweepTaskUpsertOne {
+	return u.Update(func(s *CryptoSweepTaskUpsert) {
+		s.SetNetwork(v)
+	})
+}
+
+// UpdateNetwork sets the "network" field to the value that was provided on create.
+func (u *CryptoSweepTaskUpsertOne) UpdateNetwork() *CryptoSweepTaskUpsertOne {
+	return u.Update(func(s *CryptoSweepTaskUpsert) {
+		s.UpdateNetwork()
 	})
 }
 
@@ -973,6 +1029,20 @@ func (u *CryptoSweepTaskUpsertBulk) AddJobID(v int64) *CryptoSweepTaskUpsertBulk
 func (u *CryptoSweepTaskUpsertBulk) UpdateJobID() *CryptoSweepTaskUpsertBulk {
 	return u.Update(func(s *CryptoSweepTaskUpsert) {
 		s.UpdateJobID()
+	})
+}
+
+// SetNetwork sets the "network" field.
+func (u *CryptoSweepTaskUpsertBulk) SetNetwork(v string) *CryptoSweepTaskUpsertBulk {
+	return u.Update(func(s *CryptoSweepTaskUpsert) {
+		s.SetNetwork(v)
+	})
+}
+
+// UpdateNetwork sets the "network" field to the value that was provided on create.
+func (u *CryptoSweepTaskUpsertBulk) UpdateNetwork() *CryptoSweepTaskUpsertBulk {
+	return u.Update(func(s *CryptoSweepTaskUpsert) {
+		s.UpdateNetwork()
 	})
 }
 

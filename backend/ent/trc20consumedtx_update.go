@@ -42,6 +42,20 @@ func (_u *TRC20ConsumedTxUpdate) SetNillableTxHash(v *string) *TRC20ConsumedTxUp
 	return _u
 }
 
+// SetNetwork sets the "network" field.
+func (_u *TRC20ConsumedTxUpdate) SetNetwork(v string) *TRC20ConsumedTxUpdate {
+	_u.mutation.SetNetwork(v)
+	return _u
+}
+
+// SetNillableNetwork sets the "network" field if the given value is not nil.
+func (_u *TRC20ConsumedTxUpdate) SetNillableNetwork(v *string) *TRC20ConsumedTxUpdate {
+	if v != nil {
+		_u.SetNetwork(*v)
+	}
+	return _u
+}
+
 // SetOrderID sets the "order_id" field.
 func (_u *TRC20ConsumedTxUpdate) SetOrderID(v int64) *TRC20ConsumedTxUpdate {
 	_u.mutation.ResetOrderID()
@@ -157,6 +171,11 @@ func (_u *TRC20ConsumedTxUpdate) check() error {
 			return &ValidationError{Name: "tx_hash", err: fmt.Errorf(`ent: validator failed for field "TRC20ConsumedTx.tx_hash": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Network(); ok {
+		if err := trc20consumedtx.NetworkValidator(v); err != nil {
+			return &ValidationError{Name: "network", err: fmt.Errorf(`ent: validator failed for field "TRC20ConsumedTx.network": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Address(); ok {
 		if err := trc20consumedtx.AddressValidator(v); err != nil {
 			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "TRC20ConsumedTx.address": %w`, err)}
@@ -179,6 +198,9 @@ func (_u *TRC20ConsumedTxUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.TxHash(); ok {
 		_spec.SetField(trc20consumedtx.FieldTxHash, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Network(); ok {
+		_spec.SetField(trc20consumedtx.FieldNetwork, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.OrderID(); ok {
 		_spec.SetField(trc20consumedtx.FieldOrderID, field.TypeInt64, value)
@@ -231,6 +253,20 @@ func (_u *TRC20ConsumedTxUpdateOne) SetTxHash(v string) *TRC20ConsumedTxUpdateOn
 func (_u *TRC20ConsumedTxUpdateOne) SetNillableTxHash(v *string) *TRC20ConsumedTxUpdateOne {
 	if v != nil {
 		_u.SetTxHash(*v)
+	}
+	return _u
+}
+
+// SetNetwork sets the "network" field.
+func (_u *TRC20ConsumedTxUpdateOne) SetNetwork(v string) *TRC20ConsumedTxUpdateOne {
+	_u.mutation.SetNetwork(v)
+	return _u
+}
+
+// SetNillableNetwork sets the "network" field if the given value is not nil.
+func (_u *TRC20ConsumedTxUpdateOne) SetNillableNetwork(v *string) *TRC20ConsumedTxUpdateOne {
+	if v != nil {
+		_u.SetNetwork(*v)
 	}
 	return _u
 }
@@ -363,6 +399,11 @@ func (_u *TRC20ConsumedTxUpdateOne) check() error {
 			return &ValidationError{Name: "tx_hash", err: fmt.Errorf(`ent: validator failed for field "TRC20ConsumedTx.tx_hash": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Network(); ok {
+		if err := trc20consumedtx.NetworkValidator(v); err != nil {
+			return &ValidationError{Name: "network", err: fmt.Errorf(`ent: validator failed for field "TRC20ConsumedTx.network": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Address(); ok {
 		if err := trc20consumedtx.AddressValidator(v); err != nil {
 			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "TRC20ConsumedTx.address": %w`, err)}
@@ -402,6 +443,9 @@ func (_u *TRC20ConsumedTxUpdateOne) sqlSave(ctx context.Context) (_node *TRC20Co
 	}
 	if value, ok := _u.mutation.TxHash(); ok {
 		_spec.SetField(trc20consumedtx.FieldTxHash, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Network(); ok {
+		_spec.SetField(trc20consumedtx.FieldNetwork, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.OrderID(); ok {
 		_spec.SetField(trc20consumedtx.FieldOrderID, field.TypeInt64, value)

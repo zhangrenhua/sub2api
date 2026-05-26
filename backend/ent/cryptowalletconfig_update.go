@@ -91,6 +91,34 @@ func (_u *CryptoWalletConfigUpdate) SetNillableFeeAddress(v *string) *CryptoWall
 	return _u
 }
 
+// SetEthCollectionAddress sets the "eth_collection_address" field.
+func (_u *CryptoWalletConfigUpdate) SetEthCollectionAddress(v string) *CryptoWalletConfigUpdate {
+	_u.mutation.SetEthCollectionAddress(v)
+	return _u
+}
+
+// SetNillableEthCollectionAddress sets the "eth_collection_address" field if the given value is not nil.
+func (_u *CryptoWalletConfigUpdate) SetNillableEthCollectionAddress(v *string) *CryptoWalletConfigUpdate {
+	if v != nil {
+		_u.SetEthCollectionAddress(*v)
+	}
+	return _u
+}
+
+// SetEthFeeAddress sets the "eth_fee_address" field.
+func (_u *CryptoWalletConfigUpdate) SetEthFeeAddress(v string) *CryptoWalletConfigUpdate {
+	_u.mutation.SetEthFeeAddress(v)
+	return _u
+}
+
+// SetNillableEthFeeAddress sets the "eth_fee_address" field if the given value is not nil.
+func (_u *CryptoWalletConfigUpdate) SetNillableEthFeeAddress(v *string) *CryptoWalletConfigUpdate {
+	if v != nil {
+		_u.SetEthFeeAddress(*v)
+	}
+	return _u
+}
+
 // SetInitialized sets the "initialized" field.
 func (_u *CryptoWalletConfigUpdate) SetInitialized(v bool) *CryptoWalletConfigUpdate {
 	_u.mutation.SetInitialized(v)
@@ -164,6 +192,16 @@ func (_u *CryptoWalletConfigUpdate) check() error {
 			return &ValidationError{Name: "fee_address", err: fmt.Errorf(`ent: validator failed for field "CryptoWalletConfig.fee_address": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.EthCollectionAddress(); ok {
+		if err := cryptowalletconfig.EthCollectionAddressValidator(v); err != nil {
+			return &ValidationError{Name: "eth_collection_address", err: fmt.Errorf(`ent: validator failed for field "CryptoWalletConfig.eth_collection_address": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.EthFeeAddress(); ok {
+		if err := cryptowalletconfig.EthFeeAddressValidator(v); err != nil {
+			return &ValidationError{Name: "eth_fee_address", err: fmt.Errorf(`ent: validator failed for field "CryptoWalletConfig.eth_fee_address": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -193,6 +231,12 @@ func (_u *CryptoWalletConfigUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if value, ok := _u.mutation.FeeAddress(); ok {
 		_spec.SetField(cryptowalletconfig.FieldFeeAddress, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.EthCollectionAddress(); ok {
+		_spec.SetField(cryptowalletconfig.FieldEthCollectionAddress, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.EthFeeAddress(); ok {
+		_spec.SetField(cryptowalletconfig.FieldEthFeeAddress, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Initialized(); ok {
 		_spec.SetField(cryptowalletconfig.FieldInitialized, field.TypeBool, value)
@@ -283,6 +327,34 @@ func (_u *CryptoWalletConfigUpdateOne) SetNillableFeeAddress(v *string) *CryptoW
 	return _u
 }
 
+// SetEthCollectionAddress sets the "eth_collection_address" field.
+func (_u *CryptoWalletConfigUpdateOne) SetEthCollectionAddress(v string) *CryptoWalletConfigUpdateOne {
+	_u.mutation.SetEthCollectionAddress(v)
+	return _u
+}
+
+// SetNillableEthCollectionAddress sets the "eth_collection_address" field if the given value is not nil.
+func (_u *CryptoWalletConfigUpdateOne) SetNillableEthCollectionAddress(v *string) *CryptoWalletConfigUpdateOne {
+	if v != nil {
+		_u.SetEthCollectionAddress(*v)
+	}
+	return _u
+}
+
+// SetEthFeeAddress sets the "eth_fee_address" field.
+func (_u *CryptoWalletConfigUpdateOne) SetEthFeeAddress(v string) *CryptoWalletConfigUpdateOne {
+	_u.mutation.SetEthFeeAddress(v)
+	return _u
+}
+
+// SetNillableEthFeeAddress sets the "eth_fee_address" field if the given value is not nil.
+func (_u *CryptoWalletConfigUpdateOne) SetNillableEthFeeAddress(v *string) *CryptoWalletConfigUpdateOne {
+	if v != nil {
+		_u.SetEthFeeAddress(*v)
+	}
+	return _u
+}
+
 // SetInitialized sets the "initialized" field.
 func (_u *CryptoWalletConfigUpdateOne) SetInitialized(v bool) *CryptoWalletConfigUpdateOne {
 	_u.mutation.SetInitialized(v)
@@ -369,6 +441,16 @@ func (_u *CryptoWalletConfigUpdateOne) check() error {
 			return &ValidationError{Name: "fee_address", err: fmt.Errorf(`ent: validator failed for field "CryptoWalletConfig.fee_address": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.EthCollectionAddress(); ok {
+		if err := cryptowalletconfig.EthCollectionAddressValidator(v); err != nil {
+			return &ValidationError{Name: "eth_collection_address", err: fmt.Errorf(`ent: validator failed for field "CryptoWalletConfig.eth_collection_address": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.EthFeeAddress(); ok {
+		if err := cryptowalletconfig.EthFeeAddressValidator(v); err != nil {
+			return &ValidationError{Name: "eth_fee_address", err: fmt.Errorf(`ent: validator failed for field "CryptoWalletConfig.eth_fee_address": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -415,6 +497,12 @@ func (_u *CryptoWalletConfigUpdateOne) sqlSave(ctx context.Context) (_node *Cryp
 	}
 	if value, ok := _u.mutation.FeeAddress(); ok {
 		_spec.SetField(cryptowalletconfig.FieldFeeAddress, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.EthCollectionAddress(); ok {
+		_spec.SetField(cryptowalletconfig.FieldEthCollectionAddress, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.EthFeeAddress(); ok {
+		_spec.SetField(cryptowalletconfig.FieldEthFeeAddress, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Initialized(); ok {
 		_spec.SetField(cryptowalletconfig.FieldInitialized, field.TypeBool, value)

@@ -13543,6 +13543,7 @@ type CryptoSweepJobMutation struct {
 	op                 Op
 	typ                string
 	id                 *int64
+	network            *string
 	status             *string
 	created_by         *string
 	total_tasks        *int
@@ -13658,6 +13659,42 @@ func (m *CryptoSweepJobMutation) IDs(ctx context.Context) ([]int64, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetNetwork sets the "network" field.
+func (m *CryptoSweepJobMutation) SetNetwork(s string) {
+	m.network = &s
+}
+
+// Network returns the value of the "network" field in the mutation.
+func (m *CryptoSweepJobMutation) Network() (r string, exists bool) {
+	v := m.network
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNetwork returns the old "network" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldNetwork(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNetwork is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNetwork requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNetwork: %w", err)
+	}
+	return oldValue.Network, nil
+}
+
+// ResetNetwork resets all changes to the "network" field.
+func (m *CryptoSweepJobMutation) ResetNetwork() {
+	m.network = nil
 }
 
 // SetStatus sets the "status" field.
@@ -14127,7 +14164,10 @@ func (m *CryptoSweepJobMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CryptoSweepJobMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
+	if m.network != nil {
+		fields = append(fields, cryptosweepjob.FieldNetwork)
+	}
 	if m.status != nil {
 		fields = append(fields, cryptosweepjob.FieldStatus)
 	}
@@ -14166,6 +14206,8 @@ func (m *CryptoSweepJobMutation) Fields() []string {
 // schema.
 func (m *CryptoSweepJobMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case cryptosweepjob.FieldNetwork:
+		return m.Network()
 	case cryptosweepjob.FieldStatus:
 		return m.Status()
 	case cryptosweepjob.FieldCreatedBy:
@@ -14195,6 +14237,8 @@ func (m *CryptoSweepJobMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *CryptoSweepJobMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case cryptosweepjob.FieldNetwork:
+		return m.OldNetwork(ctx)
 	case cryptosweepjob.FieldStatus:
 		return m.OldStatus(ctx)
 	case cryptosweepjob.FieldCreatedBy:
@@ -14224,6 +14268,13 @@ func (m *CryptoSweepJobMutation) OldField(ctx context.Context, name string) (ent
 // type.
 func (m *CryptoSweepJobMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case cryptosweepjob.FieldNetwork:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNetwork(v)
+		return nil
 	case cryptosweepjob.FieldStatus:
 		v, ok := value.(string)
 		if !ok {
@@ -14391,6 +14442,9 @@ func (m *CryptoSweepJobMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *CryptoSweepJobMutation) ResetField(name string) error {
 	switch name {
+	case cryptosweepjob.FieldNetwork:
+		m.ResetNetwork()
+		return nil
 	case cryptosweepjob.FieldStatus:
 		m.ResetStatus()
 		return nil
@@ -14481,6 +14535,7 @@ type CryptoSweepTaskMutation struct {
 	id                  *int64
 	job_id              *int64
 	addjob_id           *int64
+	network             *string
 	user_id             *int64
 	adduser_id          *int64
 	address             *string
@@ -14652,6 +14707,42 @@ func (m *CryptoSweepTaskMutation) AddedJobID() (r int64, exists bool) {
 func (m *CryptoSweepTaskMutation) ResetJobID() {
 	m.job_id = nil
 	m.addjob_id = nil
+}
+
+// SetNetwork sets the "network" field.
+func (m *CryptoSweepTaskMutation) SetNetwork(s string) {
+	m.network = &s
+}
+
+// Network returns the value of the "network" field in the mutation.
+func (m *CryptoSweepTaskMutation) Network() (r string, exists bool) {
+	v := m.network
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNetwork returns the old "network" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldNetwork(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNetwork is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNetwork requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNetwork: %w", err)
+	}
+	return oldValue.Network, nil
+}
+
+// ResetNetwork resets all changes to the "network" field.
+func (m *CryptoSweepTaskMutation) ResetNetwork() {
+	m.network = nil
 }
 
 // SetUserID sets the "user_id" field.
@@ -15108,9 +15199,12 @@ func (m *CryptoSweepTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CryptoSweepTaskMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.job_id != nil {
 		fields = append(fields, cryptosweeptask.FieldJobID)
+	}
+	if m.network != nil {
+		fields = append(fields, cryptosweeptask.FieldNetwork)
 	}
 	if m.user_id != nil {
 		fields = append(fields, cryptosweeptask.FieldUserID)
@@ -15152,6 +15246,8 @@ func (m *CryptoSweepTaskMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case cryptosweeptask.FieldJobID:
 		return m.JobID()
+	case cryptosweeptask.FieldNetwork:
+		return m.Network()
 	case cryptosweeptask.FieldUserID:
 		return m.UserID()
 	case cryptosweeptask.FieldAddress:
@@ -15183,6 +15279,8 @@ func (m *CryptoSweepTaskMutation) OldField(ctx context.Context, name string) (en
 	switch name {
 	case cryptosweeptask.FieldJobID:
 		return m.OldJobID(ctx)
+	case cryptosweeptask.FieldNetwork:
+		return m.OldNetwork(ctx)
 	case cryptosweeptask.FieldUserID:
 		return m.OldUserID(ctx)
 	case cryptosweeptask.FieldAddress:
@@ -15218,6 +15316,13 @@ func (m *CryptoSweepTaskMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetJobID(v)
+		return nil
+	case cryptosweeptask.FieldNetwork:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNetwork(v)
 		return nil
 	case cryptosweeptask.FieldUserID:
 		v, ok := value.(int64)
@@ -15392,6 +15497,9 @@ func (m *CryptoSweepTaskMutation) ResetField(name string) error {
 	case cryptosweeptask.FieldJobID:
 		m.ResetJobID()
 		return nil
+	case cryptosweeptask.FieldNetwork:
+		m.ResetNetwork()
+		return nil
 	case cryptosweeptask.FieldUserID:
 		m.ResetUserID()
 		return nil
@@ -15485,6 +15593,8 @@ type CryptoWalletConfigMutation struct {
 	addnext_derivation_index *int64
 	collection_address       *string
 	fee_address              *string
+	eth_collection_address   *string
+	eth_fee_address          *string
 	initialized              *bool
 	created_at               *time.Time
 	updated_at               *time.Time
@@ -15756,6 +15866,78 @@ func (m *CryptoWalletConfigMutation) ResetFeeAddress() {
 	m.fee_address = nil
 }
 
+// SetEthCollectionAddress sets the "eth_collection_address" field.
+func (m *CryptoWalletConfigMutation) SetEthCollectionAddress(s string) {
+	m.eth_collection_address = &s
+}
+
+// EthCollectionAddress returns the value of the "eth_collection_address" field in the mutation.
+func (m *CryptoWalletConfigMutation) EthCollectionAddress() (r string, exists bool) {
+	v := m.eth_collection_address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEthCollectionAddress returns the old "eth_collection_address" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldEthCollectionAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEthCollectionAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEthCollectionAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEthCollectionAddress: %w", err)
+	}
+	return oldValue.EthCollectionAddress, nil
+}
+
+// ResetEthCollectionAddress resets all changes to the "eth_collection_address" field.
+func (m *CryptoWalletConfigMutation) ResetEthCollectionAddress() {
+	m.eth_collection_address = nil
+}
+
+// SetEthFeeAddress sets the "eth_fee_address" field.
+func (m *CryptoWalletConfigMutation) SetEthFeeAddress(s string) {
+	m.eth_fee_address = &s
+}
+
+// EthFeeAddress returns the value of the "eth_fee_address" field in the mutation.
+func (m *CryptoWalletConfigMutation) EthFeeAddress() (r string, exists bool) {
+	v := m.eth_fee_address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEthFeeAddress returns the old "eth_fee_address" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldEthFeeAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEthFeeAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEthFeeAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEthFeeAddress: %w", err)
+	}
+	return oldValue.EthFeeAddress, nil
+}
+
+// ResetEthFeeAddress resets all changes to the "eth_fee_address" field.
+func (m *CryptoWalletConfigMutation) ResetEthFeeAddress() {
+	m.eth_fee_address = nil
+}
+
 // SetInitialized sets the "initialized" field.
 func (m *CryptoWalletConfigMutation) SetInitialized(b bool) {
 	m.initialized = &b
@@ -15898,7 +16080,7 @@ func (m *CryptoWalletConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CryptoWalletConfigMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 9)
 	if m.encrypted_mnemonic != nil {
 		fields = append(fields, cryptowalletconfig.FieldEncryptedMnemonic)
 	}
@@ -15910,6 +16092,12 @@ func (m *CryptoWalletConfigMutation) Fields() []string {
 	}
 	if m.fee_address != nil {
 		fields = append(fields, cryptowalletconfig.FieldFeeAddress)
+	}
+	if m.eth_collection_address != nil {
+		fields = append(fields, cryptowalletconfig.FieldEthCollectionAddress)
+	}
+	if m.eth_fee_address != nil {
+		fields = append(fields, cryptowalletconfig.FieldEthFeeAddress)
 	}
 	if m.initialized != nil {
 		fields = append(fields, cryptowalletconfig.FieldInitialized)
@@ -15936,6 +16124,10 @@ func (m *CryptoWalletConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.CollectionAddress()
 	case cryptowalletconfig.FieldFeeAddress:
 		return m.FeeAddress()
+	case cryptowalletconfig.FieldEthCollectionAddress:
+		return m.EthCollectionAddress()
+	case cryptowalletconfig.FieldEthFeeAddress:
+		return m.EthFeeAddress()
 	case cryptowalletconfig.FieldInitialized:
 		return m.Initialized()
 	case cryptowalletconfig.FieldCreatedAt:
@@ -15959,6 +16151,10 @@ func (m *CryptoWalletConfigMutation) OldField(ctx context.Context, name string) 
 		return m.OldCollectionAddress(ctx)
 	case cryptowalletconfig.FieldFeeAddress:
 		return m.OldFeeAddress(ctx)
+	case cryptowalletconfig.FieldEthCollectionAddress:
+		return m.OldEthCollectionAddress(ctx)
+	case cryptowalletconfig.FieldEthFeeAddress:
+		return m.OldEthFeeAddress(ctx)
 	case cryptowalletconfig.FieldInitialized:
 		return m.OldInitialized(ctx)
 	case cryptowalletconfig.FieldCreatedAt:
@@ -16001,6 +16197,20 @@ func (m *CryptoWalletConfigMutation) SetField(name string, value ent.Value) erro
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFeeAddress(v)
+		return nil
+	case cryptowalletconfig.FieldEthCollectionAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEthCollectionAddress(v)
+		return nil
+	case cryptowalletconfig.FieldEthFeeAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEthFeeAddress(v)
 		return nil
 	case cryptowalletconfig.FieldInitialized:
 		v, ok := value.(bool)
@@ -16098,6 +16308,12 @@ func (m *CryptoWalletConfigMutation) ResetField(name string) error {
 		return nil
 	case cryptowalletconfig.FieldFeeAddress:
 		m.ResetFeeAddress()
+		return nil
+	case cryptowalletconfig.FieldEthCollectionAddress:
+		m.ResetEthCollectionAddress()
+		return nil
+	case cryptowalletconfig.FieldEthFeeAddress:
+		m.ResetEthFeeAddress()
 		return nil
 	case cryptowalletconfig.FieldInitialized:
 		m.ResetInitialized()
@@ -35943,6 +36159,7 @@ type TRC20ConsumedTxMutation struct {
 	typ           string
 	id            *int64
 	tx_hash       *string
+	network       *string
 	order_id      *int64
 	addorder_id   *int64
 	address       *string
@@ -36088,6 +36305,42 @@ func (m *TRC20ConsumedTxMutation) OldTxHash(ctx context.Context) (v string, err 
 // ResetTxHash resets all changes to the "tx_hash" field.
 func (m *TRC20ConsumedTxMutation) ResetTxHash() {
 	m.tx_hash = nil
+}
+
+// SetNetwork sets the "network" field.
+func (m *TRC20ConsumedTxMutation) SetNetwork(s string) {
+	m.network = &s
+}
+
+// Network returns the value of the "network" field in the mutation.
+func (m *TRC20ConsumedTxMutation) Network() (r string, exists bool) {
+	v := m.network
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNetwork returns the old "network" field's value of the TRC20ConsumedTx entity.
+// If the TRC20ConsumedTx object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TRC20ConsumedTxMutation) OldNetwork(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNetwork is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNetwork requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNetwork: %w", err)
+	}
+	return oldValue.Network, nil
+}
+
+// ResetNetwork resets all changes to the "network" field.
+func (m *TRC20ConsumedTxMutation) ResetNetwork() {
+	m.network = nil
 }
 
 // SetOrderID sets the "order_id" field.
@@ -36357,9 +36610,12 @@ func (m *TRC20ConsumedTxMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TRC20ConsumedTxMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.tx_hash != nil {
 		fields = append(fields, trc20consumedtx.FieldTxHash)
+	}
+	if m.network != nil {
+		fields = append(fields, trc20consumedtx.FieldNetwork)
 	}
 	if m.order_id != nil {
 		fields = append(fields, trc20consumedtx.FieldOrderID)
@@ -36386,6 +36642,8 @@ func (m *TRC20ConsumedTxMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case trc20consumedtx.FieldTxHash:
 		return m.TxHash()
+	case trc20consumedtx.FieldNetwork:
+		return m.Network()
 	case trc20consumedtx.FieldOrderID:
 		return m.OrderID()
 	case trc20consumedtx.FieldAddress:
@@ -36407,6 +36665,8 @@ func (m *TRC20ConsumedTxMutation) OldField(ctx context.Context, name string) (en
 	switch name {
 	case trc20consumedtx.FieldTxHash:
 		return m.OldTxHash(ctx)
+	case trc20consumedtx.FieldNetwork:
+		return m.OldNetwork(ctx)
 	case trc20consumedtx.FieldOrderID:
 		return m.OldOrderID(ctx)
 	case trc20consumedtx.FieldAddress:
@@ -36432,6 +36692,13 @@ func (m *TRC20ConsumedTxMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTxHash(v)
+		return nil
+	case trc20consumedtx.FieldNetwork:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNetwork(v)
 		return nil
 	case trc20consumedtx.FieldOrderID:
 		v, ok := value.(int64)
@@ -36555,6 +36822,9 @@ func (m *TRC20ConsumedTxMutation) ResetField(name string) error {
 	switch name {
 	case trc20consumedtx.FieldTxHash:
 		m.ResetTxHash()
+		return nil
+	case trc20consumedtx.FieldNetwork:
+		m.ResetNetwork()
 		return nil
 	case trc20consumedtx.FieldOrderID:
 		m.ResetOrderID()

@@ -13,6 +13,8 @@ const (
 	Label = "crypto_sweep_job"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldNetwork holds the string denoting the network field in the database.
+	FieldNetwork = "network"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldCreatedBy holds the string denoting the created_by field in the database.
@@ -40,6 +42,7 @@ const (
 // Columns holds all SQL columns for cryptosweepjob fields.
 var Columns = []string{
 	FieldID,
+	FieldNetwork,
 	FieldStatus,
 	FieldCreatedBy,
 	FieldTotalTasks,
@@ -63,6 +66,10 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultNetwork holds the default value on creation for the "network" field.
+	DefaultNetwork string
+	// NetworkValidator is a validator for the "network" field. It is called by the builders before save.
+	NetworkValidator func(string) error
 	// DefaultStatus holds the default value on creation for the "status" field.
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
@@ -95,6 +102,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByNetwork orders the results by the network field.
+func ByNetwork(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNetwork, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

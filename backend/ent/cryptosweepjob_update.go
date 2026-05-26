@@ -28,6 +28,20 @@ func (_u *CryptoSweepJobUpdate) Where(ps ...predicate.CryptoSweepJob) *CryptoSwe
 	return _u
 }
 
+// SetNetwork sets the "network" field.
+func (_u *CryptoSweepJobUpdate) SetNetwork(v string) *CryptoSweepJobUpdate {
+	_u.mutation.SetNetwork(v)
+	return _u
+}
+
+// SetNillableNetwork sets the "network" field if the given value is not nil.
+func (_u *CryptoSweepJobUpdate) SetNillableNetwork(v *string) *CryptoSweepJobUpdate {
+	if v != nil {
+		_u.SetNetwork(*v)
+	}
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *CryptoSweepJobUpdate) SetStatus(v string) *CryptoSweepJobUpdate {
 	_u.mutation.SetStatus(v)
@@ -216,6 +230,11 @@ func (_u *CryptoSweepJobUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CryptoSweepJobUpdate) check() error {
+	if v, ok := _u.mutation.Network(); ok {
+		if err := cryptosweepjob.NetworkValidator(v); err != nil {
+			return &ValidationError{Name: "network", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepJob.network": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := cryptosweepjob.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepJob.status": %w`, err)}
@@ -245,6 +264,9 @@ func (_u *CryptoSweepJobUpdate) sqlSave(ctx context.Context) (_node int, err err
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Network(); ok {
+		_spec.SetField(cryptosweepjob.FieldNetwork, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(cryptosweepjob.FieldStatus, field.TypeString, value)
@@ -303,6 +325,20 @@ type CryptoSweepJobUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *CryptoSweepJobMutation
+}
+
+// SetNetwork sets the "network" field.
+func (_u *CryptoSweepJobUpdateOne) SetNetwork(v string) *CryptoSweepJobUpdateOne {
+	_u.mutation.SetNetwork(v)
+	return _u
+}
+
+// SetNillableNetwork sets the "network" field if the given value is not nil.
+func (_u *CryptoSweepJobUpdateOne) SetNillableNetwork(v *string) *CryptoSweepJobUpdateOne {
+	if v != nil {
+		_u.SetNetwork(*v)
+	}
+	return _u
 }
 
 // SetStatus sets the "status" field.
@@ -506,6 +542,11 @@ func (_u *CryptoSweepJobUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CryptoSweepJobUpdateOne) check() error {
+	if v, ok := _u.mutation.Network(); ok {
+		if err := cryptosweepjob.NetworkValidator(v); err != nil {
+			return &ValidationError{Name: "network", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepJob.network": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := cryptosweepjob.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "CryptoSweepJob.status": %w`, err)}
@@ -552,6 +593,9 @@ func (_u *CryptoSweepJobUpdateOne) sqlSave(ctx context.Context) (_node *CryptoSw
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Network(); ok {
+		_spec.SetField(cryptosweepjob.FieldNetwork, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(cryptosweepjob.FieldStatus, field.TypeString, value)

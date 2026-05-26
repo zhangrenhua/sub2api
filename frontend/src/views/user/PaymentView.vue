@@ -415,6 +415,21 @@ function removeRecoverySnapshot() {
   clearPaymentRecoverySnapshot(window.localStorage, PAYMENT_RECOVERY_STORAGE_KEY)
 }
 
+// snapshotIsResumable verifies, via the backend, that the locally-stored
+// recovery snapshot refers to an order owned by the current user that is still
+// PENDING. getOrder is user-scoped (403/404 for another user's order), so this
+// blocks a different user on the same browser from inheriting a prior order and
+// also drops stale (paid/expired/cancelled) snapshots.
+async function snapshotIsResumable(snapshot: PaymentRecoverySnapshot): Promise<boolean> {
+  if (!snapshot.orderId) return false
+  try {
+    const order = (await paymentAPI.getOrder(snapshot.orderId)).data
+    return order?.status === 'PENDING'
+  } catch {
+    return false
+  }
+}
+
 function resetPayment() {
   paymentPhase.value = 'select'
   paymentState.value = emptyPaymentState()
@@ -636,7 +651,7 @@ const subTotalAmount = computed(() => {
 
 // USDT (TRC20): plans/recharge are priced in CNY; show the converted USDT
 // amount and the rate note when this method is selected.
-const isUsdtMethod = computed(() => selectedMethod.value === 'usdt_trc20')
+const isUsdtMethod = computed(() => selectedMethod.value === 'usdt_trc20' || selectedMethod.value === 'usdt_erc20')
 const usdtRate = computed(() => selectedLimit.value?.rate ?? 0)
 const usdtPayDisplay = computed(() =>
   usdtRate.value > 0 ? (totalAmount.value / usdtRate.value).toFixed(2) : ''
@@ -1073,7 +1088,11 @@ onMounted(async () => {
         window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY),
         { resumeToken: routeResumeToken },
       )
-      if (restored) {
+      // Only resume a snapshot that belongs to the CURRENT user and is still
+      // pending. The snapshot lives in browser localStorage under a shared key,
+      // so without this check a different user on the same browser (or a stale
+      // already-paid/expired order) would wrongly see a prior payment screen.
+      if (restored && (await snapshotIsResumable(restored))) {
         paymentState.value = restored
         paymentPhase.value = 'paying'
         const restoredMethod = normalizeVisibleMethod(restored.paymentType)

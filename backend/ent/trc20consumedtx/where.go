@@ -59,6 +59,11 @@ func TxHash(v string) predicate.TRC20ConsumedTx {
 	return predicate.TRC20ConsumedTx(sql.FieldEQ(FieldTxHash, v))
 }
 
+// Network applies equality check predicate on the "network" field. It's identical to NetworkEQ.
+func Network(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldEQ(FieldNetwork, v))
+}
+
 // OrderID applies equality check predicate on the "order_id" field. It's identical to OrderIDEQ.
 func OrderID(v int64) predicate.TRC20ConsumedTx {
 	return predicate.TRC20ConsumedTx(sql.FieldEQ(FieldOrderID, v))
@@ -147,6 +152,71 @@ func TxHashEqualFold(v string) predicate.TRC20ConsumedTx {
 // TxHashContainsFold applies the ContainsFold predicate on the "tx_hash" field.
 func TxHashContainsFold(v string) predicate.TRC20ConsumedTx {
 	return predicate.TRC20ConsumedTx(sql.FieldContainsFold(FieldTxHash, v))
+}
+
+// NetworkEQ applies the EQ predicate on the "network" field.
+func NetworkEQ(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldEQ(FieldNetwork, v))
+}
+
+// NetworkNEQ applies the NEQ predicate on the "network" field.
+func NetworkNEQ(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldNEQ(FieldNetwork, v))
+}
+
+// NetworkIn applies the In predicate on the "network" field.
+func NetworkIn(vs ...string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldIn(FieldNetwork, vs...))
+}
+
+// NetworkNotIn applies the NotIn predicate on the "network" field.
+func NetworkNotIn(vs ...string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldNotIn(FieldNetwork, vs...))
+}
+
+// NetworkGT applies the GT predicate on the "network" field.
+func NetworkGT(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldGT(FieldNetwork, v))
+}
+
+// NetworkGTE applies the GTE predicate on the "network" field.
+func NetworkGTE(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldGTE(FieldNetwork, v))
+}
+
+// NetworkLT applies the LT predicate on the "network" field.
+func NetworkLT(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldLT(FieldNetwork, v))
+}
+
+// NetworkLTE applies the LTE predicate on the "network" field.
+func NetworkLTE(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldLTE(FieldNetwork, v))
+}
+
+// NetworkContains applies the Contains predicate on the "network" field.
+func NetworkContains(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldContains(FieldNetwork, v))
+}
+
+// NetworkHasPrefix applies the HasPrefix predicate on the "network" field.
+func NetworkHasPrefix(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldHasPrefix(FieldNetwork, v))
+}
+
+// NetworkHasSuffix applies the HasSuffix predicate on the "network" field.
+func NetworkHasSuffix(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldHasSuffix(FieldNetwork, v))
+}
+
+// NetworkEqualFold applies the EqualFold predicate on the "network" field.
+func NetworkEqualFold(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldEqualFold(FieldNetwork, v))
+}
+
+// NetworkContainsFold applies the ContainsFold predicate on the "network" field.
+func NetworkContainsFold(v string) predicate.TRC20ConsumedTx {
+	return predicate.TRC20ConsumedTx(sql.FieldContainsFold(FieldNetwork, v))
 }
 
 // OrderIDEQ applies the EQ predicate on the "order_id" field.

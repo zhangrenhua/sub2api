@@ -264,12 +264,12 @@ func (_q *CryptoSweepJobQuery) Clone() *CryptoSweepJobQuery {
 // Example:
 //
 //	var v []struct {
-//		Status string `json:"status,omitempty"`
+//		Network string `json:"network,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.CryptoSweepJob.Query().
-//		GroupBy(cryptosweepjob.FieldStatus).
+//		GroupBy(cryptosweepjob.FieldNetwork).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *CryptoSweepJobQuery) GroupBy(field string, fields ...string) *CryptoSweepJobGroupBy {
@@ -287,11 +287,11 @@ func (_q *CryptoSweepJobQuery) GroupBy(field string, fields ...string) *CryptoSw
 // Example:
 //
 //	var v []struct {
-//		Status string `json:"status,omitempty"`
+//		Network string `json:"network,omitempty"`
 //	}
 //
 //	client.CryptoSweepJob.Query().
-//		Select(cryptosweepjob.FieldStatus).
+//		Select(cryptosweepjob.FieldNetwork).
 //		Scan(ctx, &v)
 func (_q *CryptoSweepJobQuery) Select(fields ...string) *CryptoSweepJobSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)

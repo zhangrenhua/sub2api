@@ -74,6 +74,16 @@ func FeeAddress(v string) predicate.CryptoWalletConfig {
 	return predicate.CryptoWalletConfig(sql.FieldEQ(FieldFeeAddress, v))
 }
 
+// EthCollectionAddress applies equality check predicate on the "eth_collection_address" field. It's identical to EthCollectionAddressEQ.
+func EthCollectionAddress(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldEQ(FieldEthCollectionAddress, v))
+}
+
+// EthFeeAddress applies equality check predicate on the "eth_fee_address" field. It's identical to EthFeeAddressEQ.
+func EthFeeAddress(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldEQ(FieldEthFeeAddress, v))
+}
+
 // Initialized applies equality check predicate on the "initialized" field. It's identical to InitializedEQ.
 func Initialized(v bool) predicate.CryptoWalletConfig {
 	return predicate.CryptoWalletConfig(sql.FieldEQ(FieldInitialized, v))
@@ -322,6 +332,136 @@ func FeeAddressEqualFold(v string) predicate.CryptoWalletConfig {
 // FeeAddressContainsFold applies the ContainsFold predicate on the "fee_address" field.
 func FeeAddressContainsFold(v string) predicate.CryptoWalletConfig {
 	return predicate.CryptoWalletConfig(sql.FieldContainsFold(FieldFeeAddress, v))
+}
+
+// EthCollectionAddressEQ applies the EQ predicate on the "eth_collection_address" field.
+func EthCollectionAddressEQ(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldEQ(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressNEQ applies the NEQ predicate on the "eth_collection_address" field.
+func EthCollectionAddressNEQ(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldNEQ(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressIn applies the In predicate on the "eth_collection_address" field.
+func EthCollectionAddressIn(vs ...string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldIn(FieldEthCollectionAddress, vs...))
+}
+
+// EthCollectionAddressNotIn applies the NotIn predicate on the "eth_collection_address" field.
+func EthCollectionAddressNotIn(vs ...string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldNotIn(FieldEthCollectionAddress, vs...))
+}
+
+// EthCollectionAddressGT applies the GT predicate on the "eth_collection_address" field.
+func EthCollectionAddressGT(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldGT(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressGTE applies the GTE predicate on the "eth_collection_address" field.
+func EthCollectionAddressGTE(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldGTE(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressLT applies the LT predicate on the "eth_collection_address" field.
+func EthCollectionAddressLT(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldLT(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressLTE applies the LTE predicate on the "eth_collection_address" field.
+func EthCollectionAddressLTE(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldLTE(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressContains applies the Contains predicate on the "eth_collection_address" field.
+func EthCollectionAddressContains(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldContains(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressHasPrefix applies the HasPrefix predicate on the "eth_collection_address" field.
+func EthCollectionAddressHasPrefix(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldHasPrefix(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressHasSuffix applies the HasSuffix predicate on the "eth_collection_address" field.
+func EthCollectionAddressHasSuffix(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldHasSuffix(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressEqualFold applies the EqualFold predicate on the "eth_collection_address" field.
+func EthCollectionAddressEqualFold(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldEqualFold(FieldEthCollectionAddress, v))
+}
+
+// EthCollectionAddressContainsFold applies the ContainsFold predicate on the "eth_collection_address" field.
+func EthCollectionAddressContainsFold(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldContainsFold(FieldEthCollectionAddress, v))
+}
+
+// EthFeeAddressEQ applies the EQ predicate on the "eth_fee_address" field.
+func EthFeeAddressEQ(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldEQ(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressNEQ applies the NEQ predicate on the "eth_fee_address" field.
+func EthFeeAddressNEQ(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldNEQ(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressIn applies the In predicate on the "eth_fee_address" field.
+func EthFeeAddressIn(vs ...string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldIn(FieldEthFeeAddress, vs...))
+}
+
+// EthFeeAddressNotIn applies the NotIn predicate on the "eth_fee_address" field.
+func EthFeeAddressNotIn(vs ...string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldNotIn(FieldEthFeeAddress, vs...))
+}
+
+// EthFeeAddressGT applies the GT predicate on the "eth_fee_address" field.
+func EthFeeAddressGT(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldGT(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressGTE applies the GTE predicate on the "eth_fee_address" field.
+func EthFeeAddressGTE(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldGTE(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressLT applies the LT predicate on the "eth_fee_address" field.
+func EthFeeAddressLT(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldLT(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressLTE applies the LTE predicate on the "eth_fee_address" field.
+func EthFeeAddressLTE(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldLTE(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressContains applies the Contains predicate on the "eth_fee_address" field.
+func EthFeeAddressContains(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldContains(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressHasPrefix applies the HasPrefix predicate on the "eth_fee_address" field.
+func EthFeeAddressHasPrefix(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldHasPrefix(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressHasSuffix applies the HasSuffix predicate on the "eth_fee_address" field.
+func EthFeeAddressHasSuffix(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldHasSuffix(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressEqualFold applies the EqualFold predicate on the "eth_fee_address" field.
+func EthFeeAddressEqualFold(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldEqualFold(FieldEthFeeAddress, v))
+}
+
+// EthFeeAddressContainsFold applies the ContainsFold predicate on the "eth_fee_address" field.
+func EthFeeAddressContainsFold(v string) predicate.CryptoWalletConfig {
+	return predicate.CryptoWalletConfig(sql.FieldContainsFold(FieldEthFeeAddress, v))
 }
 
 // InitializedEQ applies the EQ predicate on the "initialized" field.

@@ -77,6 +77,39 @@
           <p class="text-xs text-gray-400">{{ t('payment.crypto.collectionHint') }}</p>
         </div>
 
+        <!-- ERC20 (Ethereum) section -->
+        <div v-if="overview.initialized" class="space-y-4">
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('payment.crypto.erc20Section') }}</h3>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="card p-4">
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.crypto.depositTotal') }}</p>
+              <p class="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-white">{{ fmtUsdt(overview.erc20_deposit_total_usdt) }}</p>
+              <p class="text-xs text-gray-400">{{ overview.erc20_deposit_addresses }} {{ t('payment.crypto.addresses') }}</p>
+            </div>
+            <div class="card p-4">
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.crypto.collectionBalance') }}</p>
+              <p class="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-white">{{ fmtUsdt(overview.eth_collection_balance) }}</p>
+            </div>
+            <div class="card p-4">
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.crypto.feeEth') }}</p>
+              <p class="mt-1 text-xl font-bold tabular-nums" :class="overview.eth_fee_balance < 0.05 ? 'text-red-500' : 'text-gray-900 dark:text-white'">{{ overview.eth_fee_balance.toFixed(4) }} ETH</p>
+              <p class="text-xs text-gray-400 break-all">{{ overview.eth_fee_address }}</p>
+            </div>
+            <div class="card flex flex-col justify-end p-4">
+              <button @click="showSweepEth = true" :disabled="busy" class="btn btn-primary btn-sm">{{ t('payment.crypto.sweepErc20Button') }}</button>
+            </div>
+          </div>
+          <div class="card space-y-3 p-5">
+            <h4 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('payment.crypto.ethCollectionAddress') }}</h4>
+            <div class="flex flex-wrap items-center gap-3">
+              <input v-model="ethCollectionAddress" class="input min-w-0 flex-1 font-mono text-sm" placeholder="0x..." />
+              <input v-model="totpCode" maxlength="6" class="input w-32" :placeholder="t('payment.crypto.totpCode')" />
+              <button @click="handleSetEthCollection" :disabled="busy" class="btn btn-primary">{{ t('common.save') }}</button>
+            </div>
+            <p class="text-xs text-gray-400">{{ t('payment.crypto.collectionHint') }}</p>
+          </div>
+        </div>
+
         <!-- Deposit addresses table -->
         <div v-if="overview.initialized" class="card p-5">
           <h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">{{ t('payment.crypto.depositAddresses') }}</h3>
@@ -138,6 +171,20 @@
           <input v-model="totpCode" maxlength="6" class="input mt-3 w-full" :placeholder="t('payment.crypto.totpCode')" />
         </template>
       </ConfirmDialog>
+
+      <!-- ERC20 sweep confirmation -->
+      <ConfirmDialog
+        :show="showSweepEth"
+        :title="t('payment.crypto.sweepErc20ConfirmTitle')"
+        :message="t('payment.crypto.sweepConfirmMessage')"
+        :confirm-text="t('payment.crypto.sweepErc20Button')"
+        @confirm="handleSweepEth"
+        @cancel="showSweepEth = false"
+      >
+        <template #default>
+          <input v-model="totpCode" maxlength="6" class="input mt-3 w-full" :placeholder="t('payment.crypto.totpCode')" />
+        </template>
+      </ConfirmDialog>
     </div>
   </AppLayout>
 </template>
@@ -170,8 +217,10 @@ const sweepJobs = ref<SweepJob[]>([])
 const importMnemonic = ref('')
 const generatedMnemonic = ref('')
 const collectionAddress = ref('')
+const ethCollectionAddress = ref('')
 const totpCode = ref('')
 const showSweep = ref(false)
+const showSweepEth = ref(false)
 
 function fmtUsdt(v: number): string {
   return `${(v ?? 0).toFixed(2)} USDT`
@@ -198,6 +247,7 @@ async function loadOverview() {
   const res = await adminCryptoWalletAPI.getOverview()
   overview.value = res
   collectionAddress.value = res.collection_address || ''
+  ethCollectionAddress.value = res.eth_collection_address || ''
 }
 async function loadAddresses() {
   const res = await adminCryptoWalletAPI.listAddresses({ page: 1, page_size: 100 })
@@ -258,6 +308,27 @@ async function handleSweep() {
     await adminCryptoWalletAPI.startSweep({ totp_code: totpCode.value })
     totpCode.value = ''
     showSweep.value = false
+    appStore.showSuccess(t('payment.crypto.sweepStarted'))
+    await loadJobs()
+  } catch (err) { fail(err) } finally { busy.value = false }
+}
+
+async function handleSetEthCollection() {
+  busy.value = true
+  try {
+    await adminCryptoWalletAPI.setEthCollectionAddress({ address: ethCollectionAddress.value.trim(), totp_code: totpCode.value })
+    totpCode.value = ''
+    appStore.showSuccess(t('common.saved'))
+    await loadOverview()
+  } catch (err) { fail(err) } finally { busy.value = false }
+}
+
+async function handleSweepEth() {
+  busy.value = true
+  try {
+    await adminCryptoWalletAPI.startSweepEth({ totp_code: totpCode.value })
+    totpCode.value = ''
+    showSweepEth.value = false
     appStore.showSuccess(t('payment.crypto.sweepStarted'))
     await loadJobs()
   } catch (err) { fail(err) } finally { busy.value = false }

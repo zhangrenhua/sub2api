@@ -12,23 +12,27 @@
 package wallet
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil/hdkeychain"
 	"github.com/btcsuite/btcd/chaincfg"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/fbsobreira/gotron-sdk/pkg/address"
 	"github.com/tyler-smith/go-bip39"
 )
 
-// BIP44 path components for TRON. 195 is TRON's registered SLIP-0044 coin type.
+// BIP44 path components. SLIP-0044 coin types: 195 = TRON, 60 = Ethereum.
 //
-//	m / 44' / 195' / 0' / 0 / {index}
+//	TRON: m / 44' / 195' / 0' / 0 / {index}
+//	ETH:  m / 44' / 60'  / 0' / 0 / {index}
 const (
-	pathPurpose  = hdkeychain.HardenedKeyStart + 44
-	pathCoinType = hdkeychain.HardenedKeyStart + 195
-	pathAccount  = hdkeychain.HardenedKeyStart + 0
-	pathChange   = 0 // external chain (receive addresses)
+	pathPurpose     = hdkeychain.HardenedKeyStart + 44
+	pathCoinType    = hdkeychain.HardenedKeyStart + 195
+	pathCoinTypeETH = hdkeychain.HardenedKeyStart + 60
+	pathAccount     = hdkeychain.HardenedKeyStart + 0
+	pathChange      = 0 // external chain (receive addresses)
 )
 
 // Manager derives TRON addresses and keys from a master seed.
@@ -72,13 +76,22 @@ func GenerateMnemonic() (string, error) {
 	return mnemonic, nil
 }
 
-// childKey derives the child extended key at m/44'/195'/0'/0/{index}.
+// childKey derives the TRON child extended key at m/44'/195'/0'/0/{index}.
 func (m *Manager) childKey(index uint32) (*hdkeychain.ExtendedKey, error) {
+	return m.childKeyForCoin(pathCoinType, index)
+}
+
+// ethChildKey derives the Ethereum child extended key at m/44'/60'/0'/0/{index}.
+func (m *Manager) ethChildKey(index uint32) (*hdkeychain.ExtendedKey, error) {
+	return m.childKeyForCoin(pathCoinTypeETH, index)
+}
+
+func (m *Manager) childKeyForCoin(coinType, index uint32) (*hdkeychain.ExtendedKey, error) {
 	if m == nil || m.master == nil {
 		return nil, fmt.Errorf("wallet: nil manager")
 	}
 	k := m.master
-	for _, step := range []uint32{pathPurpose, pathCoinType, pathAccount, pathChange, index} {
+	for _, step := range []uint32{pathPurpose, coinType, pathAccount, pathChange, index} {
 		next, err := k.Derive(step)
 		if err != nil {
 			return nil, fmt.Errorf("wallet: derive step %d: %w", step, err)
@@ -122,4 +135,39 @@ func (m *Manager) PrivateKey(index uint32) (*btcec.PrivateKey, error) {
 // exactly the one this key can spend).
 func AddressForPrivateKey(priv *btcec.PrivateKey) string {
 	return address.BTCECPrivkeyToAddress(priv).String()
+}
+
+// --- Ethereum (ERC20) ---
+
+// EthAddress returns the EIP-55 checksummed Ethereum address (0x...) for the
+// given derivation index, derived at m/44'/60'/0'/0/{index}.
+func (m *Manager) EthAddress(index uint32) (string, error) {
+	k, err := m.ethChildKey(index)
+	if err != nil {
+		return "", err
+	}
+	pub, err := k.ECPubKey()
+	if err != nil {
+		return "", fmt.Errorf("wallet: eth ec pubkey: %w", err)
+	}
+	return ethcrypto.PubkeyToAddress(*pub.ToECDSA()).Hex(), nil
+}
+
+// EthPrivateKey returns the ECDSA private key for the given index, used to sign
+// the ERC20 sweep transaction out of that deposit address.
+func (m *Manager) EthPrivateKey(index uint32) (*ecdsa.PrivateKey, error) {
+	k, err := m.ethChildKey(index)
+	if err != nil {
+		return nil, err
+	}
+	priv, err := k.ECPrivKey()
+	if err != nil {
+		return nil, fmt.Errorf("wallet: eth ec privkey: %w", err)
+	}
+	return priv.ToECDSA(), nil
+}
+
+// EthAddressForPrivateKey returns the Ethereum address the given key controls.
+func EthAddressForPrivateKey(priv *ecdsa.PrivateKey) string {
+	return ethcrypto.PubkeyToAddress(priv.PublicKey).Hex()
 }

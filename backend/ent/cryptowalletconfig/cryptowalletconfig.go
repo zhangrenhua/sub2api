@@ -21,6 +21,10 @@ const (
 	FieldCollectionAddress = "collection_address"
 	// FieldFeeAddress holds the string denoting the fee_address field in the database.
 	FieldFeeAddress = "fee_address"
+	// FieldEthCollectionAddress holds the string denoting the eth_collection_address field in the database.
+	FieldEthCollectionAddress = "eth_collection_address"
+	// FieldEthFeeAddress holds the string denoting the eth_fee_address field in the database.
+	FieldEthFeeAddress = "eth_fee_address"
 	// FieldInitialized holds the string denoting the initialized field in the database.
 	FieldInitialized = "initialized"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -38,6 +42,8 @@ var Columns = []string{
 	FieldNextDerivationIndex,
 	FieldCollectionAddress,
 	FieldFeeAddress,
+	FieldEthCollectionAddress,
+	FieldEthFeeAddress,
 	FieldInitialized,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -66,6 +72,14 @@ var (
 	DefaultFeeAddress string
 	// FeeAddressValidator is a validator for the "fee_address" field. It is called by the builders before save.
 	FeeAddressValidator func(string) error
+	// DefaultEthCollectionAddress holds the default value on creation for the "eth_collection_address" field.
+	DefaultEthCollectionAddress string
+	// EthCollectionAddressValidator is a validator for the "eth_collection_address" field. It is called by the builders before save.
+	EthCollectionAddressValidator func(string) error
+	// DefaultEthFeeAddress holds the default value on creation for the "eth_fee_address" field.
+	DefaultEthFeeAddress string
+	// EthFeeAddressValidator is a validator for the "eth_fee_address" field. It is called by the builders before save.
+	EthFeeAddressValidator func(string) error
 	// DefaultInitialized holds the default value on creation for the "initialized" field.
 	DefaultInitialized bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -102,6 +116,16 @@ func ByCollectionAddress(opts ...sql.OrderTermOption) OrderOption {
 // ByFeeAddress orders the results by the fee_address field.
 func ByFeeAddress(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFeeAddress, opts...).ToFunc()
+}
+
+// ByEthCollectionAddress orders the results by the eth_collection_address field.
+func ByEthCollectionAddress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEthCollectionAddress, opts...).ToFunc()
+}
+
+// ByEthFeeAddress orders the results by the eth_fee_address field.
+func ByEthFeeAddress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEthFeeAddress, opts...).ToFunc()
 }
 
 // ByInitialized orders the results by the initialized field.

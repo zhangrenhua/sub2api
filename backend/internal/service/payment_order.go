@@ -95,8 +95,8 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	// USDT/TRC20: plans are priced in CNY, so convert the CNY pay amount to USDT
 	// using the instance's configured exchange rate, and enforce the USDT-only
 	// minimum (in CNY). Both are configured per TRC20 instance.
-	if sel != nil && sel.ProviderKey == payment.TypeTRC20 {
-		payAmountStr, payAmount, err = trc20PayAmountCNYtoUSDT(req, limitAmount, payAmount, sel)
+	if sel != nil && cryptoNetworkForProvider(sel.ProviderKey) != "" {
+		payAmountStr, payAmount, err = cryptoPayAmountCNYtoUSDT(req, limitAmount, payAmount, sel)
 		if err != nil {
 			return nil, err
 		}
@@ -454,13 +454,13 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 		IsMobile:    req.IsMobile,
 		ReturnURL:   providerReturnURL,
 	}
-	// TRC20 has no upstream gateway: resolve (and lazily provision) the user's
-	// per-user deposit address and carry it to the provider via OpenID.
-	if sel.ProviderKey == payment.TypeTRC20 {
+	// Crypto methods (TRC20/ERC20) have no upstream gateway: resolve (and lazily
+	// provision) the user's per-user deposit address and carry it via OpenID.
+	if network := cryptoNetworkForProvider(sel.ProviderKey); network != "" {
 		if s.cryptoWalletSvc == nil {
 			return nil, infraerrors.ServiceUnavailable("WALLET_UNAVAILABLE", "crypto wallet service not configured")
 		}
-		addrRow, aerr := s.cryptoWalletSvc.EnsureUserAddress(ctx, req.UserID)
+		addrRow, aerr := s.cryptoWalletSvc.EnsureUserAddress(ctx, req.UserID, network)
 		if aerr != nil {
 			return nil, aerr
 		}
@@ -622,10 +622,24 @@ func (s *PaymentService) validateSelectedCreateOrderInstance(ctx context.Context
 // when the instance does not configure one.
 const trc20DefaultMinRechargeCNY = 100.0
 
-// trc20PayAmountCNYtoUSDT converts a CNY pay amount to USDT using the instance's
+// cryptoNetworkForProvider maps a provider key to its crypto network label
+// (TRC20/ERC20), or "" for non-crypto providers.
+func cryptoNetworkForProvider(providerKey string) string {
+	switch providerKey {
+	case payment.TypeTRC20:
+		return cryptoNetworkTRC20
+	case payment.TypeERC20:
+		return cryptoNetworkERC20
+	default:
+		return ""
+	}
+}
+
+// cryptoPayAmountCNYtoUSDT converts a CNY pay amount to USDT using the instance's
 // configured rate ("cnyPerUsdt"), and enforces the USDT minimum recharge (in
 // CNY, "minRechargeCny", default 100). cnyPayAmount already includes any fee.
-func trc20PayAmountCNYtoUSDT(req CreateOrderRequest, limitAmount, cnyPayAmount float64, sel *payment.InstanceSelection) (string, float64, error) {
+// Network-agnostic: used by both TRC20 and ERC20.
+func cryptoPayAmountCNYtoUSDT(req CreateOrderRequest, limitAmount, cnyPayAmount float64, sel *payment.InstanceSelection) (string, float64, error) {
 	var cfg map[string]string
 	if sel != nil {
 		cfg = sel.Config

@@ -78,6 +78,34 @@ func (_c *CryptoWalletConfigCreate) SetNillableFeeAddress(v *string) *CryptoWall
 	return _c
 }
 
+// SetEthCollectionAddress sets the "eth_collection_address" field.
+func (_c *CryptoWalletConfigCreate) SetEthCollectionAddress(v string) *CryptoWalletConfigCreate {
+	_c.mutation.SetEthCollectionAddress(v)
+	return _c
+}
+
+// SetNillableEthCollectionAddress sets the "eth_collection_address" field if the given value is not nil.
+func (_c *CryptoWalletConfigCreate) SetNillableEthCollectionAddress(v *string) *CryptoWalletConfigCreate {
+	if v != nil {
+		_c.SetEthCollectionAddress(*v)
+	}
+	return _c
+}
+
+// SetEthFeeAddress sets the "eth_fee_address" field.
+func (_c *CryptoWalletConfigCreate) SetEthFeeAddress(v string) *CryptoWalletConfigCreate {
+	_c.mutation.SetEthFeeAddress(v)
+	return _c
+}
+
+// SetNillableEthFeeAddress sets the "eth_fee_address" field if the given value is not nil.
+func (_c *CryptoWalletConfigCreate) SetNillableEthFeeAddress(v *string) *CryptoWalletConfigCreate {
+	if v != nil {
+		_c.SetEthFeeAddress(*v)
+	}
+	return _c
+}
+
 // SetInitialized sets the "initialized" field.
 func (_c *CryptoWalletConfigCreate) SetInitialized(v bool) *CryptoWalletConfigCreate {
 	_c.mutation.SetInitialized(v)
@@ -171,6 +199,14 @@ func (_c *CryptoWalletConfigCreate) defaults() {
 		v := cryptowalletconfig.DefaultFeeAddress
 		_c.mutation.SetFeeAddress(v)
 	}
+	if _, ok := _c.mutation.EthCollectionAddress(); !ok {
+		v := cryptowalletconfig.DefaultEthCollectionAddress
+		_c.mutation.SetEthCollectionAddress(v)
+	}
+	if _, ok := _c.mutation.EthFeeAddress(); !ok {
+		v := cryptowalletconfig.DefaultEthFeeAddress
+		_c.mutation.SetEthFeeAddress(v)
+	}
 	if _, ok := _c.mutation.Initialized(); !ok {
 		v := cryptowalletconfig.DefaultInitialized
 		_c.mutation.SetInitialized(v)
@@ -207,6 +243,22 @@ func (_c *CryptoWalletConfigCreate) check() error {
 	if v, ok := _c.mutation.FeeAddress(); ok {
 		if err := cryptowalletconfig.FeeAddressValidator(v); err != nil {
 			return &ValidationError{Name: "fee_address", err: fmt.Errorf(`ent: validator failed for field "CryptoWalletConfig.fee_address": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.EthCollectionAddress(); !ok {
+		return &ValidationError{Name: "eth_collection_address", err: errors.New(`ent: missing required field "CryptoWalletConfig.eth_collection_address"`)}
+	}
+	if v, ok := _c.mutation.EthCollectionAddress(); ok {
+		if err := cryptowalletconfig.EthCollectionAddressValidator(v); err != nil {
+			return &ValidationError{Name: "eth_collection_address", err: fmt.Errorf(`ent: validator failed for field "CryptoWalletConfig.eth_collection_address": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.EthFeeAddress(); !ok {
+		return &ValidationError{Name: "eth_fee_address", err: errors.New(`ent: missing required field "CryptoWalletConfig.eth_fee_address"`)}
+	}
+	if v, ok := _c.mutation.EthFeeAddress(); ok {
+		if err := cryptowalletconfig.EthFeeAddressValidator(v); err != nil {
+			return &ValidationError{Name: "eth_fee_address", err: fmt.Errorf(`ent: validator failed for field "CryptoWalletConfig.eth_fee_address": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Initialized(); !ok {
@@ -260,6 +312,14 @@ func (_c *CryptoWalletConfigCreate) createSpec() (*CryptoWalletConfig, *sqlgraph
 	if value, ok := _c.mutation.FeeAddress(); ok {
 		_spec.SetField(cryptowalletconfig.FieldFeeAddress, field.TypeString, value)
 		_node.FeeAddress = value
+	}
+	if value, ok := _c.mutation.EthCollectionAddress(); ok {
+		_spec.SetField(cryptowalletconfig.FieldEthCollectionAddress, field.TypeString, value)
+		_node.EthCollectionAddress = value
+	}
+	if value, ok := _c.mutation.EthFeeAddress(); ok {
+		_spec.SetField(cryptowalletconfig.FieldEthFeeAddress, field.TypeString, value)
+		_node.EthFeeAddress = value
 	}
 	if value, ok := _c.mutation.Initialized(); ok {
 		_spec.SetField(cryptowalletconfig.FieldInitialized, field.TypeBool, value)
@@ -376,6 +436,30 @@ func (u *CryptoWalletConfigUpsert) SetFeeAddress(v string) *CryptoWalletConfigUp
 // UpdateFeeAddress sets the "fee_address" field to the value that was provided on create.
 func (u *CryptoWalletConfigUpsert) UpdateFeeAddress() *CryptoWalletConfigUpsert {
 	u.SetExcluded(cryptowalletconfig.FieldFeeAddress)
+	return u
+}
+
+// SetEthCollectionAddress sets the "eth_collection_address" field.
+func (u *CryptoWalletConfigUpsert) SetEthCollectionAddress(v string) *CryptoWalletConfigUpsert {
+	u.Set(cryptowalletconfig.FieldEthCollectionAddress, v)
+	return u
+}
+
+// UpdateEthCollectionAddress sets the "eth_collection_address" field to the value that was provided on create.
+func (u *CryptoWalletConfigUpsert) UpdateEthCollectionAddress() *CryptoWalletConfigUpsert {
+	u.SetExcluded(cryptowalletconfig.FieldEthCollectionAddress)
+	return u
+}
+
+// SetEthFeeAddress sets the "eth_fee_address" field.
+func (u *CryptoWalletConfigUpsert) SetEthFeeAddress(v string) *CryptoWalletConfigUpsert {
+	u.Set(cryptowalletconfig.FieldEthFeeAddress, v)
+	return u
+}
+
+// UpdateEthFeeAddress sets the "eth_fee_address" field to the value that was provided on create.
+func (u *CryptoWalletConfigUpsert) UpdateEthFeeAddress() *CryptoWalletConfigUpsert {
+	u.SetExcluded(cryptowalletconfig.FieldEthFeeAddress)
 	return u
 }
 
@@ -508,6 +592,34 @@ func (u *CryptoWalletConfigUpsertOne) SetFeeAddress(v string) *CryptoWalletConfi
 func (u *CryptoWalletConfigUpsertOne) UpdateFeeAddress() *CryptoWalletConfigUpsertOne {
 	return u.Update(func(s *CryptoWalletConfigUpsert) {
 		s.UpdateFeeAddress()
+	})
+}
+
+// SetEthCollectionAddress sets the "eth_collection_address" field.
+func (u *CryptoWalletConfigUpsertOne) SetEthCollectionAddress(v string) *CryptoWalletConfigUpsertOne {
+	return u.Update(func(s *CryptoWalletConfigUpsert) {
+		s.SetEthCollectionAddress(v)
+	})
+}
+
+// UpdateEthCollectionAddress sets the "eth_collection_address" field to the value that was provided on create.
+func (u *CryptoWalletConfigUpsertOne) UpdateEthCollectionAddress() *CryptoWalletConfigUpsertOne {
+	return u.Update(func(s *CryptoWalletConfigUpsert) {
+		s.UpdateEthCollectionAddress()
+	})
+}
+
+// SetEthFeeAddress sets the "eth_fee_address" field.
+func (u *CryptoWalletConfigUpsertOne) SetEthFeeAddress(v string) *CryptoWalletConfigUpsertOne {
+	return u.Update(func(s *CryptoWalletConfigUpsert) {
+		s.SetEthFeeAddress(v)
+	})
+}
+
+// UpdateEthFeeAddress sets the "eth_fee_address" field to the value that was provided on create.
+func (u *CryptoWalletConfigUpsertOne) UpdateEthFeeAddress() *CryptoWalletConfigUpsertOne {
+	return u.Update(func(s *CryptoWalletConfigUpsert) {
+		s.UpdateEthFeeAddress()
 	})
 }
 
@@ -810,6 +922,34 @@ func (u *CryptoWalletConfigUpsertBulk) SetFeeAddress(v string) *CryptoWalletConf
 func (u *CryptoWalletConfigUpsertBulk) UpdateFeeAddress() *CryptoWalletConfigUpsertBulk {
 	return u.Update(func(s *CryptoWalletConfigUpsert) {
 		s.UpdateFeeAddress()
+	})
+}
+
+// SetEthCollectionAddress sets the "eth_collection_address" field.
+func (u *CryptoWalletConfigUpsertBulk) SetEthCollectionAddress(v string) *CryptoWalletConfigUpsertBulk {
+	return u.Update(func(s *CryptoWalletConfigUpsert) {
+		s.SetEthCollectionAddress(v)
+	})
+}
+
+// UpdateEthCollectionAddress sets the "eth_collection_address" field to the value that was provided on create.
+func (u *CryptoWalletConfigUpsertBulk) UpdateEthCollectionAddress() *CryptoWalletConfigUpsertBulk {
+	return u.Update(func(s *CryptoWalletConfigUpsert) {
+		s.UpdateEthCollectionAddress()
+	})
+}
+
+// SetEthFeeAddress sets the "eth_fee_address" field.
+func (u *CryptoWalletConfigUpsertBulk) SetEthFeeAddress(v string) *CryptoWalletConfigUpsertBulk {
+	return u.Update(func(s *CryptoWalletConfigUpsert) {
+		s.SetEthFeeAddress(v)
+	})
+}
+
+// UpdateEthFeeAddress sets the "eth_fee_address" field to the value that was provided on create.
+func (u *CryptoWalletConfigUpsertBulk) UpdateEthFeeAddress() *CryptoWalletConfigUpsertBulk {
+	return u.Update(func(s *CryptoWalletConfigUpsert) {
+		s.UpdateEthFeeAddress()
 	})
 }
 

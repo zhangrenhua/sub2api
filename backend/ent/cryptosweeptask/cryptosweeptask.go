@@ -15,6 +15,8 @@ const (
 	FieldID = "id"
 	// FieldJobID holds the string denoting the job_id field in the database.
 	FieldJobID = "job_id"
+	// FieldNetwork holds the string denoting the network field in the database.
+	FieldNetwork = "network"
 	// FieldUserID holds the string denoting the user_id field in the database.
 	FieldUserID = "user_id"
 	// FieldAddress holds the string denoting the address field in the database.
@@ -43,6 +45,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldJobID,
+	FieldNetwork,
 	FieldUserID,
 	FieldAddress,
 	FieldDerivationIndex,
@@ -66,6 +69,10 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultNetwork holds the default value on creation for the "network" field.
+	DefaultNetwork string
+	// NetworkValidator is a validator for the "network" field. It is called by the builders before save.
+	NetworkValidator func(string) error
 	// DefaultUserID holds the default value on creation for the "user_id" field.
 	DefaultUserID int64
 	// AddressValidator is a validator for the "address" field. It is called by the builders before save.
@@ -103,6 +110,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByJobID orders the results by the job_id field.
 func ByJobID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldJobID, opts...).ToFunc()
+}
+
+// ByNetwork orders the results by the network field.
+func ByNetwork(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNetwork, opts...).ToFunc()
 }
 
 // ByUserID orders the results by the user_id field.
