@@ -19,6 +19,11 @@ const pendingERC20ReconcileLimit = 100
 // ReconcilePendingERC20Orders scans pending ERC20 orders and credits any whose
 // per-user Ethereum deposit address received a matching, sufficiently-confirmed,
 // not-yet-consumed USDT transfer. Mirrors ReconcilePendingTRC20Orders.
+//
+// Pending orders are grouped by user so each deposit address is queried against
+// Etherscan at most once per pass (a user with N pending orders costs one HTTP
+// call, not N). Combined with the client's built-in rate limiting this keeps the
+// pass well within Etherscan's request budget even with many pending orders.
 func (s *PaymentService) ReconcilePendingERC20Orders(ctx context.Context) (int, error) {
 	if s.cryptoWalletSvc == nil {
 		return 0, nil
@@ -48,34 +53,64 @@ func (s *PaymentService) ReconcilePendingERC20Orders(ctx context.Context) (int, 
 		return 0, fmt.Errorf("query pending erc20 orders: %w", err)
 	}
 
-	recovered := 0
+	// Group by user, preserving oldest-first order of first appearance so the
+	// longest-waiting deposits are reconciled first.
+	byUser := make(map[int64][]*dbent.PaymentOrder, len(orders))
+	userSeq := make([]int64, 0, len(orders))
 	for _, o := range orders {
-		credited, rerr := s.reconcileOneERC20(ctx, o, client, contract, confirmSeconds)
+		if _, seen := byUser[o.UserID]; !seen {
+			userSeq = append(userSeq, o.UserID)
+		}
+		byUser[o.UserID] = append(byUser[o.UserID], o)
+	}
+
+	recovered := 0
+	for _, uid := range userSeq {
+		credited, rerr := s.reconcileUserERC20(ctx, uid, byUser[uid], client, contract, confirmSeconds)
 		if rerr != nil {
-			slog.Warn("[ERC20] reconcile order failed", "orderID", o.ID, "error", rerr)
+			slog.Warn("[ERC20] reconcile user failed", "userID", uid, "error", rerr)
 			continue
 		}
-		if credited {
-			recovered++
-		}
+		recovered += credited
 	}
 	return recovered, nil
 }
 
-func (s *PaymentService) reconcileOneERC20(ctx context.Context, o *dbent.PaymentOrder, client *eth.Client, contract string, confirmSeconds int) (bool, error) {
-	addrRow, err := s.cryptoWalletSvc.GetUserAddress(ctx, o.UserID, cryptoNetworkERC20)
+// reconcileUserERC20 fetches one user's deposit address transfers once and
+// matches all of that user's pending orders against them.
+func (s *PaymentService) reconcileUserERC20(ctx context.Context, userID int64, orders []*dbent.PaymentOrder, client *eth.Client, contract string, confirmSeconds int) (int, error) {
+	addrRow, err := s.cryptoWalletSvc.GetUserAddress(ctx, userID, cryptoNetworkERC20)
 	if err != nil {
-		return false, fmt.Errorf("get user address: %w", err)
+		return 0, fmt.Errorf("get user address: %w", err)
 	}
 	if addrRow == nil {
-		return false, nil
+		return 0, nil
 	}
 
 	transfers, err := client.InboundERC20Transfers(ctx, addrRow.Address, contract, 50)
 	if err != nil {
-		return false, fmt.Errorf("query transfers: %w", err)
+		return 0, fmt.Errorf("query transfers: %w", err)
 	}
 
+	credited := 0
+	for _, o := range orders {
+		ok, merr := s.matchERC20Transfer(ctx, o, addrRow.Address, transfers, contract, confirmSeconds)
+		if merr != nil {
+			slog.Warn("[ERC20] reconcile order failed", "orderID", o.ID, "error", merr)
+			continue
+		}
+		if ok {
+			credited++
+		}
+	}
+	return credited, nil
+}
+
+// matchERC20Transfer credits o from the first transfer that matches its amount,
+// address and finality window and has not already been consumed. The tx-hash
+// dedup ledger (claimConsumedTx) ensures a single deposit credits only one
+// order, including across the orders matched within this same pass.
+func (s *PaymentService) matchERC20Transfer(ctx context.Context, o *dbent.PaymentOrder, address string, transfers []eth.ERC20Transfer, contract string, confirmSeconds int) (bool, error) {
 	cutoff := time.Now().Add(-time.Duration(confirmSeconds) * time.Second)
 	orderStart := o.CreatedAt.Add(-2 * time.Minute)
 
@@ -83,7 +118,7 @@ func (s *PaymentService) reconcileOneERC20(ctx context.Context, o *dbent.Payment
 		if !strings.EqualFold(tr.ContractAddress, contract) {
 			continue
 		}
-		if !strings.EqualFold(tr.To, addrRow.Address) {
+		if !strings.EqualFold(tr.To, address) {
 			continue
 		}
 		if math.Abs(tr.Amount()-o.PayAmount) > trc20AmountTolerance {
@@ -97,7 +132,7 @@ func (s *PaymentService) reconcileOneERC20(ctx context.Context, o *dbent.Payment
 			continue // predates this order
 		}
 
-		claimed, cerr := s.claimConsumedTx(ctx, tr.TxHash, cryptoNetworkERC20, o.ID, addrRow.Address, tr.Amount(), blockTime)
+		claimed, cerr := s.claimConsumedTx(ctx, tr.TxHash, cryptoNetworkERC20, o.ID, address, tr.Amount(), blockTime)
 		if cerr != nil {
 			return false, cerr
 		}
@@ -111,7 +146,7 @@ func (s *PaymentService) reconcileOneERC20(ctx context.Context, o *dbent.Payment
 			Amount:   tr.Amount(),
 			Status:   payment.NotificationStatusSuccess,
 			RawData:  fmt.Sprintf("erc20:%s", tr.TxHash),
-			Metadata: map[string]string{"network": cryptoNetworkERC20, "to": addrRow.Address},
+			Metadata: map[string]string{"network": cryptoNetworkERC20, "to": address},
 		}, payment.TypeERC20)
 		if notifErr != nil {
 			s.releaseConsumedTx(ctx, tr.TxHash)

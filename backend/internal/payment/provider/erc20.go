@@ -22,8 +22,9 @@ type ERC20 struct {
 }
 
 // NewERC20 builds an ERC20 provider from an instance's decrypted config.
-// config keys: usdtContract (optional, defaults to mainnet), etherscanApiBase,
-// confirmSeconds (optional).
+// config keys: usdtContract (optional, defaults to mainnet), etherscanApiBase
+// (optional, defaults to the Etherscan V2 endpoint), chainId (optional, defaults
+// to "1" mainnet; e.g. "11155111" for Sepolia), confirmSeconds (optional).
 func NewERC20(instanceID string, config map[string]string) (*ERC20, error) {
 	cfg := make(map[string]string, len(config))
 	for k, v := range config {

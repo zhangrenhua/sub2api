@@ -15,8 +15,10 @@ import (
 )
 
 // defaultEthConfirmSeconds is the minimum age an inbound ETH transfer must reach
-// before it is treated as final. ETH blocks are ~12s; ~180s ≈ 15 blocks.
-const defaultEthConfirmSeconds = 180
+// before it is treated as final. ETH blocks are ~12s; ~800s ≈ 66 blocks ≈ 13min,
+// matching Ethereum's economic finality (~2 epochs) so a credited deposit cannot
+// be reorged out from under us.
+const defaultEthConfirmSeconds = 800
 
 // ethSettings holds on-chain parameters resolved from the active ERC20 instance.
 type ethSettings struct {
@@ -75,7 +77,7 @@ func (s *CryptoWalletService) resolveEth(ctx context.Context) (*ethSettings, err
 	}
 
 	return &ethSettings{
-		client:          eth.NewClient(cfg["etherscanApiBase"], cfg["etherscanApiKey"]),
+		client:          eth.NewClient(cfg["etherscanApiBase"], cfg["etherscanApiKey"], cfg["chainId"]),
 		contract:        contract,
 		confirmSeconds:  confirmSeconds,
 		sweepMinUSDT:    sweepMin,

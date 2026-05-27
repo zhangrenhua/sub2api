@@ -1,6 +1,6 @@
-// Package eth provides Ethereum (ERC20) read access via the Etherscan REST API:
-// inbound USDT transfers (for payment reconciliation) and ETH / ERC20 balances
-// (for the admin wallet overview and sweep planning).
+// Package eth provides Ethereum (ERC20) read access via the Etherscan V2 REST
+// API: inbound USDT transfers (for payment reconciliation) and ETH / ERC20
+// balances (for the admin wallet overview and sweep planning).
 //
 // Write paths (building, signing and broadcasting sweep transactions) live in
 // signer.go and use go-ethereum's ethclient over JSON-RPC.
@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -23,27 +24,60 @@ import (
 )
 
 const (
-	defaultEtherscanBase = "https://api.etherscan.io/api"
+	// defaultEtherscanBase is the unified Etherscan V2 endpoint. The legacy V1
+	// per-network hosts (api.etherscan.io/api, api-sepolia.etherscan.io/api, …)
+	// are deprecated; V2 uses one base for every chain plus a chainid param.
+	defaultEtherscanBase = "https://api.etherscan.io/v2/api"
+	defaultChainID       = "1" // Ethereum mainnet
 	httpTimeout          = 15 * time.Second
 	maxRespBytes         = 8 << 20 // 8MB
 	usdtDecimals         = 6       // mainnet USDT (ERC20) precision
+
+	// Etherscan free tier allows 5 req/s with an API key; gate just under that.
+	// Keyless access is far stricter (~1 req/5s), so back off hard when no key.
+	keyedMinInterval   = 220 * time.Millisecond
+	keylessMinInterval = 5 * time.Second
 )
 
-// Client is an Etherscan REST client. Use NewClient.
+// Client is an Etherscan V2 REST client. Use NewClient.
 type Client struct {
 	apiBase string
 	apiKey  string
+	chainID string
 	http    *http.Client
+
+	// rate paces outbound calls to stay under Etherscan's per-second limit. A
+	// single Client is reused for every call within one reconcile pass, so this
+	// serializes that pass's requests; concurrent callers queue in arrival order.
+	rateMu      sync.Mutex
+	nextCallAt  time.Time
+	minInterval time.Duration
 }
 
-// NewClient builds an Etherscan client. apiBase may be empty (defaults to
-// mainnet). For testnet use e.g. https://api-sepolia.etherscan.io/api.
-func NewClient(apiBase, apiKey string) *Client {
+// NewClient builds an Etherscan V2 client. apiBase may be empty (defaults to the
+// unified V2 endpoint). chainID selects the network (empty → "1" mainnet; e.g.
+// "11155111" for Sepolia). A single API key works across all V2 chains.
+func NewClient(apiBase, apiKey, chainID string) *Client {
 	base := strings.TrimRight(strings.TrimSpace(apiBase), "/")
 	if base == "" {
 		base = defaultEtherscanBase
 	}
-	return &Client{apiBase: base, apiKey: strings.TrimSpace(apiKey), http: &http.Client{Timeout: httpTimeout}}
+	cid := strings.TrimSpace(chainID)
+	if cid == "" {
+		cid = defaultChainID
+	}
+	key := strings.TrimSpace(apiKey)
+	minInterval := keyedMinInterval
+	if key == "" {
+		minInterval = keylessMinInterval
+	}
+	return &Client{
+		apiBase:     base,
+		apiKey:      key,
+		chainID:     cid,
+		http:        &http.Client{Timeout: httpTimeout},
+		minInterval: minInterval,
+	}
 }
 
 // ERC20Transfer is a single ERC20 token transfer event.
@@ -78,6 +112,7 @@ func (c *Client) InboundERC20Transfers(ctx context.Context, address, contract st
 		limit = 50
 	}
 	q := url.Values{}
+	q.Set("chainid", c.chainID)
 	q.Set("module", "account")
 	q.Set("action", "tokentx")
 	q.Set("contractaddress", contract)
@@ -137,6 +172,7 @@ func (c *Client) InboundERC20Transfers(ctx context.Context, address, contract st
 // ERC20Balance returns the address's balance of the given token as a human USDT amount.
 func (c *Client) ERC20Balance(ctx context.Context, address, contract string) (float64, error) {
 	q := url.Values{}
+	q.Set("chainid", c.chainID)
 	q.Set("module", "account")
 	q.Set("action", "tokenbalance")
 	q.Set("contractaddress", contract)
@@ -160,6 +196,7 @@ func (c *Client) ERC20Balance(ctx context.Context, address, contract string) (fl
 // gauge the fee wallet's gas runway.
 func (c *Client) ETHBalance(ctx context.Context, address string) (float64, error) {
 	q := url.Values{}
+	q.Set("chainid", c.chainID)
 	q.Set("module", "account")
 	q.Set("action", "balance")
 	q.Set("address", address)
@@ -195,7 +232,36 @@ func (c *Client) resultString(ctx context.Context, endpoint string) (string, err
 	return resp.Result, nil
 }
 
+// throttle blocks until this Client's rate limiter admits another call, or ctx
+// is cancelled. The slot is reserved up-front so concurrent callers don't all
+// fire at once after a shared wait.
+func (c *Client) throttle(ctx context.Context) error {
+	c.rateMu.Lock()
+	now := time.Now()
+	if c.nextCallAt.Before(now) {
+		c.nextCallAt = now
+	}
+	wait := c.nextCallAt.Sub(now)
+	c.nextCallAt = c.nextCallAt.Add(c.minInterval)
+	c.rateMu.Unlock()
+
+	if wait <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 func (c *Client) get(ctx context.Context, endpoint string) ([]byte, error) {
+	if err := c.throttle(ctx); err != nil {
+		return nil, err
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err

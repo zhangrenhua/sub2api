@@ -9,6 +9,13 @@ import (
 
 const expiryCheckTimeout = 30 * time.Second
 
+// cryptoReconcileTimeout bounds one crypto (TRC20/ERC20) reconcile pass. On-chain
+// reads are deduped per deposit address and paced under the provider's rate
+// limit, so a pass with many distinct pending users can legitimately run longer
+// than the order-expiry budget. Ticks are synchronous and don't overlap, so a
+// long pass simply delays the next one rather than piling up.
+const cryptoReconcileTimeout = 3 * time.Minute
+
 // trc20ReconcileInterval is how often pending USDT/TRC20 orders are reconciled
 // against the chain. It runs on its own faster ticker (separate from the wxpay
 // reconcile + order expiry pass) so on-chain deposits are detected quickly
@@ -107,7 +114,7 @@ func (s *PaymentOrderExpiryService) runOnce() {
 // runCryptoReconcileOnce reconciles pending USDT/TRC20 and USDT/ERC20 orders
 // against their chains. Runs on its own 15s ticker.
 func (s *PaymentOrderExpiryService) runCryptoReconcileOnce() {
-	trcCtx, cancel := context.WithTimeout(context.Background(), expiryCheckTimeout)
+	trcCtx, cancel := context.WithTimeout(context.Background(), cryptoReconcileTimeout)
 	recovered, err := s.paymentSvc.ReconcilePendingTRC20Orders(trcCtx)
 	cancel()
 	if err != nil {
@@ -116,7 +123,7 @@ func (s *PaymentOrderExpiryService) runCryptoReconcileOnce() {
 		slog.Info("[PaymentOrderExpiry] reconciled paid trc20 orders", "count", recovered)
 	}
 
-	ercCtx, cancelErc := context.WithTimeout(context.Background(), expiryCheckTimeout)
+	ercCtx, cancelErc := context.WithTimeout(context.Background(), cryptoReconcileTimeout)
 	ercRecovered, err := s.paymentSvc.ReconcilePendingERC20Orders(ercCtx)
 	cancelErc()
 	if err != nil {

@@ -34,6 +34,11 @@ const (
 //   - transfer not older than the order (avoid matching a prior deposit),
 //   - tx hash not already consumed (the dedup ledger prevents a single transfer
 //     from crediting two orders of the same user/amount).
+//
+// Pending orders are grouped by user so each deposit address is queried against
+// TronGrid at most once per pass (a user with N pending orders costs one HTTP
+// call, not N). Combined with the client's built-in rate limiting this keeps the
+// pass well within TronGrid's request budget even with many pending orders.
 func (s *PaymentService) ReconcilePendingTRC20Orders(ctx context.Context) (int, error) {
 	if s.cryptoWalletSvc == nil {
 		return 0, nil
@@ -63,34 +68,64 @@ func (s *PaymentService) ReconcilePendingTRC20Orders(ctx context.Context) (int, 
 		return 0, fmt.Errorf("query pending trc20 orders: %w", err)
 	}
 
-	recovered := 0
+	// Group by user, preserving oldest-first order of first appearance so the
+	// longest-waiting deposits are reconciled first.
+	byUser := make(map[int64][]*dbent.PaymentOrder, len(orders))
+	userSeq := make([]int64, 0, len(orders))
 	for _, o := range orders {
-		credited, rerr := s.reconcileOneTRC20(ctx, o, client, contract, confirmSeconds)
+		if _, seen := byUser[o.UserID]; !seen {
+			userSeq = append(userSeq, o.UserID)
+		}
+		byUser[o.UserID] = append(byUser[o.UserID], o)
+	}
+
+	recovered := 0
+	for _, uid := range userSeq {
+		credited, rerr := s.reconcileUserTRC20(ctx, uid, byUser[uid], client, contract, confirmSeconds)
 		if rerr != nil {
-			slog.Warn("[TRC20] reconcile order failed", "orderID", o.ID, "error", rerr)
+			slog.Warn("[TRC20] reconcile user failed", "userID", uid, "error", rerr)
 			continue
 		}
-		if credited {
-			recovered++
-		}
+		recovered += credited
 	}
 	return recovered, nil
 }
 
-func (s *PaymentService) reconcileOneTRC20(ctx context.Context, o *dbent.PaymentOrder, client *tron.Client, contract string, confirmSeconds int) (bool, error) {
-	addrRow, err := s.cryptoWalletSvc.GetUserAddress(ctx, o.UserID, cryptoNetworkTRC20)
+// reconcileUserTRC20 fetches one user's deposit address transfers once and
+// matches all of that user's pending orders against them.
+func (s *PaymentService) reconcileUserTRC20(ctx context.Context, userID int64, orders []*dbent.PaymentOrder, client *tron.Client, contract string, confirmSeconds int) (int, error) {
+	addrRow, err := s.cryptoWalletSvc.GetUserAddress(ctx, userID, cryptoNetworkTRC20)
 	if err != nil {
-		return false, fmt.Errorf("get user address: %w", err)
+		return 0, fmt.Errorf("get user address: %w", err)
 	}
 	if addrRow == nil {
-		return false, nil // order created before address provisioning (shouldn't happen)
+		return 0, nil // order created before address provisioning (shouldn't happen)
 	}
 
 	transfers, err := client.InboundTRC20Transfers(ctx, addrRow.Address, contract, 50)
 	if err != nil {
-		return false, fmt.Errorf("query transfers: %w", err)
+		return 0, fmt.Errorf("query transfers: %w", err)
 	}
 
+	credited := 0
+	for _, o := range orders {
+		ok, merr := s.matchTRC20Transfer(ctx, o, addrRow.Address, transfers, contract, confirmSeconds)
+		if merr != nil {
+			slog.Warn("[TRC20] reconcile order failed", "orderID", o.ID, "error", merr)
+			continue
+		}
+		if ok {
+			credited++
+		}
+	}
+	return credited, nil
+}
+
+// matchTRC20Transfer credits o from the first transfer that matches its amount,
+// address and finality window and has not already been consumed. The tx-hash
+// dedup ledger (claimConsumedTx) ensures a single deposit credits only one
+// order, including across the orders matched within this same pass.
+func (s *PaymentService) matchTRC20Transfer(ctx context.Context, o *dbent.PaymentOrder, address string, transfers []tron.TRC20Transfer, contract string, confirmSeconds int) (bool, error) {
 	cutoff := time.Now().Add(-time.Duration(confirmSeconds) * time.Second)
 	// Allow a small clock skew before the order's creation time.
 	orderStart := o.CreatedAt.Add(-2 * time.Minute)
@@ -101,7 +136,7 @@ func (s *PaymentService) reconcileOneTRC20(ctx context.Context, o *dbent.Payment
 		if tr.ContractAddress != contract {
 			continue
 		}
-		if tr.To != addrRow.Address {
+		if tr.To != address {
 			continue
 		}
 		if math.Abs(tr.Amount()-o.PayAmount) > trc20AmountTolerance {
@@ -116,7 +151,7 @@ func (s *PaymentService) reconcileOneTRC20(ctx context.Context, o *dbent.Payment
 		}
 
 		// Claim the tx hash; the unique constraint blocks double-crediting.
-		claimed, cerr := s.claimConsumedTx(ctx, tr.TxID, cryptoNetworkTRC20, o.ID, addrRow.Address, tr.Amount(), blockTime)
+		claimed, cerr := s.claimConsumedTx(ctx, tr.TxID, cryptoNetworkTRC20, o.ID, address, tr.Amount(), blockTime)
 		if cerr != nil {
 			return false, cerr
 		}
@@ -130,7 +165,7 @@ func (s *PaymentService) reconcileOneTRC20(ctx context.Context, o *dbent.Payment
 			Amount:   tr.Amount(),
 			Status:   payment.NotificationStatusSuccess,
 			RawData:  fmt.Sprintf("trc20:%s", tr.TxID),
-			Metadata: map[string]string{"network": cryptoNetworkTRC20, "to": addrRow.Address},
+			Metadata: map[string]string{"network": cryptoNetworkTRC20, "to": address},
 		}, payment.TypeTRC20)
 		if notifErr != nil {
 			// Release the claim so a later tick can retry fulfillment.

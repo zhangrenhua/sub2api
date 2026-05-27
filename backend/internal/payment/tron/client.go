@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -28,6 +29,11 @@ const (
 	maxRespBytes   = 4 << 20 // 4MB
 	// usdtDecimals is the TRC20 USDT contract's token precision (6).
 	usdtDecimals = 6
+
+	// TronGrid's free tier allows ~15 req/s with an API key; gate well under
+	// that. Keyless access is heavily throttled, so back off hard when no key.
+	keyedMinInterval   = 120 * time.Millisecond
+	keylessMinInterval = 5 * time.Second
 )
 
 // Client is a TronGrid REST client. Zero value is not usable; use NewClient.
@@ -35,6 +41,13 @@ type Client struct {
 	apiBase string
 	apiKey  string
 	http    *http.Client
+
+	// rate paces outbound calls to stay under TronGrid's per-second limit. A
+	// single Client is reused for every call within one reconcile pass, so this
+	// serializes that pass's requests; concurrent callers queue in arrival order.
+	rateMu      sync.Mutex
+	nextCallAt  time.Time
+	minInterval time.Duration
 }
 
 // NewClient builds a TronGrid client. apiBase may be empty (defaults to the
@@ -45,10 +58,16 @@ func NewClient(apiBase, apiKey string) *Client {
 	if base == "" {
 		base = defaultAPIBase
 	}
+	key := strings.TrimSpace(apiKey)
+	minInterval := keyedMinInterval
+	if key == "" {
+		minInterval = keylessMinInterval
+	}
 	return &Client{
-		apiBase: base,
-		apiKey:  strings.TrimSpace(apiKey),
-		http:    &http.Client{Timeout: httpTimeout},
+		apiBase:     base,
+		apiKey:      key,
+		http:        &http.Client{Timeout: httpTimeout},
+		minInterval: minInterval,
 	}
 }
 
@@ -185,7 +204,36 @@ func (c *Client) account(ctx context.Context, address string) (*tronAccount, err
 	return &resp.Data[0], nil
 }
 
+// throttle blocks until this Client's rate limiter admits another call, or ctx
+// is cancelled. The slot is reserved up-front so concurrent callers don't all
+// fire at once after a shared wait.
+func (c *Client) throttle(ctx context.Context) error {
+	c.rateMu.Lock()
+	now := time.Now()
+	if c.nextCallAt.Before(now) {
+		c.nextCallAt = now
+	}
+	wait := c.nextCallAt.Sub(now)
+	c.nextCallAt = c.nextCallAt.Add(c.minInterval)
+	c.rateMu.Unlock()
+
+	if wait <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 func (c *Client) get(ctx context.Context, endpoint string) ([]byte, error) {
+	if err := c.throttle(ctx); err != nil {
+		return nil, err
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
