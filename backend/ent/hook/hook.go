@@ -141,6 +141,42 @@ func (f ChannelMonitorRequestTemplateFunc) Mutate(ctx context.Context, m ent.Mut
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ChannelMonitorRequestTemplateMutation", m)
 }
 
+// The CryptoSweepJobFunc type is an adapter to allow the use of ordinary
+// function as CryptoSweepJob mutator.
+type CryptoSweepJobFunc func(context.Context, *ent.CryptoSweepJobMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CryptoSweepJobFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CryptoSweepJobMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CryptoSweepJobMutation", m)
+}
+
+// The CryptoSweepTaskFunc type is an adapter to allow the use of ordinary
+// function as CryptoSweepTask mutator.
+type CryptoSweepTaskFunc func(context.Context, *ent.CryptoSweepTaskMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CryptoSweepTaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CryptoSweepTaskMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CryptoSweepTaskMutation", m)
+}
+
+// The CryptoWalletConfigFunc type is an adapter to allow the use of ordinary
+// function as CryptoWalletConfig mutator.
+type CryptoWalletConfigFunc func(context.Context, *ent.CryptoWalletConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CryptoWalletConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CryptoWalletConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CryptoWalletConfigMutation", m)
+}
+
 // The ErrorPassthroughRuleFunc type is an adapter to allow the use of ordinary
 // function as ErrorPassthroughRule mutator.
 type ErrorPassthroughRuleFunc func(context.Context, *ent.ErrorPassthroughRuleMutation) (ent.Value, error)
@@ -333,6 +369,18 @@ func (f TLSFingerprintProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TLSFingerprintProfileMutation", m)
 }
 
+// The TRC20ConsumedTxFunc type is an adapter to allow the use of ordinary
+// function as TRC20ConsumedTx mutator.
+type TRC20ConsumedTxFunc func(context.Context, *ent.TRC20ConsumedTxMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TRC20ConsumedTxFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TRC20ConsumedTxMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TRC20ConsumedTxMutation", m)
+}
+
 // The UsageCleanupTaskFunc type is an adapter to allow the use of ordinary
 // function as UsageCleanupTask mutator.
 type UsageCleanupTaskFunc func(context.Context, *ent.UsageCleanupTaskMutation) (ent.Value, error)
@@ -403,6 +451,18 @@ func (f UserAttributeValueFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserAttributeValueMutation", m)
+}
+
+// The UserCryptoAddressFunc type is an adapter to allow the use of ordinary
+// function as UserCryptoAddress mutator.
+type UserCryptoAddressFunc func(context.Context, *ent.UserCryptoAddressMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserCryptoAddressFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserCryptoAddressMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserCryptoAddressMutation", m)
 }
 
 // The UserPlatformQuotaFunc type is an adapter to allow the use of ordinary

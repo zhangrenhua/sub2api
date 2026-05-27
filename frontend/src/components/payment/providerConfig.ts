@@ -37,13 +37,15 @@ export const PROVIDER_SUPPORTED_TYPES: Record<string, string[]> = {
   stripe: ['card', 'alipay', 'wxpay', 'link'],
   airwallex: ['airwallex'],
   paypal: ['paypal'],
+  usdt_trc20: ['usdt_trc20'],
+  usdt_erc20: ['usdt_erc20'],
 }
 
 /** Available payment modes for EasyPay providers. */
 export const EASYPAY_PAYMENT_MODES = ['qrcode', 'popup'] as const
 
 /** Fixed display order for user-facing payment methods */
-export const METHOD_ORDER = ['alipay', 'alipay_direct', 'wxpay', 'wxpay_direct', 'stripe', 'airwallex', 'paypal'] as const
+export const METHOD_ORDER = ['alipay', 'alipay_direct', 'wxpay', 'wxpay_direct', 'stripe', 'airwallex', 'paypal', 'usdt_trc20', 'usdt_erc20'] as const
 
 /** Payment mode constants */
 export const PAYMENT_MODE_QRCODE = 'qrcode'
@@ -159,6 +161,35 @@ export const PROVIDER_CONFIG_FIELDS: Record<string, ConfigFieldDef[]> = {
     { key: 'apiBase', label: '', sensitive: false, defaultValue: 'https://api-m.paypal.com' },
     { key: 'currency', label: '', sensitive: false, defaultValue: 'USD', hintKey: 'admin.settings.payment.field_paymentCurrencyHint', options: PAYMENT_CURRENCY_OPTIONS },
     { key: 'brandName', label: 'Brand Name', sensitive: false, optional: true, clearable: true },
+  ],
+  // Self-custodied USDT collection. No upstream gateway secret; wallet
+  // mnemonic/sweeping are managed on the dedicated Crypto Wallet page.
+  // Plans are priced in CNY; cnyPerUsdt converts to the USDT amount to collect,
+  // and minRechargeCny enforces the USDT-only minimum (in CNY).
+  usdt_trc20: [
+    { key: 'cnyPerUsdt', label: 'CNY per USDT (rate)', sensitive: false, defaultValue: '6.8', hintKey: 'admin.settings.payment.field_cnyPerUsdtHint' },
+    { key: 'minRechargeCny', label: 'Min Recharge (CNY)', sensitive: false, optional: true, defaultValue: '100' },
+    { key: 'usdtContract', label: 'USDT Contract', sensitive: false, defaultValue: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t' },
+    { key: 'trongridApiBase', label: 'TronGrid API Base', sensitive: false, defaultValue: 'https://api.trongrid.io' },
+    { key: 'trongridGrpcNode', label: 'TronGrid gRPC Node', sensitive: false, defaultValue: 'grpc.trongrid.io:50051' },
+    { key: 'trongridApiKey', label: 'TronGrid API Key', sensitive: true, optional: true, clearable: true },
+    { key: 'confirmSeconds', label: 'Confirmation Seconds', sensitive: false, optional: true, defaultValue: '60' },
+    { key: 'gasTopUpSun', label: 'Gas Top-up (SUN)', sensitive: false, optional: true, defaultValue: '30000000' },
+    { key: 'feeLimitSun', label: 'Fee Limit (SUN)', sensitive: false, optional: true, defaultValue: '100000000' },
+    { key: 'sweepMinUsdt', label: 'Sweep Min (USDT)', sensitive: false, optional: true, defaultValue: '5' },
+  ],
+  // Self-custodied USDT collection on Ethereum. Reads via Etherscan, sweeps via
+  // an Ethereum JSON-RPC endpoint. ETH gas is expensive — keep the sweep min high.
+  usdt_erc20: [
+    { key: 'cnyPerUsdt', label: 'CNY per USDT (rate)', sensitive: false, defaultValue: '6.8', hintKey: 'admin.settings.payment.field_cnyPerUsdtHint' },
+    { key: 'minRechargeCny', label: 'Min Recharge (CNY)', sensitive: false, optional: true, defaultValue: '100' },
+    { key: 'usdtContract', label: 'USDT Contract', sensitive: false, defaultValue: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
+    { key: 'etherscanApiBase', label: 'Etherscan API Base', sensitive: false, optional: true, defaultValue: 'https://api.etherscan.io/api' },
+    { key: 'etherscanApiKey', label: 'Etherscan API Key', sensitive: true, optional: true, clearable: true },
+    { key: 'ethRpcUrl', label: 'Ethereum RPC URL', sensitive: true, optional: true, clearable: true, hintKey: 'admin.settings.payment.field_ethRpcUrlHint' },
+    { key: 'confirmSeconds', label: 'Confirmation Seconds', sensitive: false, optional: true, defaultValue: '180' },
+    { key: 'gasTopUpWei', label: 'Gas Top-up (wei)', sensitive: false, optional: true, defaultValue: '3000000000000000' },
+    { key: 'sweepMinUsdt', label: 'Sweep Min (USDT)', sensitive: false, optional: true, defaultValue: '50' },
   ],
 }
 

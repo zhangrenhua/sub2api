@@ -39,6 +39,15 @@ type ChannelMonitorHistory func(*sql.Selector)
 // ChannelMonitorRequestTemplate is the predicate function for channelmonitorrequesttemplate builders.
 type ChannelMonitorRequestTemplate func(*sql.Selector)
 
+// CryptoSweepJob is the predicate function for cryptosweepjob builders.
+type CryptoSweepJob func(*sql.Selector)
+
+// CryptoSweepTask is the predicate function for cryptosweeptask builders.
+type CryptoSweepTask func(*sql.Selector)
+
+// CryptoWalletConfig is the predicate function for cryptowalletconfig builders.
+type CryptoWalletConfig func(*sql.Selector)
+
 // ErrorPassthroughRule is the predicate function for errorpassthroughrule builders.
 type ErrorPassthroughRule func(*sql.Selector)
 
@@ -87,6 +96,9 @@ type SubscriptionPlan func(*sql.Selector)
 // TLSFingerprintProfile is the predicate function for tlsfingerprintprofile builders.
 type TLSFingerprintProfile func(*sql.Selector)
 
+// TRC20ConsumedTx is the predicate function for trc20consumedtx builders.
+type TRC20ConsumedTx func(*sql.Selector)
+
 // UsageCleanupTask is the predicate function for usagecleanuptask builders.
 type UsageCleanupTask func(*sql.Selector)
 
@@ -104,6 +116,9 @@ type UserAttributeDefinition func(*sql.Selector)
 
 // UserAttributeValue is the predicate function for userattributevalue builders.
 type UserAttributeValue func(*sql.Selector)
+
+// UserCryptoAddress is the predicate function for usercryptoaddress builders.
+type UserCryptoAddress func(*sql.Selector)
 
 // UserPlatformQuota is the predicate function for userplatformquota builders.
 type UserPlatformQuota func(*sql.Selector)

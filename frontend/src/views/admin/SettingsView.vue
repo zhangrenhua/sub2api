@@ -8900,6 +8900,8 @@ const allPaymentTypes = computed(() => [
   { value: "stripe", label: t("payment.methods.stripe") },
   { value: "airwallex", label: t("payment.methods.airwallex") },
   { value: "paypal", label: t("payment.methods.paypal") },
+  { value: "usdt_trc20", label: t("payment.methods.usdt_trc20") },
+  { value: "usdt_erc20", label: t("payment.methods.usdt_erc20") },
 ]);
 
 function isPaymentTypeEnabled(type: string): boolean {
@@ -8958,6 +8960,8 @@ const providerKeyOptions = computed(() => [
   { value: "stripe", label: t("admin.settings.payment.providerStripe") },
   { value: "airwallex", label: t("admin.settings.payment.providerAirwallex") },
   { value: "paypal", label: t("admin.settings.payment.providerPayPal") },
+  { value: "usdt_trc20", label: t("admin.settings.payment.providerUsdtTrc20") },
+  { value: "usdt_erc20", label: t("admin.settings.payment.providerUsdtErc20") },
 ]);
 
 const enabledProviderKeyOptions = computed(() => {

@@ -19,6 +19,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
+	"github.com/Wei-Shaw/sub2api/ent/cryptosweepjob"
+	"github.com/Wei-Shaw/sub2api/ent/cryptosweeptask"
+	"github.com/Wei-Shaw/sub2api/ent/cryptowalletconfig"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
@@ -36,12 +39,14 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/trc20consumedtx"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/usercryptoaddress"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
@@ -397,6 +402,87 @@ func (f TraverseChannelMonitorRequestTemplate) Traverse(ctx context.Context, q e
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.ChannelMonitorRequestTemplateQuery", q)
+}
+
+// The CryptoSweepJobFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CryptoSweepJobFunc func(context.Context, *ent.CryptoSweepJobQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CryptoSweepJobFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CryptoSweepJobQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CryptoSweepJobQuery", q)
+}
+
+// The TraverseCryptoSweepJob type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCryptoSweepJob func(context.Context, *ent.CryptoSweepJobQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCryptoSweepJob) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCryptoSweepJob) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CryptoSweepJobQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CryptoSweepJobQuery", q)
+}
+
+// The CryptoSweepTaskFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CryptoSweepTaskFunc func(context.Context, *ent.CryptoSweepTaskQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CryptoSweepTaskFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CryptoSweepTaskQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CryptoSweepTaskQuery", q)
+}
+
+// The TraverseCryptoSweepTask type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCryptoSweepTask func(context.Context, *ent.CryptoSweepTaskQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCryptoSweepTask) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCryptoSweepTask) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CryptoSweepTaskQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CryptoSweepTaskQuery", q)
+}
+
+// The CryptoWalletConfigFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CryptoWalletConfigFunc func(context.Context, *ent.CryptoWalletConfigQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CryptoWalletConfigFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CryptoWalletConfigQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CryptoWalletConfigQuery", q)
+}
+
+// The TraverseCryptoWalletConfig type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCryptoWalletConfig func(context.Context, *ent.CryptoWalletConfigQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCryptoWalletConfig) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCryptoWalletConfig) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CryptoWalletConfigQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CryptoWalletConfigQuery", q)
 }
 
 // The ErrorPassthroughRuleFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -831,6 +917,33 @@ func (f TraverseTLSFingerprintProfile) Traverse(ctx context.Context, q ent.Query
 	return fmt.Errorf("unexpected query type %T. expect *ent.TLSFingerprintProfileQuery", q)
 }
 
+// The TRC20ConsumedTxFunc type is an adapter to allow the use of ordinary function as a Querier.
+type TRC20ConsumedTxFunc func(context.Context, *ent.TRC20ConsumedTxQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f TRC20ConsumedTxFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.TRC20ConsumedTxQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.TRC20ConsumedTxQuery", q)
+}
+
+// The TraverseTRC20ConsumedTx type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseTRC20ConsumedTx func(context.Context, *ent.TRC20ConsumedTxQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseTRC20ConsumedTx) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseTRC20ConsumedTx) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.TRC20ConsumedTxQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.TRC20ConsumedTxQuery", q)
+}
+
 // The UsageCleanupTaskFunc type is an adapter to allow the use of ordinary function as a Querier.
 type UsageCleanupTaskFunc func(context.Context, *ent.UsageCleanupTaskQuery) (ent.Value, error)
 
@@ -993,6 +1106,33 @@ func (f TraverseUserAttributeValue) Traverse(ctx context.Context, q ent.Query) e
 	return fmt.Errorf("unexpected query type %T. expect *ent.UserAttributeValueQuery", q)
 }
 
+// The UserCryptoAddressFunc type is an adapter to allow the use of ordinary function as a Querier.
+type UserCryptoAddressFunc func(context.Context, *ent.UserCryptoAddressQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f UserCryptoAddressFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.UserCryptoAddressQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.UserCryptoAddressQuery", q)
+}
+
+// The TraverseUserCryptoAddress type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseUserCryptoAddress func(context.Context, *ent.UserCryptoAddressQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseUserCryptoAddress) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseUserCryptoAddress) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.UserCryptoAddressQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.UserCryptoAddressQuery", q)
+}
+
 // The UserPlatformQuotaFunc type is an adapter to allow the use of ordinary function as a Querier.
 type UserPlatformQuotaFunc func(context.Context, *ent.UserPlatformQuotaQuery) (ent.Value, error)
 
@@ -1072,6 +1212,12 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.ChannelMonitorHistoryQuery, predicate.ChannelMonitorHistory, channelmonitorhistory.OrderOption]{typ: ent.TypeChannelMonitorHistory, tq: q}, nil
 	case *ent.ChannelMonitorRequestTemplateQuery:
 		return &query[*ent.ChannelMonitorRequestTemplateQuery, predicate.ChannelMonitorRequestTemplate, channelmonitorrequesttemplate.OrderOption]{typ: ent.TypeChannelMonitorRequestTemplate, tq: q}, nil
+	case *ent.CryptoSweepJobQuery:
+		return &query[*ent.CryptoSweepJobQuery, predicate.CryptoSweepJob, cryptosweepjob.OrderOption]{typ: ent.TypeCryptoSweepJob, tq: q}, nil
+	case *ent.CryptoSweepTaskQuery:
+		return &query[*ent.CryptoSweepTaskQuery, predicate.CryptoSweepTask, cryptosweeptask.OrderOption]{typ: ent.TypeCryptoSweepTask, tq: q}, nil
+	case *ent.CryptoWalletConfigQuery:
+		return &query[*ent.CryptoWalletConfigQuery, predicate.CryptoWalletConfig, cryptowalletconfig.OrderOption]{typ: ent.TypeCryptoWalletConfig, tq: q}, nil
 	case *ent.ErrorPassthroughRuleQuery:
 		return &query[*ent.ErrorPassthroughRuleQuery, predicate.ErrorPassthroughRule, errorpassthroughrule.OrderOption]{typ: ent.TypeErrorPassthroughRule, tq: q}, nil
 	case *ent.GroupQuery:
@@ -1104,6 +1250,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.SubscriptionPlanQuery, predicate.SubscriptionPlan, subscriptionplan.OrderOption]{typ: ent.TypeSubscriptionPlan, tq: q}, nil
 	case *ent.TLSFingerprintProfileQuery:
 		return &query[*ent.TLSFingerprintProfileQuery, predicate.TLSFingerprintProfile, tlsfingerprintprofile.OrderOption]{typ: ent.TypeTLSFingerprintProfile, tq: q}, nil
+	case *ent.TRC20ConsumedTxQuery:
+		return &query[*ent.TRC20ConsumedTxQuery, predicate.TRC20ConsumedTx, trc20consumedtx.OrderOption]{typ: ent.TypeTRC20ConsumedTx, tq: q}, nil
 	case *ent.UsageCleanupTaskQuery:
 		return &query[*ent.UsageCleanupTaskQuery, predicate.UsageCleanupTask, usagecleanuptask.OrderOption]{typ: ent.TypeUsageCleanupTask, tq: q}, nil
 	case *ent.UsageLogQuery:
@@ -1116,6 +1264,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.UserAttributeDefinitionQuery, predicate.UserAttributeDefinition, userattributedefinition.OrderOption]{typ: ent.TypeUserAttributeDefinition, tq: q}, nil
 	case *ent.UserAttributeValueQuery:
 		return &query[*ent.UserAttributeValueQuery, predicate.UserAttributeValue, userattributevalue.OrderOption]{typ: ent.TypeUserAttributeValue, tq: q}, nil
+	case *ent.UserCryptoAddressQuery:
+		return &query[*ent.UserCryptoAddressQuery, predicate.UserCryptoAddress, usercryptoaddress.OrderOption]{typ: ent.TypeUserCryptoAddress, tq: q}, nil
 	case *ent.UserPlatformQuotaQuery:
 		return &query[*ent.UserPlatformQuotaQuery, predicate.UserPlatformQuota, userplatformquota.OrderOption]{typ: ent.TypeUserPlatformQuota, tq: q}, nil
 	case *ent.UserSubscriptionQuery:

@@ -18,7 +18,7 @@ export type OrderStatus =
   | 'REFUNDED'
   | 'REFUND_FAILED'
 
-export type PaymentType = 'alipay' | 'wxpay' | 'alipay_direct' | 'wxpay_direct' | 'stripe' | 'easypay' | 'airwallex'
+export type PaymentType = 'alipay' | 'wxpay' | 'alipay_direct' | 'wxpay_direct' | 'stripe' | 'easypay' | 'airwallex' | 'usdt_trc20' | 'usdt_erc20'
 
 export type OrderType = 'balance' | 'subscription'
 
@@ -48,6 +48,8 @@ export interface MethodLimit {
   single_max: number
   fee_rate: number
   available: boolean
+  /** CNY→token rate (CNY per token) for crypto methods like USDT; absent for fiat. */
+  rate?: number
 }
 
 /** Response from /payment/limits API */

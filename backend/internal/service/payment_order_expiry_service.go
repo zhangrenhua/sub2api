@@ -9,6 +9,12 @@ import (
 
 const expiryCheckTimeout = 30 * time.Second
 
+// trc20ReconcileInterval is how often pending USDT/TRC20 orders are reconciled
+// against the chain. It runs on its own faster ticker (separate from the wxpay
+// reconcile + order expiry pass) so on-chain deposits are detected quickly
+// without increasing the cadence of WeChat upstream polling.
+const trc20ReconcileInterval = 15 * time.Second
+
 // PaymentOrderExpiryService periodically expires timed-out payment orders.
 type PaymentOrderExpiryService struct {
 	paymentSvc *PaymentService
@@ -46,6 +52,24 @@ func (s *PaymentOrderExpiryService) Start() {
 			}
 		}
 	}()
+
+	// Dedicated faster ticker for TRC20 on-chain reconciliation.
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		ticker := time.NewTicker(trc20ReconcileInterval)
+		defer ticker.Stop()
+
+		s.runCryptoReconcileOnce()
+		for {
+			select {
+			case <-ticker.C:
+				s.runCryptoReconcileOnce()
+			case <-s.stopCh:
+				return
+			}
+		}
+	}()
 }
 
 func (s *PaymentOrderExpiryService) Stop() {
@@ -77,5 +101,27 @@ func (s *PaymentOrderExpiryService) runOnce() {
 	}
 	if expired > 0 {
 		slog.Info("[PaymentOrderExpiry] expired timed-out orders", "count", expired)
+	}
+}
+
+// runCryptoReconcileOnce reconciles pending USDT/TRC20 and USDT/ERC20 orders
+// against their chains. Runs on its own 15s ticker.
+func (s *PaymentOrderExpiryService) runCryptoReconcileOnce() {
+	trcCtx, cancel := context.WithTimeout(context.Background(), expiryCheckTimeout)
+	recovered, err := s.paymentSvc.ReconcilePendingTRC20Orders(trcCtx)
+	cancel()
+	if err != nil {
+		slog.Warn("[PaymentOrderExpiry] failed to reconcile pending trc20 orders", "error", err)
+	} else if recovered > 0 {
+		slog.Info("[PaymentOrderExpiry] reconciled paid trc20 orders", "count", recovered)
+	}
+
+	ercCtx, cancelErc := context.WithTimeout(context.Background(), expiryCheckTimeout)
+	ercRecovered, err := s.paymentSvc.ReconcilePendingERC20Orders(ercCtx)
+	cancelErc()
+	if err != nil {
+		slog.Warn("[PaymentOrderExpiry] failed to reconcile pending erc20 orders", "error", err)
+	} else if ercRecovered > 0 {
+		slog.Info("[PaymentOrderExpiry] reconciled paid erc20 orders", "count", ercRecovered)
 	}
 }

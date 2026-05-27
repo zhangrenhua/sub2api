@@ -73,30 +73,11 @@ export const zh: HelpFactory = (base) => ({
       ]
     },
     {
-      id: 'register',
-      title: '1. 注册账号并获取 API Key',
-      blocks: [
-        { t: 'ul', items: [
-          `打开浏览器访问 <a href="${base}" target="_blank" rel="noopener noreferrer">${base}</a>`,
-          '点击「注册」（如果是客服单独提供账号的，直接跳过注册；兑换码用户需要自行注册）',
-          '输入邮箱并点击「创建账号」，登录邮箱获取验证码完成注册',
-          '登录账号后进入兑换界面，输入兑换码',
-          '进入控制台，打开「令牌 / Token」页面',
-          { html: '点击「创建令牌」', children: [{ t: 'ul', items: [
-            '日卡 / 周卡 / 月卡用户选择「订阅分组」',
-            '余额 Token 计费用户选择「余额结算」分组',
-            'Codex 用户选择 Codex 分组'
-          ]}]},
-          '复制生成的 API Key（格式形如 <code>sk-xxxxxxxxxxxx</code>）'
-        ]}
-      ]
-    },
-    {
       id: 'prepare',
-      title: '2. 准备工作',
+      title: '1. 准备工作',
       blocks: [
         { t: 'p', html: '你需要一台电脑（macOS、Windows 或 Linux 均可），以及稳定的网络连接。' },
-        { t: 'h3', text: '2.1 安装 Node.js' },
+        { t: 'h3', text: '1.1 安装 Node.js' },
         { t: 'p', html: 'Claude Code 和 OpenClaw 都依赖 Node.js 22 或更高版本。' },
         { t: 'h4', text: 'macOS / Linux' },
         { t: 'p', html: '打开终端，粘贴以下命令并回车：' },
@@ -117,7 +98,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'install-cc',
-      title: '3. 安装 Claude Code（终端版）',
+      title: '2. 安装 Claude Code（终端版）',
       blocks: [
         { t: 'p', html: 'Claude Code 是 Anthropic 官方的 AI 编程助手，可以在终端中直接使用。' },
         { t: 'callout', variant: 'warning', html: '由于 Claude 官方封锁了中国及香港用户，所以<strong>下载安装时需要翻墙至美国或日本</strong>。安装后即可不用翻墙直连我们的中转服务。' },
@@ -133,7 +114,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'config-cc',
-      title: '4. 配置 Claude Code 使用中转服务',
+      title: '3. 配置 Claude Code 使用中转服务',
       blocks: [
         { t: 'p', html: '这是最关键的一步——让 Claude Code 连接到我们的中转服务，而不是 Anthropic 官方 API。' },
         { t: 'h3', text: '方法一：环境变量配置（推荐）' },
@@ -193,15 +174,15 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'vscode',
-      title: '5. 安装 VS Code + Claude Code 插件',
+      title: '4. 安装 VS Code + Claude Code 插件',
       blocks: [
-        { t: 'h3', text: '5.1 安装 VS Code' },
+        { t: 'h3', text: '4.1 安装 VS Code' },
         { t: 'ul', items: [
           '访问 VS Code 官网',
           '下载对应系统的安装包',
           '安装并打开'
         ]},
-        { t: 'h3', text: '5.2 安装 Claude Code 插件' },
+        { t: 'h3', text: '4.2 安装 Claude Code 插件' },
         { t: 'ul', items: [
           '打开 VS Code',
           '按 <kbd>Cmd+Shift+X</kbd>（macOS）或 <kbd>Ctrl+Shift+X</kbd>（Windows/Linux）打开扩展面板',
@@ -212,15 +193,15 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'config-vscode',
-      title: '6. 配置 VS Code 中的 Claude Code 插件',
+      title: '5. 配置 VS Code 中的 Claude Code 插件',
       blocks: [
-        { t: 'h3', text: '6.1 打开 VS Code 设置' },
+        { t: 'h3', text: '5.1 打开 VS Code 设置' },
         { t: 'p', html: '按 <kbd>Cmd+,</kbd>（macOS）或 <kbd>Ctrl+,</kbd>（Windows/Linux）打开设置。' },
-        { t: 'h3', text: '6.2 配置环境变量' },
+        { t: 'h3', text: '5.2 配置环境变量' },
         { t: 'p', html: '在 VS Code 的 <code>settings.json</code> 中添加（按 <kbd>Cmd+Shift+P</kbd> → 输入 <em>Open User Settings (JSON)</em>）：' },
         { t: 'code', lang: 'json', code: `{\n  "claude-code.env": {\n    "ANTHROPIC_BASE_URL": "${base}",\n    "ANTHROPIC_API_KEY": "sk-你的API Key"\n  },\n  "claudeCode.environmentVariables": [\n    { "name": "ANTHROPIC_BASE_URL", "value": "${base}" },\n    { "name": "ANTHROPIC_AUTH_TOKEN", "value": "sk-你的API Key" }\n  ]\n}` },
-        { t: 'callout', variant: 'tip', html: '💡 如果你已经在第 4 步通过环境变量或 <code>~/.claude/settings.json</code> 配置过，VS Code 插件会自动继承，这一步可以跳过。' },
-        { t: 'h3', text: '6.3 使用插件' },
+        { t: 'callout', variant: 'tip', html: '💡 如果你已经在第 3 步通过环境变量或 <code>~/.claude/settings.json</code> 配置过，VS Code 插件会自动继承，这一步可以跳过。' },
+        { t: 'h3', text: '5.3 使用插件' },
         { t: 'ul', items: [
           '按 <kbd>Cmd+Shift+P</kbd>（macOS）或 <kbd>Ctrl+Shift+P</kbd>（Windows/Linux）',
           '输入 <code>Claude Code</code>',
@@ -232,16 +213,16 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'openclaw',
-      title: '7. 安装配置 OpenClaw',
+      title: '6. 安装配置 OpenClaw',
       blocks: [
         { t: 'p', html: 'OpenClaw 是一个开源的 AI 助手框架，可以把 Claude 接入 Telegram、微信、Discord 等各种平台。' },
-        { t: 'h3', text: '7.1 安装 OpenClaw' },
+        { t: 'h3', text: '6.1 安装 OpenClaw' },
         { t: 'h4', text: 'macOS / Linux / WSL2' },
         { t: 'code', lang: 'bash', code: 'curl -fsSL https://openclaw.ai/install.sh | bash' },
         { t: 'h4', text: 'Windows PowerShell' },
         { t: 'code', lang: 'powershell', code: 'iwr -useb https://openclaw.ai/install.ps1 | iex' },
         { t: 'p', html: '安装脚本会自动检测 Node.js 环境并启动配置向导。' },
-        { t: 'h3', text: '7.2 配置向导' },
+        { t: 'h3', text: '6.2 配置向导' },
         { t: 'ul', items: [
           '选择 AI 提供商 → 选择 <strong>Anthropic</strong>',
           '输入 API Key → 粘贴你在控制台获取的 API Key',
@@ -251,26 +232,26 @@ export const zh: HelpFactory = (base) => ({
         ]},
         { t: 'p', html: '如果错过了配置向导，可以重新运行：' },
         { t: 'code', lang: 'bash', code: 'openclaw configure' },
-        { t: 'h3', text: '7.3 手动配置（推荐）' },
+        { t: 'h3', text: '6.3 手动配置（推荐）' },
         { t: 'p', html: '编辑 <code>~/.openclaw/openclaw.json</code>，建议配置 <code>"maxTokens": 65536</code>：' },
         { t: 'code', lang: 'json', code: `{\n  "agents": {\n    "defaults": {\n      "model": "ccvibe/claude-opus-4-6",\n      "models": {\n        "ccvibe/claude-opus-4-6": {}\n      }\n    }\n  },\n  "providers": {\n    "ccvibe": {\n      "baseUrl": "${base}/v1",\n      "authHeader": true,\n      "auth": "api-key",\n      "apiKey": "sk-替换成你的key",\n      "api": "anthropic-messages",\n      "models": [\n        {\n          "id": "claude-opus-4-6",\n          "name": "claude-opus-4-6",\n          "reasoning": false,\n          "contextWindow": 1000000,\n          "maxTokens": 65536\n        }\n      ]\n    }\n  }\n}` },
-        { t: 'h3', text: '7.4 重启 OpenClaw' },
+        { t: 'h3', text: '6.4 重启 OpenClaw' },
         { t: 'code', lang: 'bash', code: 'openclaw gateway restart' },
         { t: 'p', html: '然后访问控制面板：' },
         { t: 'code', lang: 'bash', code: 'openclaw dashboard' },
-        { t: 'h3', text: '7.5 验证' },
+        { t: 'h3', text: '6.5 验证' },
         { t: 'code', lang: 'bash', code: 'openclaw status\nopenclaw doctor' },
         { t: 'p', html: '如果请求有问题，可以检查 <code>~/.openclaw/agents/main/agent/models.json</code> 是否有错误的缓存配置。如果一切正常，你会看到绿色的状态信息。' },
-        { t: 'h3', text: '7.6 腾讯云 OpenClaw 配置' },
+        { t: 'h3', text: '6.6 腾讯云 OpenClaw 配置' },
         { t: 'code', lang: 'json', code: `{\n  "provider": "anthropic",\n  "base_url": "${base}",\n  "api": "anthropic-messages",\n  "api_key": "your-api-key-here",\n  "model": {\n    "id": "claude-opus-4-6",\n    "name": "Claude Opus 4.6"\n  }\n}` },
         { t: 'p', html: '替换 <code>api_key</code>，重启龙虾即可使用。参考文档：<a href="https://cloud.tencent.com/developer/article/2625144" target="_blank" rel="noopener noreferrer">Anthropic Claude 配置</a>' }
       ]
     },
     {
       id: 'opencode',
-      title: '8. Open Code 及其他工具',
+      title: '7. Open Code 及其他工具',
       blocks: [
-        { t: 'h3', text: '8.1 修改 opencode.json' },
+        { t: 'h3', text: '7.1 修改 opencode.json' },
         { t: 'code', lang: 'json', code: `{\n  "$schema": "https://opencode.ai/config.json",\n  "provider": {\n    "anthropic": {\n      "options": {\n        "baseURL": "${base}/v1",\n        "apiKey": "sk-你的api key"\n      }\n    }\n  },\n  "model": "anthropic/claude-opus-4-6",\n  "small_model": "anthropic/claude-haiku-4-5"\n}` },
         { t: 'ul', items: [
           '<code>opencode.json</code> 一般在 <code>~/.config/opencode/opencode.json</code>，最新版本可能是 <code>opencode.jsonc</code>，请先确认',
@@ -278,19 +259,19 @@ export const zh: HelpFactory = (base) => ({
         ]},
         { t: 'p', html: '启动：<code>opencode</code>' },
         { t: 'p', html: '参考文档：<a href="https://opencode.ai/docs/zh-cn/providers/" target="_blank" rel="noopener noreferrer">opencode.ai/docs</a>' },
-        { t: 'h3', text: '8.2 Hermes Agent' },
+        { t: 'h3', text: '7.2 Hermes Agent' },
         { t: 'p', html: '参考文档：<a href="https://www.runoob.com/ai-agent/hermes-agent.html" target="_blank" rel="noopener noreferrer">runoob.com / hermes-agent</a>。域名和 Key 换成中转服务的即可。' },
-        { t: 'h3', text: '8.3 Cursor' },
+        { t: 'h3', text: '7.3 Cursor' },
         { t: 'p', html: '参考文档：<a href="https://gitcode.csdn.net/69b92f9f0a2f6a37c5981c5e.html" target="_blank" rel="noopener noreferrer">gitcode.csdn.net</a>' }
       ]
     },
     {
       id: 'pricing',
-      title: '9. 计费说明',
+      title: '8. 计费说明',
       blocks: [
-        { t: 'h3', text: '9.1 计费方式' },
+        { t: 'h3', text: '8.1 计费方式' },
         { t: 'p', html: '我们的中转服务采用与 Anthropic 官方<strong>完全一致的 1:1 计价</strong>，按 Token 用量计费，不额外加价。' },
-        { t: 'h3', text: '9.2 Claude 模型价格参考' },
+        { t: 'h3', text: '8.2 Claude 模型价格参考' },
         { t: 'table', head: ['模型', '输入价格（每百万 Token）', '输出价格（每百万 Token）'], rows: [
           ['Claude Opus 4', '$15.00', '$75.00'],
           ['Claude Sonnet 4', '$3.00', '$15.00'],
@@ -311,14 +292,14 @@ export const zh: HelpFactory = (base) => ({
         ]},
         { t: 'callout', variant: 'warning', html: '不要使用低价的 haiku 模型，可能会遇到官方限流，建议使用 sonnet 或 opus 系列模型。' },
         { t: 'callout', variant: 'tip', html: '💡 <strong>Prompt Caching</strong>（提示缓存）可以大幅降低重复内容的费用，缓存命中的输入 Token 价格降低 90%。我们的中转服务完整支持 Prompt Caching。' },
-        { t: 'h3', text: '9.3 Claude Code 日均费用参考' },
+        { t: 'h3', text: '8.3 Claude Code 日均费用参考' },
         { t: 'p', html: '根据 Anthropic 官方数据：' },
         { t: 'ul', items: [
           '平均每位开发者每天约 <strong>$6</strong>',
           '90% 的用户日均费用低于 <strong>$12</strong>',
           '使用 Sonnet 模型月均约 <strong>$100–200</strong>'
         ]},
-        { t: 'h3', text: '9.4 省钱技巧' },
+        { t: 'h3', text: '8.4 省钱技巧' },
         { t: 'ul', items: [
           '使用 Sonnet 模型处理日常编码任务（性价比最高）',
           '只在复杂架构设计时切换到 Opus',
@@ -330,7 +311,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'codex',
-      title: '10. CodeX 使用教程',
+      title: '9. CodeX 使用教程',
       blocks: [
         { t: 'p', html: '支持的模型清单：' },
         { t: 'code', lang: 'bash', code: 'gpt-5.4\ngpt-5.5\ngpt-image-2' },
@@ -349,7 +330,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'image-gen',
-      title: '11. 图像生成（gpt-image-2）',
+      title: '10. 图像生成（gpt-image-2）',
       blocks: [
         { t: 'h3', text: '注意事项' },
         { t: 'callout', variant: 'warning', html: 'image-2 生图不能用于非法目的，会触发 GPT 的风控。我们这边也有自己的风控系统，部分内容会被打回要求修改提示词，我们也会定时检查各渠道的风控情况。' },
@@ -401,7 +382,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'faq',
-      title: '12. 常见问题',
+      title: '11. 常见问题',
       blocks: [
         { t: 'h3', text: '安装相关' },
         { t: 'faq', items: [
@@ -641,30 +622,11 @@ export const en: HelpFactory = (base) => ({
       ]
     },
     {
-      id: 'register',
-      title: '1. Register and obtain an API Key',
-      blocks: [
-        { t: 'ul', items: [
-          `Open your browser and visit <a href="${base}" target="_blank" rel="noopener noreferrer">${base}</a>`,
-          'Click "Register" (skip if support has provided an account for you; redeem-code users must register themselves)',
-          'Enter your email and click "Create account". Verify with the code sent to your inbox',
-          'After signing in, open the redeem page and enter your redeem code',
-          'Go to the dashboard and open the "Tokens" page',
-          { html: 'Click "Create token":', children: [{ t: 'ul', items: [
-            'Daily / weekly / monthly users → pick the "Subscription" group',
-            'Pay-as-you-go (token balance) users → pick the "Balance" group',
-            'Codex users → pick the Codex group'
-          ]}]},
-          'Copy the generated API key (looks like <code>sk-xxxxxxxxxxxx</code>)'
-        ]}
-      ]
-    },
-    {
       id: 'prepare',
-      title: '2. Prerequisites',
+      title: '1. Prerequisites',
       blocks: [
         { t: 'p', html: 'You need a computer (macOS, Windows, or Linux) and a stable internet connection.' },
-        { t: 'h3', text: '2.1 Install Node.js' },
+        { t: 'h3', text: '1.1 Install Node.js' },
         { t: 'p', html: 'Both Claude Code and OpenClaw require Node.js 22 or newer.' },
         { t: 'h4', text: 'macOS / Linux' },
         { t: 'p', html: 'Open Terminal and paste:' },
@@ -685,7 +647,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'install-cc',
-      title: '3. Install Claude Code (terminal)',
+      title: '2. Install Claude Code (terminal)',
       blocks: [
         { t: 'p', html: 'Claude Code is Anthropic\'s official AI coding assistant that runs in your terminal.' },
         { t: 'callout', variant: 'warning', html: 'Anthropic blocks China and Hong Kong IPs, so <strong>you need a VPN to a region like the US or Japan during install</strong>. Once installed, you can drop the VPN and connect directly to our gateway.' },
@@ -701,7 +663,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'config-cc',
-      title: '4. Point Claude Code at our gateway',
+      title: '3. Point Claude Code at our gateway',
       blocks: [
         { t: 'p', html: 'This is the key step — connect Claude Code to our gateway instead of Anthropic\'s official API.' },
         { t: 'h3', text: 'Option 1: Environment variables (recommended)' },
@@ -761,15 +723,15 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'vscode',
-      title: '5. VS Code + Claude Code extension',
+      title: '4. VS Code + Claude Code extension',
       blocks: [
-        { t: 'h3', text: '5.1 Install VS Code' },
+        { t: 'h3', text: '4.1 Install VS Code' },
         { t: 'ul', items: [
           'Visit the VS Code website',
           'Download the installer for your OS',
           'Install and launch'
         ]},
-        { t: 'h3', text: '5.2 Install the Claude Code extension' },
+        { t: 'h3', text: '4.2 Install the Claude Code extension' },
         { t: 'ul', items: [
           'Open VS Code',
           'Press <kbd>Cmd+Shift+X</kbd> (macOS) or <kbd>Ctrl+Shift+X</kbd> (Windows/Linux)',
@@ -780,15 +742,15 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'config-vscode',
-      title: '6. Configure the VS Code extension',
+      title: '5. Configure the VS Code extension',
       blocks: [
-        { t: 'h3', text: '6.1 Open settings' },
+        { t: 'h3', text: '5.1 Open settings' },
         { t: 'p', html: 'Press <kbd>Cmd+,</kbd> (macOS) or <kbd>Ctrl+,</kbd> (Windows/Linux).' },
-        { t: 'h3', text: '6.2 Environment variables' },
+        { t: 'h3', text: '5.2 Environment variables' },
         { t: 'p', html: 'Add to <code>settings.json</code> (<kbd>Cmd+Shift+P</kbd> → <em>Open User Settings (JSON)</em>):' },
         { t: 'code', lang: 'json', code: `{\n  "claude-code.env": {\n    "ANTHROPIC_BASE_URL": "${base}",\n    "ANTHROPIC_API_KEY": "sk-your-api-key"\n  },\n  "claudeCode.environmentVariables": [\n    { "name": "ANTHROPIC_BASE_URL", "value": "${base}" },\n    { "name": "ANTHROPIC_AUTH_TOKEN", "value": "sk-your-api-key" }\n  ]\n}` },
-        { t: 'callout', variant: 'tip', html: '💡 If you already configured environment variables or <code>~/.claude/settings.json</code> in step 4, the VS Code extension inherits them — you can skip this.' },
-        { t: 'h3', text: '6.3 Using the extension' },
+        { t: 'callout', variant: 'tip', html: '💡 If you already configured environment variables or <code>~/.claude/settings.json</code> in step 3, the VS Code extension inherits them — you can skip this.' },
+        { t: 'h3', text: '5.3 Using the extension' },
         { t: 'ul', items: [
           'Press <kbd>Cmd+Shift+P</kbd> (macOS) or <kbd>Ctrl+Shift+P</kbd> (Windows/Linux)',
           'Type <code>Claude Code</code>',
@@ -800,16 +762,16 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'openclaw',
-      title: '7. Install and configure OpenClaw',
+      title: '6. Install and configure OpenClaw',
       blocks: [
         { t: 'p', html: 'OpenClaw is an open-source AI assistant framework that brings Claude into Telegram, WeChat, Discord, and other platforms.' },
-        { t: 'h3', text: '7.1 Install OpenClaw' },
+        { t: 'h3', text: '6.1 Install OpenClaw' },
         { t: 'h4', text: 'macOS / Linux / WSL2' },
         { t: 'code', lang: 'bash', code: 'curl -fsSL https://openclaw.ai/install.sh | bash' },
         { t: 'h4', text: 'Windows PowerShell' },
         { t: 'code', lang: 'powershell', code: 'iwr -useb https://openclaw.ai/install.ps1 | iex' },
         { t: 'p', html: 'The installer auto-detects Node.js and launches the onboarding wizard.' },
-        { t: 'h3', text: '7.2 Onboarding wizard' },
+        { t: 'h3', text: '6.2 Onboarding wizard' },
         { t: 'ul', items: [
           'Provider → <strong>Anthropic</strong>',
           'API Key → paste the key from the dashboard',
@@ -819,26 +781,26 @@ export const en: HelpFactory = (base) => ({
         ]},
         { t: 'p', html: 'Re-run the wizard anytime:' },
         { t: 'code', lang: 'bash', code: 'openclaw configure' },
-        { t: 'h3', text: '7.3 Manual config (recommended)' },
+        { t: 'h3', text: '6.3 Manual config (recommended)' },
         { t: 'p', html: 'Edit <code>~/.openclaw/openclaw.json</code>. Recommended: <code>"maxTokens": 65536</code>.' },
         { t: 'code', lang: 'json', code: `{\n  "agents": {\n    "defaults": {\n      "model": "ccvibe/claude-opus-4-6",\n      "models": {\n        "ccvibe/claude-opus-4-6": {}\n      }\n    }\n  },\n  "providers": {\n    "ccvibe": {\n      "baseUrl": "${base}/v1",\n      "authHeader": true,\n      "auth": "api-key",\n      "apiKey": "sk-replace-with-your-key",\n      "api": "anthropic-messages",\n      "models": [\n        {\n          "id": "claude-opus-4-6",\n          "name": "claude-opus-4-6",\n          "reasoning": false,\n          "contextWindow": 1000000,\n          "maxTokens": 65536\n        }\n      ]\n    }\n  }\n}` },
-        { t: 'h3', text: '7.4 Restart OpenClaw' },
+        { t: 'h3', text: '6.4 Restart OpenClaw' },
         { t: 'code', lang: 'bash', code: 'openclaw gateway restart' },
         { t: 'p', html: 'Then open the dashboard:' },
         { t: 'code', lang: 'bash', code: 'openclaw dashboard' },
-        { t: 'h3', text: '7.5 Verify' },
+        { t: 'h3', text: '6.5 Verify' },
         { t: 'code', lang: 'bash', code: 'openclaw status\nopenclaw doctor' },
         { t: 'p', html: 'If requests misbehave, check <code>~/.openclaw/agents/main/agent/models.json</code> for stale cached config. Green status means you are good.' },
-        { t: 'h3', text: '7.6 Tencent Cloud OpenClaw' },
+        { t: 'h3', text: '6.6 Tencent Cloud OpenClaw' },
         { t: 'code', lang: 'json', code: `{\n  "provider": "anthropic",\n  "base_url": "${base}",\n  "api": "anthropic-messages",\n  "api_key": "your-api-key-here",\n  "model": {\n    "id": "claude-opus-4-6",\n    "name": "Claude Opus 4.6"\n  }\n}` },
         { t: 'p', html: 'Replace <code>api_key</code> and restart. Reference: <a href="https://cloud.tencent.com/developer/article/2625144" target="_blank" rel="noopener noreferrer">Anthropic Claude config</a>.' }
       ]
     },
     {
       id: 'opencode',
-      title: '8. Open Code and other tools',
+      title: '7. Open Code and other tools',
       blocks: [
-        { t: 'h3', text: '8.1 Edit opencode.json' },
+        { t: 'h3', text: '7.1 Edit opencode.json' },
         { t: 'code', lang: 'json', code: `{\n  "$schema": "https://opencode.ai/config.json",\n  "provider": {\n    "anthropic": {\n      "options": {\n        "baseURL": "${base}/v1",\n        "apiKey": "sk-your-api-key"\n      }\n    }\n  },\n  "model": "anthropic/claude-opus-4-6",\n  "small_model": "anthropic/claude-haiku-4-5"\n}` },
         { t: 'ul', items: [
           '<code>opencode.json</code> usually lives at <code>~/.config/opencode/opencode.json</code>. Newer versions may use <code>opencode.jsonc</code> — check first.',
@@ -846,19 +808,19 @@ export const en: HelpFactory = (base) => ({
         ]},
         { t: 'p', html: 'Launch: <code>opencode</code>' },
         { t: 'p', html: 'Reference: <a href="https://opencode.ai/docs/zh-cn/providers/" target="_blank" rel="noopener noreferrer">opencode.ai/docs</a>' },
-        { t: 'h3', text: '8.2 Hermes Agent' },
+        { t: 'h3', text: '7.2 Hermes Agent' },
         { t: 'p', html: 'Reference: <a href="https://www.runoob.com/ai-agent/hermes-agent.html" target="_blank" rel="noopener noreferrer">runoob.com / hermes-agent</a>. Swap the host and key for the gateway\'s.' },
-        { t: 'h3', text: '8.3 Cursor' },
+        { t: 'h3', text: '7.3 Cursor' },
         { t: 'p', html: 'Reference: <a href="https://gitcode.csdn.net/69b92f9f0a2f6a37c5981c5e.html" target="_blank" rel="noopener noreferrer">gitcode.csdn.net</a>' }
       ]
     },
     {
       id: 'pricing',
-      title: '9. Pricing',
+      title: '8. Pricing',
       blocks: [
-        { t: 'h3', text: '9.1 Pricing model' },
+        { t: 'h3', text: '8.1 Pricing model' },
         { t: 'p', html: 'Our gateway uses <strong>1:1 pricing matching Anthropic\'s official rates</strong> — pay per token, no markup.' },
-        { t: 'h3', text: '9.2 Claude model prices' },
+        { t: 'h3', text: '8.2 Claude model prices' },
         { t: 'table', head: ['Model', 'Input (per 1M tokens)', 'Output (per 1M tokens)'], rows: [
           ['Claude Opus 4', '$15.00', '$75.00'],
           ['Claude Sonnet 4', '$3.00', '$15.00'],
@@ -879,14 +841,14 @@ export const en: HelpFactory = (base) => ({
         ]},
         { t: 'callout', variant: 'warning', html: 'Avoid the cheap haiku model — you may hit upstream rate limits. Prefer sonnet or opus.' },
         { t: 'callout', variant: 'tip', html: '💡 <strong>Prompt Caching</strong> cuts cost dramatically for repeated context — cache hits are billed at 10% of the normal input price. Our gateway fully supports it.' },
-        { t: 'h3', text: '9.3 Average Claude Code spend' },
+        { t: 'h3', text: '8.3 Average Claude Code spend' },
         { t: 'p', html: 'Per Anthropic\'s data:' },
         { t: 'ul', items: [
           'Average developer: ~<strong>$6/day</strong>',
           '90th percentile users stay below <strong>$12/day</strong>',
           'Sonnet-only users average <strong>$100–200/month</strong>'
         ]},
-        { t: 'h3', text: '9.4 Cost-saving tips' },
+        { t: 'h3', text: '8.4 Cost-saving tips' },
         { t: 'ul', items: [
           'Use Sonnet for day-to-day coding (best value)',
           'Switch to Opus only for hard architecture decisions',
@@ -898,7 +860,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'codex',
-      title: '10. Codex setup',
+      title: '9. Codex setup',
       blocks: [
         { t: 'p', html: 'Supported models:' },
         { t: 'code', lang: 'bash', code: 'gpt-5.4\ngpt-5.5\ngpt-image-2' },
@@ -917,7 +879,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'image-gen',
-      title: '11. Image generation (gpt-image-2)',
+      title: '10. Image generation (gpt-image-2)',
       blocks: [
         { t: 'h3', text: 'Caveats' },
         { t: 'callout', variant: 'warning', html: 'Do not use image-2 for unlawful content — it will trip GPT\'s safety filters. We also run our own moderation; some prompts will be rejected with a request to rephrase. We sweep upstream channels regularly for moderation issues.' },
@@ -969,7 +931,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'faq',
-      title: '12. FAQ',
+      title: '11. FAQ',
       blocks: [
         { t: 'h3', text: 'Install issues' },
         { t: 'faq', items: [

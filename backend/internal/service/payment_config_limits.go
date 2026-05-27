@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -32,6 +34,9 @@ func (s *PaymentConfigService) GetAvailableMethodLimits(ctx context.Context) (*M
 		}
 		ml := pcAggregateMethodLimits(pt, insts)
 		ml.Currency = currency
+		if pt == payment.TypeTRC20 || pt == payment.TypeERC20 {
+			ml.Rate = cryptoCNYPerUSDT(insts)
+		}
 		resp.Methods[ml.PaymentType] = ml
 	}
 	resp.GlobalMin, resp.GlobalMax = pcComputeGlobalRange(resp.Methods)
@@ -167,6 +172,24 @@ func (s *PaymentConfigService) pcInstancePaymentCurrency(inst *dbent.PaymentProv
 // For Stripe providers, ALL sub-types (card, link, alipay, wxpay) map to "stripe"
 // because the user sees a single "Stripe" button, not individual sub-methods.
 // Uses a seen set to avoid counting one instance twice.
+// cryptoCNYPerUSDT extracts the configured CNY→USDT rate from the first crypto
+// (TRC20/ERC20) instance that has one. Returns 0 when unconfigured.
+func cryptoCNYPerUSDT(instances []*dbent.PaymentProviderInstance) float64 {
+	for _, inst := range instances {
+		if strings.TrimSpace(inst.Config) == "" {
+			continue
+		}
+		var cfg map[string]string
+		if err := json.Unmarshal([]byte(inst.Config), &cfg); err != nil {
+			continue
+		}
+		if rate, err := strconv.ParseFloat(strings.TrimSpace(cfg["cnyPerUsdt"]), 64); err == nil && rate > 0 {
+			return rate
+		}
+	}
+	return 0
+}
+
 func pcGroupByPaymentType(instances []*dbent.PaymentProviderInstance) map[string][]*dbent.PaymentProviderInstance {
 	typeInstances := make(map[string][]*dbent.PaymentProviderInstance)
 	seen := make(map[string]map[int64]bool)

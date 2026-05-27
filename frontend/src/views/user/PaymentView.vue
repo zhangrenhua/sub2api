@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="mx-auto max-w-4xl space-y-6">
+    <div class="mx-auto max-w-4xl space-y-3">
       <div v-if="loading" class="flex items-center justify-center py-20">
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
       </div>
@@ -22,6 +22,8 @@
             :pay-url="paymentState.payUrl"
             :order-type="paymentState.orderType"
             :currency="paymentState.currency || selectedCurrency"
+            :amount="paymentState.payAmount"
+            :rate="usdtRate"
             @done="onPaymentDone"
             @success="onPaymentSuccess"
             @settled="onPaymentSettled"
@@ -32,7 +34,7 @@
           <!-- Top-up Tab -->
           <template v-if="activeTab === 'recharge'">
             <!-- Recharge Account Card -->
-            <div class="card p-5">
+            <div class="card p-4">
               <p class="text-xs font-medium text-gray-400 dark:text-gray-500">{{ t('payment.rechargeAccount') }}</p>
               <p class="mt-1 text-base font-semibold text-gray-900 dark:text-white">{{ user?.username || '' }}</p>
               <p class="mt-0.5 text-sm font-medium text-green-600 dark:text-green-400">{{ t('payment.currentBalance') }}: {{ user?.balance?.toFixed(2) || '0.00' }}</p>
@@ -41,7 +43,7 @@
               <p class="text-gray-500 dark:text-gray-400">{{ t('payment.notAvailable') }}</p>
             </div>
             <template v-else>
-            <div class="card p-6">
+            <div class="card p-4">
               <AmountInput
                 v-model="amount"
                 :amounts="[10, 20, 50, 100, 200, 500, 1000, 2000, 5000]"
@@ -50,14 +52,14 @@
               />
               <p v-if="amountError" class="mt-2 text-xs text-amber-600 dark:text-amber-300">{{ amountError }}</p>
             </div>
-            <div v-if="enabledMethods.length >= 1" class="card p-6">
+            <div v-if="enabledMethods.length >= 1" class="card p-4">
               <PaymentMethodSelector
                 :methods="methodOptions"
                 :selected="selectedMethod"
                 @select="selectedMethod = $event"
               />
             </div>
-            <div v-if="validAmount > 0" class="card p-6">
+            <div v-if="validAmount > 0" class="card p-4">
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
                   <span class="text-gray-500 dark:text-gray-400">{{ t('payment.paymentAmount') }}</span>
@@ -78,13 +80,21 @@
                 <p v-if="balanceRechargeMultiplier !== 1" class="border-t border-gray-200 pt-2 text-xs text-gray-500 dark:border-dark-600 dark:text-gray-400">
                   {{ t('payment.rechargeRatePreview', { usd: balanceRechargeMultiplier.toFixed(2) }) }}
                 </p>
+                <div v-if="isUsdtMethod && usdtRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
+                  <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.usdtPayable') }}</span>
+                  <span class="text-lg font-bold text-[#26A17B]">{{ usdtPayDisplay }} USDT</span>
+                </div>
+                <p v-if="isUsdtMethod && usdtRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('payment.usdtRateNote', { rate: usdtRate }) }}
+                </p>
               </div>
             </div>
-            <button :class="['btn w-full py-3 text-base font-medium', paymentButtonClass]" :disabled="!canSubmit || submitting" @click="handleSubmitRecharge">
+            <button :class="['btn w-full py-2.5 text-base font-medium', paymentButtonClass]" :disabled="!canSubmit || submitting" @click="handleSubmitRecharge">
               <span v-if="submitting" class="flex items-center justify-center gap-2">
                 <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                 {{ t('common.processing') }}
               </span>
+              <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ usdtPayDisplay }} USDT</span>
               <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(totalAmount) }}</span>
             </button>
             </template>
@@ -93,7 +103,7 @@
           <template v-else-if="activeTab === 'subscription'">
             <!-- Subscription confirm (inline, replaces plan list) -->
             <template v-if="selectedPlan">
-              <div class="card p-5">
+              <div class="card p-4">
                 <!-- Header: platform badge + plan name -->
                 <div class="mb-3 flex flex-wrap items-center gap-2">
                   <span :class="['rounded-md border px-2 py-0.5 text-xs font-medium', planBadgeClass]">
@@ -139,14 +149,14 @@
                   </div>
                 </div>
               </div>
-              <div v-if="enabledMethods.length >= 1" class="card p-6">
+              <div v-if="enabledMethods.length >= 1" class="card p-4">
                 <PaymentMethodSelector
                   :methods="subMethodOptions"
                   :selected="selectedMethod"
                   @select="selectedMethod = $event"
                 />
               </div>
-              <div v-if="feeRate > 0 && selectedPlan.price > 0" class="card p-6">
+              <div v-if="feeRate > 0 && selectedPlan.price > 0" class="card p-4">
                 <div class="space-y-2 text-sm">
                   <div class="flex justify-between">
                     <span class="text-gray-500 dark:text-gray-400">{{ t('payment.amountLabel') }}</span>
@@ -160,13 +170,24 @@
                     <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.actualPay') }}</span>
                     <span class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ formatSelectedPaymentAmount(subTotalAmount) }}</span>
                   </div>
+                  <div v-if="isUsdtMethod && usdtRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.usdtPayable') }}</span>
+                    <span class="text-lg font-bold text-[#26A17B]">{{ subUsdtPayDisplay }} USDT</span>
+                  </div>
+                  <p v-if="isUsdtMethod && usdtRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('payment.usdtRateNote', { rate: usdtRate }) }}
+                  </p>
                 </div>
               </div>
-              <button :class="['btn w-full py-3 text-base font-medium', paymentButtonClass]" :disabled="!canSubmitSubscription || submitting" @click="confirmSubscribe">
+              <p v-else-if="isUsdtMethod && usdtRate > 0" class="px-1 text-center text-xs text-gray-500 dark:text-gray-400">
+                {{ t('payment.usdtPayableNote', { amount: subUsdtPayDisplay, rate: usdtRate }) }}
+              </p>
+              <button :class="['btn w-full py-2.5 text-base font-medium', paymentButtonClass]" :disabled="!canSubmitSubscription || submitting" @click="confirmSubscribe">
                 <span v-if="submitting" class="flex items-center justify-center gap-2">
                   <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                   {{ t('common.processing') }}
                 </span>
+                <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ subUsdtPayDisplay }} USDT</span>
                 <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(feeRate > 0 ? subTotalAmount : selectedPlan.price) }}</span>
               </button>
               <button class="btn btn-secondary w-full" @click="selectedPlan = null">{{ t('common.cancel') }}</button>
@@ -394,6 +415,21 @@ function removeRecoverySnapshot() {
   clearPaymentRecoverySnapshot(window.localStorage, PAYMENT_RECOVERY_STORAGE_KEY)
 }
 
+// snapshotIsResumable verifies, via the backend, that the locally-stored
+// recovery snapshot refers to an order owned by the current user that is still
+// PENDING. getOrder is user-scoped (403/404 for another user's order), so this
+// blocks a different user on the same browser from inheriting a prior order and
+// also drops stale (paid/expired/cancelled) snapshots.
+async function snapshotIsResumable(snapshot: PaymentRecoverySnapshot): Promise<boolean> {
+  if (!snapshot.orderId) return false
+  try {
+    const order = (await paymentAPI.getOrder(snapshot.orderId)).data
+    return order?.status === 'PENDING'
+  } catch {
+    return false
+  }
+}
+
 function resetPayment() {
   paymentPhase.value = 'select'
   paymentState.value = emptyPaymentState()
@@ -611,6 +647,18 @@ const subTotalAmount = computed(() => {
   const price = selectedPlan.value?.price ?? 0
   if (feeRate.value <= 0 || price <= 0) return price
   return Math.round((price + subFeeAmount.value) * 100) / 100
+})
+
+// USDT (TRC20): plans/recharge are priced in CNY; show the converted USDT
+// amount and the rate note when this method is selected.
+const isUsdtMethod = computed(() => selectedMethod.value === 'usdt_trc20' || selectedMethod.value === 'usdt_erc20')
+const usdtRate = computed(() => selectedLimit.value?.rate ?? 0)
+const usdtPayDisplay = computed(() =>
+  usdtRate.value > 0 ? (totalAmount.value / usdtRate.value).toFixed(2) : ''
+)
+const subUsdtPayDisplay = computed(() => {
+  const cny = feeRate.value > 0 ? subTotalAmount.value : (selectedPlan.value?.price ?? 0)
+  return usdtRate.value > 0 ? (cny / usdtRate.value).toFixed(2) : ''
 })
 
 const canSubmitSubscription = computed(() =>
@@ -1040,7 +1088,11 @@ onMounted(async () => {
         window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY),
         { resumeToken: routeResumeToken },
       )
-      if (restored) {
+      // Only resume a snapshot that belongs to the CURRENT user and is still
+      // pending. The snapshot lives in browser localStorage under a shared key,
+      // so without this check a different user on the same browser (or a stale
+      // already-paid/expired order) would wrongly see a prior payment screen.
+      if (restored && (await snapshotIsResumable(restored))) {
         paymentState.value = restored
         paymentPhase.value = 'paying'
         const restoredMethod = normalizeVisibleMethod(restored.paymentType)

@@ -16,6 +16,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/payment/provider"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 // --- Order Creation ---
@@ -90,6 +91,15 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	}
 	if err := validateSelectedCreateOrderAmountCurrency(payAmountStr, sel); err != nil {
 		return nil, err
+	}
+	// USDT/TRC20: plans are priced in CNY, so convert the CNY pay amount to USDT
+	// using the instance's configured exchange rate, and enforce the USDT-only
+	// minimum (in CNY). Both are configured per TRC20 instance.
+	if sel != nil && cryptoNetworkForProvider(sel.ProviderKey) != "" {
+		payAmountStr, payAmount, err = cryptoPayAmountCNYtoUSDT(req, limitAmount, payAmount, sel)
+		if err != nil {
+			return nil, err
+		}
 	}
 	oauthResp, err := s.maybeBuildWeChatOAuthRequiredResponseForSelection(ctx, req, limitAmount, payAmount, feeRate, sel)
 	if err != nil {
@@ -437,13 +447,26 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 	if err != nil {
 		return nil, err
 	}
-	providerReq := buildProviderCreatePaymentRequest(CreateOrderRequest{
+	depositReq := CreateOrderRequest{
 		PaymentType: req.PaymentType,
 		OpenID:      req.OpenID,
 		ClientIP:    req.ClientIP,
 		IsMobile:    req.IsMobile,
 		ReturnURL:   providerReturnURL,
-	}, sel, outTradeNo, payAmountStr, subject)
+	}
+	// Crypto methods (TRC20/ERC20) have no upstream gateway: resolve (and lazily
+	// provision) the user's per-user deposit address and carry it via OpenID.
+	if network := cryptoNetworkForProvider(sel.ProviderKey); network != "" {
+		if s.cryptoWalletSvc == nil {
+			return nil, infraerrors.ServiceUnavailable("WALLET_UNAVAILABLE", "crypto wallet service not configured")
+		}
+		addrRow, aerr := s.cryptoWalletSvc.EnsureUserAddress(ctx, req.UserID, network)
+		if aerr != nil {
+			return nil, aerr
+		}
+		depositReq.OpenID = addrRow.Address
+	}
+	providerReq := buildProviderCreatePaymentRequest(depositReq, sel, outTradeNo, payAmountStr, subject)
 	pr, err := prov.CreatePayment(ctx, providerReq)
 	if err != nil {
 		slog.Error("[PaymentService] CreatePayment failed", "provider", sel.ProviderKey, "instance", sel.InstanceID, "error", err)
@@ -593,6 +616,63 @@ func (s *PaymentService) validateSelectedCreateOrderInstance(ctx context.Context
 		return infraerrors.TooManyRequests("NO_AVAILABLE_INSTANCE", "selected payment instance is not compatible with the current WeChat OAuth app")
 	}
 	return nil
+}
+
+// trc20DefaultMinRechargeCNY is the default minimum recharge (in CNY) for USDT
+// when the instance does not configure one.
+const (
+	trc20DefaultMinRechargeCNY = 100.0
+	erc20DefaultMinRechargeCNY = 100.0
+)
+
+// cryptoNetworkForProvider maps a provider key to its crypto network label
+// (TRC20/ERC20), or "" for non-crypto providers.
+func cryptoNetworkForProvider(providerKey string) string {
+	switch providerKey {
+	case payment.TypeTRC20:
+		return cryptoNetworkTRC20
+	case payment.TypeERC20:
+		return cryptoNetworkERC20
+	default:
+		return ""
+	}
+}
+
+// cryptoPayAmountCNYtoUSDT converts a CNY pay amount to USDT using the instance's
+// configured rate ("cnyPerUsdt"), and enforces the USDT minimum recharge (in
+// CNY, "minRechargeCny", default 100). cnyPayAmount already includes any fee.
+// Network-agnostic: used by both TRC20 and ERC20.
+func cryptoPayAmountCNYtoUSDT(req CreateOrderRequest, limitAmount, cnyPayAmount float64, sel *payment.InstanceSelection) (string, float64, error) {
+	var cfg map[string]string
+	if sel != nil {
+		cfg = sel.Config
+	}
+
+	// Default minimum is network-aware: ERC20 higher since ETH gas is costly.
+	minCNY := trc20DefaultMinRechargeCNY
+	if cryptoNetworkForProvider(sel.ProviderKey) == cryptoNetworkERC20 {
+		minCNY = erc20DefaultMinRechargeCNY
+	}
+	if v, err := strconv.ParseFloat(strings.TrimSpace(cfg["minRechargeCny"]), 64); err == nil && v > 0 {
+		minCNY = v
+	}
+	if limitAmount < minCNY {
+		return "", 0, infraerrors.BadRequest("USDT_MIN_AMOUNT", "amount below USDT minimum").
+			WithMetadata(map[string]string{"min_cny": strconv.FormatFloat(minCNY, 'f', -1, 64)})
+	}
+
+	rate, err := strconv.ParseFloat(strings.TrimSpace(cfg["cnyPerUsdt"]), 64)
+	if err != nil || rate <= 0 {
+		return "", 0, infraerrors.BadRequest("USDT_RATE_NOT_CONFIGURED", "USDT exchange rate (cnyPerUsdt) is not configured")
+	}
+
+	usdt := decimal.NewFromFloat(cnyPayAmount).Div(decimal.NewFromFloat(rate)).Round(2)
+	if usdt.LessThanOrEqual(decimal.Zero) {
+		return "", 0, infraerrors.BadRequest("INVALID_AMOUNT", "converted USDT amount is not positive")
+	}
+	usdtStr := usdt.StringFixed(2)
+	usdtVal, _ := usdt.Float64()
+	return usdtStr, usdtVal, nil
 }
 
 func calculateCreateOrderPayAmount(limitAmount, feeRate float64, currency string) (string, float64, error) {

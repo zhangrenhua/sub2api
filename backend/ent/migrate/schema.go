@@ -596,6 +596,92 @@ var (
 			},
 		},
 	}
+	// CryptoSweepJobsColumns holds the columns for the "crypto_sweep_jobs" table.
+	CryptoSweepJobsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "network", Type: field.TypeString, Size: 20, Default: "TRC20"},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "created_by", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "total_tasks", Type: field.TypeInt, Default: 0},
+		{Name: "completed_tasks", Type: field.TypeInt, Default: 0},
+		{Name: "total_swept", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
+		{Name: "collection_address", Type: field.TypeString, Size: 64},
+		{Name: "error", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "finished_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// CryptoSweepJobsTable holds the schema information for the "crypto_sweep_jobs" table.
+	CryptoSweepJobsTable = &schema.Table{
+		Name:       "crypto_sweep_jobs",
+		Columns:    CryptoSweepJobsColumns,
+		PrimaryKey: []*schema.Column{CryptoSweepJobsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "cryptosweepjob_status",
+				Unique:  false,
+				Columns: []*schema.Column{CryptoSweepJobsColumns[2]},
+			},
+			{
+				Name:    "cryptosweepjob_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CryptoSweepJobsColumns[9]},
+			},
+		},
+	}
+	// CryptoSweepTasksColumns holds the columns for the "crypto_sweep_tasks" table.
+	CryptoSweepTasksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "job_id", Type: field.TypeInt64},
+		{Name: "network", Type: field.TypeString, Size: 20, Default: "TRC20"},
+		{Name: "user_id", Type: field.TypeInt64, Default: 0},
+		{Name: "address", Type: field.TypeString, Size: 64},
+		{Name: "derivation_index", Type: field.TypeInt64},
+		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "gas_fund_tx", Type: field.TypeString, Size: 80, Default: ""},
+		{Name: "sweep_tx", Type: field.TypeString, Size: 80, Default: ""},
+		{Name: "error", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// CryptoSweepTasksTable holds the schema information for the "crypto_sweep_tasks" table.
+	CryptoSweepTasksTable = &schema.Table{
+		Name:       "crypto_sweep_tasks",
+		Columns:    CryptoSweepTasksColumns,
+		PrimaryKey: []*schema.Column{CryptoSweepTasksColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "cryptosweeptask_job_id",
+				Unique:  false,
+				Columns: []*schema.Column{CryptoSweepTasksColumns[1]},
+			},
+			{
+				Name:    "cryptosweeptask_status",
+				Unique:  false,
+				Columns: []*schema.Column{CryptoSweepTasksColumns[7]},
+			},
+		},
+	}
+	// CryptoWalletConfigsColumns holds the columns for the "crypto_wallet_configs" table.
+	CryptoWalletConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "encrypted_mnemonic", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "next_derivation_index", Type: field.TypeInt64, Default: 1},
+		{Name: "collection_address", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "fee_address", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "eth_collection_address", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "eth_fee_address", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "initialized", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// CryptoWalletConfigsTable holds the schema information for the "crypto_wallet_configs" table.
+	CryptoWalletConfigsTable = &schema.Table{
+		Name:       "crypto_wallet_configs",
+		Columns:    CryptoWalletConfigsColumns,
+		PrimaryKey: []*schema.Column{CryptoWalletConfigsColumns[0]},
+	}
 	// ErrorPassthroughRulesColumns holds the columns for the "error_passthrough_rules" table.
 	ErrorPassthroughRulesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1265,6 +1351,35 @@ var (
 		Columns:    TLSFingerprintProfilesColumns,
 		PrimaryKey: []*schema.Column{TLSFingerprintProfilesColumns[0]},
 	}
+	// Trc20ConsumedTxsColumns holds the columns for the "trc20_consumed_txs" table.
+	Trc20ConsumedTxsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "tx_hash", Type: field.TypeString, Size: 80},
+		{Name: "network", Type: field.TypeString, Size: 20, Default: "TRC20"},
+		{Name: "order_id", Type: field.TypeInt64},
+		{Name: "address", Type: field.TypeString, Size: 64},
+		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
+		{Name: "confirmed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// Trc20ConsumedTxsTable holds the schema information for the "trc20_consumed_txs" table.
+	Trc20ConsumedTxsTable = &schema.Table{
+		Name:       "trc20_consumed_txs",
+		Columns:    Trc20ConsumedTxsColumns,
+		PrimaryKey: []*schema.Column{Trc20ConsumedTxsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "trc20consumedtx_tx_hash",
+				Unique:  true,
+				Columns: []*schema.Column{Trc20ConsumedTxsColumns[1]},
+			},
+			{
+				Name:    "trc20consumedtx_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{Trc20ConsumedTxsColumns[3]},
+			},
+		},
+	}
 	// UsageCleanupTasksColumns holds the columns for the "usage_cleanup_tasks" table.
 	UsageCleanupTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1612,6 +1727,41 @@ var (
 			},
 		},
 	}
+	// UserCryptoAddressesColumns holds the columns for the "user_crypto_addresses" table.
+	UserCryptoAddressesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "network", Type: field.TypeString, Size: 20, Default: "TRC20"},
+		{Name: "address", Type: field.TypeString, Size: 64},
+		{Name: "derivation_index", Type: field.TypeInt64},
+		{Name: "last_balance", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
+		{Name: "last_balance_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// UserCryptoAddressesTable holds the schema information for the "user_crypto_addresses" table.
+	UserCryptoAddressesTable = &schema.Table{
+		Name:       "user_crypto_addresses",
+		Columns:    UserCryptoAddressesColumns,
+		PrimaryKey: []*schema.Column{UserCryptoAddressesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "usercryptoaddress_user_id_network",
+				Unique:  true,
+				Columns: []*schema.Column{UserCryptoAddressesColumns[1], UserCryptoAddressesColumns[2]},
+			},
+			{
+				Name:    "usercryptoaddress_address",
+				Unique:  true,
+				Columns: []*schema.Column{UserCryptoAddressesColumns[3]},
+			},
+			{
+				Name:    "usercryptoaddress_network_derivation_index",
+				Unique:  true,
+				Columns: []*schema.Column{UserCryptoAddressesColumns[2], UserCryptoAddressesColumns[4]},
+			},
+		},
+	}
 	// UserPlatformQuotasColumns holds the columns for the "user_platform_quotas" table.
 	UserPlatformQuotasColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1761,6 +1911,9 @@ var (
 		ChannelMonitorDailyRollupsTable,
 		ChannelMonitorHistoriesTable,
 		ChannelMonitorRequestTemplatesTable,
+		CryptoSweepJobsTable,
+		CryptoSweepTasksTable,
+		CryptoWalletConfigsTable,
 		ErrorPassthroughRulesTable,
 		GroupsTable,
 		IdempotencyRecordsTable,
@@ -1777,12 +1930,14 @@ var (
 		SettingsTable,
 		SubscriptionPlansTable,
 		TLSFingerprintProfilesTable,
+		Trc20ConsumedTxsTable,
 		UsageCleanupTasksTable,
 		UsageLogsTable,
 		UsersTable,
 		UserAllowedGroupsTable,
 		UserAttributeDefinitionsTable,
 		UserAttributeValuesTable,
+		UserCryptoAddressesTable,
 		UserPlatformQuotasTable,
 		UserSubscriptionsTable,
 	}
@@ -1833,6 +1988,15 @@ func init() {
 	}
 	ChannelMonitorRequestTemplatesTable.Annotation = &entsql.Annotation{
 		Table: "channel_monitor_request_templates",
+	}
+	CryptoSweepJobsTable.Annotation = &entsql.Annotation{
+		Table: "crypto_sweep_jobs",
+	}
+	CryptoSweepTasksTable.Annotation = &entsql.Annotation{
+		Table: "crypto_sweep_tasks",
+	}
+	CryptoWalletConfigsTable.Annotation = &entsql.Annotation{
+		Table: "crypto_wallet_configs",
 	}
 	ErrorPassthroughRulesTable.Annotation = &entsql.Annotation{
 		Table: "error_passthrough_rules",
@@ -1890,6 +2054,9 @@ func init() {
 	TLSFingerprintProfilesTable.Annotation = &entsql.Annotation{
 		Table: "tls_fingerprint_profiles",
 	}
+	Trc20ConsumedTxsTable.Annotation = &entsql.Annotation{
+		Table: "trc20_consumed_txs",
+	}
 	UsageCleanupTasksTable.Annotation = &entsql.Annotation{
 		Table: "usage_cleanup_tasks",
 	}
@@ -1916,6 +2083,9 @@ func init() {
 	UserAttributeValuesTable.ForeignKeys[1].RefTable = UserAttributeDefinitionsTable
 	UserAttributeValuesTable.Annotation = &entsql.Annotation{
 		Table: "user_attribute_values",
+	}
+	UserCryptoAddressesTable.Annotation = &entsql.Annotation{
+		Table: "user_crypto_addresses",
 	}
 	UserPlatformQuotasTable.ForeignKeys[0].RefTable = UsersTable
 	UserPlatformQuotasTable.Annotation = &entsql.Annotation{

@@ -23,6 +23,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
+	"github.com/Wei-Shaw/sub2api/ent/cryptosweepjob"
+	"github.com/Wei-Shaw/sub2api/ent/cryptosweeptask"
+	"github.com/Wei-Shaw/sub2api/ent/cryptowalletconfig"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
@@ -40,12 +43,14 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/trc20consumedtx"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/usercryptoaddress"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
@@ -71,6 +76,9 @@ const (
 	TypeChannelMonitorDailyRollup     = "ChannelMonitorDailyRollup"
 	TypeChannelMonitorHistory         = "ChannelMonitorHistory"
 	TypeChannelMonitorRequestTemplate = "ChannelMonitorRequestTemplate"
+	TypeCryptoSweepJob                = "CryptoSweepJob"
+	TypeCryptoSweepTask               = "CryptoSweepTask"
+	TypeCryptoWalletConfig            = "CryptoWalletConfig"
 	TypeErrorPassthroughRule          = "ErrorPassthroughRule"
 	TypeGroup                         = "Group"
 	TypeIdempotencyRecord             = "IdempotencyRecord"
@@ -87,12 +95,14 @@ const (
 	TypeSetting                       = "Setting"
 	TypeSubscriptionPlan              = "SubscriptionPlan"
 	TypeTLSFingerprintProfile         = "TLSFingerprintProfile"
+	TypeTRC20ConsumedTx               = "TRC20ConsumedTx"
 	TypeUsageCleanupTask              = "UsageCleanupTask"
 	TypeUsageLog                      = "UsageLog"
 	TypeUser                          = "User"
 	TypeUserAllowedGroup              = "UserAllowedGroup"
 	TypeUserAttributeDefinition       = "UserAttributeDefinition"
 	TypeUserAttributeValue            = "UserAttributeValue"
+	TypeUserCryptoAddress             = "UserCryptoAddress"
 	TypeUserPlatformQuota             = "UserPlatformQuota"
 	TypeUserSubscription              = "UserSubscription"
 )
@@ -13527,6 +13537,2845 @@ func (m *ChannelMonitorRequestTemplateMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ChannelMonitorRequestTemplate edge %s", name)
+}
+
+// CryptoSweepJobMutation represents an operation that mutates the CryptoSweepJob nodes in the graph.
+type CryptoSweepJobMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *int64
+	network            *string
+	status             *string
+	created_by         *string
+	total_tasks        *int
+	addtotal_tasks     *int
+	completed_tasks    *int
+	addcompleted_tasks *int
+	total_swept        *float64
+	addtotal_swept     *float64
+	collection_address *string
+	error              *string
+	created_at         *time.Time
+	updated_at         *time.Time
+	finished_at        *time.Time
+	clearedFields      map[string]struct{}
+	done               bool
+	oldValue           func(context.Context) (*CryptoSweepJob, error)
+	predicates         []predicate.CryptoSweepJob
+}
+
+var _ ent.Mutation = (*CryptoSweepJobMutation)(nil)
+
+// cryptosweepjobOption allows management of the mutation configuration using functional options.
+type cryptosweepjobOption func(*CryptoSweepJobMutation)
+
+// newCryptoSweepJobMutation creates new mutation for the CryptoSweepJob entity.
+func newCryptoSweepJobMutation(c config, op Op, opts ...cryptosweepjobOption) *CryptoSweepJobMutation {
+	m := &CryptoSweepJobMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCryptoSweepJob,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCryptoSweepJobID sets the ID field of the mutation.
+func withCryptoSweepJobID(id int64) cryptosweepjobOption {
+	return func(m *CryptoSweepJobMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CryptoSweepJob
+		)
+		m.oldValue = func(ctx context.Context) (*CryptoSweepJob, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CryptoSweepJob.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCryptoSweepJob sets the old CryptoSweepJob of the mutation.
+func withCryptoSweepJob(node *CryptoSweepJob) cryptosweepjobOption {
+	return func(m *CryptoSweepJobMutation) {
+		m.oldValue = func(context.Context) (*CryptoSweepJob, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CryptoSweepJobMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CryptoSweepJobMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CryptoSweepJobMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CryptoSweepJobMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CryptoSweepJob.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetNetwork sets the "network" field.
+func (m *CryptoSweepJobMutation) SetNetwork(s string) {
+	m.network = &s
+}
+
+// Network returns the value of the "network" field in the mutation.
+func (m *CryptoSweepJobMutation) Network() (r string, exists bool) {
+	v := m.network
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNetwork returns the old "network" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldNetwork(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNetwork is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNetwork requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNetwork: %w", err)
+	}
+	return oldValue.Network, nil
+}
+
+// ResetNetwork resets all changes to the "network" field.
+func (m *CryptoSweepJobMutation) ResetNetwork() {
+	m.network = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *CryptoSweepJobMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *CryptoSweepJobMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *CryptoSweepJobMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *CryptoSweepJobMutation) SetCreatedBy(s string) {
+	m.created_by = &s
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *CryptoSweepJobMutation) CreatedBy() (r string, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldCreatedBy(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *CryptoSweepJobMutation) ResetCreatedBy() {
+	m.created_by = nil
+}
+
+// SetTotalTasks sets the "total_tasks" field.
+func (m *CryptoSweepJobMutation) SetTotalTasks(i int) {
+	m.total_tasks = &i
+	m.addtotal_tasks = nil
+}
+
+// TotalTasks returns the value of the "total_tasks" field in the mutation.
+func (m *CryptoSweepJobMutation) TotalTasks() (r int, exists bool) {
+	v := m.total_tasks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalTasks returns the old "total_tasks" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldTotalTasks(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalTasks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalTasks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalTasks: %w", err)
+	}
+	return oldValue.TotalTasks, nil
+}
+
+// AddTotalTasks adds i to the "total_tasks" field.
+func (m *CryptoSweepJobMutation) AddTotalTasks(i int) {
+	if m.addtotal_tasks != nil {
+		*m.addtotal_tasks += i
+	} else {
+		m.addtotal_tasks = &i
+	}
+}
+
+// AddedTotalTasks returns the value that was added to the "total_tasks" field in this mutation.
+func (m *CryptoSweepJobMutation) AddedTotalTasks() (r int, exists bool) {
+	v := m.addtotal_tasks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalTasks resets all changes to the "total_tasks" field.
+func (m *CryptoSweepJobMutation) ResetTotalTasks() {
+	m.total_tasks = nil
+	m.addtotal_tasks = nil
+}
+
+// SetCompletedTasks sets the "completed_tasks" field.
+func (m *CryptoSweepJobMutation) SetCompletedTasks(i int) {
+	m.completed_tasks = &i
+	m.addcompleted_tasks = nil
+}
+
+// CompletedTasks returns the value of the "completed_tasks" field in the mutation.
+func (m *CryptoSweepJobMutation) CompletedTasks() (r int, exists bool) {
+	v := m.completed_tasks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompletedTasks returns the old "completed_tasks" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldCompletedTasks(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompletedTasks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompletedTasks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompletedTasks: %w", err)
+	}
+	return oldValue.CompletedTasks, nil
+}
+
+// AddCompletedTasks adds i to the "completed_tasks" field.
+func (m *CryptoSweepJobMutation) AddCompletedTasks(i int) {
+	if m.addcompleted_tasks != nil {
+		*m.addcompleted_tasks += i
+	} else {
+		m.addcompleted_tasks = &i
+	}
+}
+
+// AddedCompletedTasks returns the value that was added to the "completed_tasks" field in this mutation.
+func (m *CryptoSweepJobMutation) AddedCompletedTasks() (r int, exists bool) {
+	v := m.addcompleted_tasks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCompletedTasks resets all changes to the "completed_tasks" field.
+func (m *CryptoSweepJobMutation) ResetCompletedTasks() {
+	m.completed_tasks = nil
+	m.addcompleted_tasks = nil
+}
+
+// SetTotalSwept sets the "total_swept" field.
+func (m *CryptoSweepJobMutation) SetTotalSwept(f float64) {
+	m.total_swept = &f
+	m.addtotal_swept = nil
+}
+
+// TotalSwept returns the value of the "total_swept" field in the mutation.
+func (m *CryptoSweepJobMutation) TotalSwept() (r float64, exists bool) {
+	v := m.total_swept
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalSwept returns the old "total_swept" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldTotalSwept(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalSwept is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalSwept requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalSwept: %w", err)
+	}
+	return oldValue.TotalSwept, nil
+}
+
+// AddTotalSwept adds f to the "total_swept" field.
+func (m *CryptoSweepJobMutation) AddTotalSwept(f float64) {
+	if m.addtotal_swept != nil {
+		*m.addtotal_swept += f
+	} else {
+		m.addtotal_swept = &f
+	}
+}
+
+// AddedTotalSwept returns the value that was added to the "total_swept" field in this mutation.
+func (m *CryptoSweepJobMutation) AddedTotalSwept() (r float64, exists bool) {
+	v := m.addtotal_swept
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalSwept resets all changes to the "total_swept" field.
+func (m *CryptoSweepJobMutation) ResetTotalSwept() {
+	m.total_swept = nil
+	m.addtotal_swept = nil
+}
+
+// SetCollectionAddress sets the "collection_address" field.
+func (m *CryptoSweepJobMutation) SetCollectionAddress(s string) {
+	m.collection_address = &s
+}
+
+// CollectionAddress returns the value of the "collection_address" field in the mutation.
+func (m *CryptoSweepJobMutation) CollectionAddress() (r string, exists bool) {
+	v := m.collection_address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCollectionAddress returns the old "collection_address" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldCollectionAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCollectionAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCollectionAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCollectionAddress: %w", err)
+	}
+	return oldValue.CollectionAddress, nil
+}
+
+// ResetCollectionAddress resets all changes to the "collection_address" field.
+func (m *CryptoSweepJobMutation) ResetCollectionAddress() {
+	m.collection_address = nil
+}
+
+// SetError sets the "error" field.
+func (m *CryptoSweepJobMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *CryptoSweepJobMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *CryptoSweepJobMutation) ResetError() {
+	m.error = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CryptoSweepJobMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CryptoSweepJobMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CryptoSweepJobMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CryptoSweepJobMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CryptoSweepJobMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CryptoSweepJobMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetFinishedAt sets the "finished_at" field.
+func (m *CryptoSweepJobMutation) SetFinishedAt(t time.Time) {
+	m.finished_at = &t
+}
+
+// FinishedAt returns the value of the "finished_at" field in the mutation.
+func (m *CryptoSweepJobMutation) FinishedAt() (r time.Time, exists bool) {
+	v := m.finished_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinishedAt returns the old "finished_at" field's value of the CryptoSweepJob entity.
+// If the CryptoSweepJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepJobMutation) OldFinishedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinishedAt: %w", err)
+	}
+	return oldValue.FinishedAt, nil
+}
+
+// ClearFinishedAt clears the value of the "finished_at" field.
+func (m *CryptoSweepJobMutation) ClearFinishedAt() {
+	m.finished_at = nil
+	m.clearedFields[cryptosweepjob.FieldFinishedAt] = struct{}{}
+}
+
+// FinishedAtCleared returns if the "finished_at" field was cleared in this mutation.
+func (m *CryptoSweepJobMutation) FinishedAtCleared() bool {
+	_, ok := m.clearedFields[cryptosweepjob.FieldFinishedAt]
+	return ok
+}
+
+// ResetFinishedAt resets all changes to the "finished_at" field.
+func (m *CryptoSweepJobMutation) ResetFinishedAt() {
+	m.finished_at = nil
+	delete(m.clearedFields, cryptosweepjob.FieldFinishedAt)
+}
+
+// Where appends a list predicates to the CryptoSweepJobMutation builder.
+func (m *CryptoSweepJobMutation) Where(ps ...predicate.CryptoSweepJob) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CryptoSweepJobMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CryptoSweepJobMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CryptoSweepJob, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CryptoSweepJobMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CryptoSweepJobMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CryptoSweepJob).
+func (m *CryptoSweepJobMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CryptoSweepJobMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.network != nil {
+		fields = append(fields, cryptosweepjob.FieldNetwork)
+	}
+	if m.status != nil {
+		fields = append(fields, cryptosweepjob.FieldStatus)
+	}
+	if m.created_by != nil {
+		fields = append(fields, cryptosweepjob.FieldCreatedBy)
+	}
+	if m.total_tasks != nil {
+		fields = append(fields, cryptosweepjob.FieldTotalTasks)
+	}
+	if m.completed_tasks != nil {
+		fields = append(fields, cryptosweepjob.FieldCompletedTasks)
+	}
+	if m.total_swept != nil {
+		fields = append(fields, cryptosweepjob.FieldTotalSwept)
+	}
+	if m.collection_address != nil {
+		fields = append(fields, cryptosweepjob.FieldCollectionAddress)
+	}
+	if m.error != nil {
+		fields = append(fields, cryptosweepjob.FieldError)
+	}
+	if m.created_at != nil {
+		fields = append(fields, cryptosweepjob.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, cryptosweepjob.FieldUpdatedAt)
+	}
+	if m.finished_at != nil {
+		fields = append(fields, cryptosweepjob.FieldFinishedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CryptoSweepJobMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case cryptosweepjob.FieldNetwork:
+		return m.Network()
+	case cryptosweepjob.FieldStatus:
+		return m.Status()
+	case cryptosweepjob.FieldCreatedBy:
+		return m.CreatedBy()
+	case cryptosweepjob.FieldTotalTasks:
+		return m.TotalTasks()
+	case cryptosweepjob.FieldCompletedTasks:
+		return m.CompletedTasks()
+	case cryptosweepjob.FieldTotalSwept:
+		return m.TotalSwept()
+	case cryptosweepjob.FieldCollectionAddress:
+		return m.CollectionAddress()
+	case cryptosweepjob.FieldError:
+		return m.Error()
+	case cryptosweepjob.FieldCreatedAt:
+		return m.CreatedAt()
+	case cryptosweepjob.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case cryptosweepjob.FieldFinishedAt:
+		return m.FinishedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CryptoSweepJobMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case cryptosweepjob.FieldNetwork:
+		return m.OldNetwork(ctx)
+	case cryptosweepjob.FieldStatus:
+		return m.OldStatus(ctx)
+	case cryptosweepjob.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case cryptosweepjob.FieldTotalTasks:
+		return m.OldTotalTasks(ctx)
+	case cryptosweepjob.FieldCompletedTasks:
+		return m.OldCompletedTasks(ctx)
+	case cryptosweepjob.FieldTotalSwept:
+		return m.OldTotalSwept(ctx)
+	case cryptosweepjob.FieldCollectionAddress:
+		return m.OldCollectionAddress(ctx)
+	case cryptosweepjob.FieldError:
+		return m.OldError(ctx)
+	case cryptosweepjob.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case cryptosweepjob.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case cryptosweepjob.FieldFinishedAt:
+		return m.OldFinishedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CryptoSweepJob field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CryptoSweepJobMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case cryptosweepjob.FieldNetwork:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNetwork(v)
+		return nil
+	case cryptosweepjob.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case cryptosweepjob.FieldCreatedBy:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case cryptosweepjob.FieldTotalTasks:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalTasks(v)
+		return nil
+	case cryptosweepjob.FieldCompletedTasks:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompletedTasks(v)
+		return nil
+	case cryptosweepjob.FieldTotalSwept:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalSwept(v)
+		return nil
+	case cryptosweepjob.FieldCollectionAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCollectionAddress(v)
+		return nil
+	case cryptosweepjob.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
+		return nil
+	case cryptosweepjob.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case cryptosweepjob.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case cryptosweepjob.FieldFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinishedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoSweepJob field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CryptoSweepJobMutation) AddedFields() []string {
+	var fields []string
+	if m.addtotal_tasks != nil {
+		fields = append(fields, cryptosweepjob.FieldTotalTasks)
+	}
+	if m.addcompleted_tasks != nil {
+		fields = append(fields, cryptosweepjob.FieldCompletedTasks)
+	}
+	if m.addtotal_swept != nil {
+		fields = append(fields, cryptosweepjob.FieldTotalSwept)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CryptoSweepJobMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case cryptosweepjob.FieldTotalTasks:
+		return m.AddedTotalTasks()
+	case cryptosweepjob.FieldCompletedTasks:
+		return m.AddedCompletedTasks()
+	case cryptosweepjob.FieldTotalSwept:
+		return m.AddedTotalSwept()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CryptoSweepJobMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case cryptosweepjob.FieldTotalTasks:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalTasks(v)
+		return nil
+	case cryptosweepjob.FieldCompletedTasks:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCompletedTasks(v)
+		return nil
+	case cryptosweepjob.FieldTotalSwept:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalSwept(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoSweepJob numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CryptoSweepJobMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(cryptosweepjob.FieldFinishedAt) {
+		fields = append(fields, cryptosweepjob.FieldFinishedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CryptoSweepJobMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CryptoSweepJobMutation) ClearField(name string) error {
+	switch name {
+	case cryptosweepjob.FieldFinishedAt:
+		m.ClearFinishedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoSweepJob nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CryptoSweepJobMutation) ResetField(name string) error {
+	switch name {
+	case cryptosweepjob.FieldNetwork:
+		m.ResetNetwork()
+		return nil
+	case cryptosweepjob.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case cryptosweepjob.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case cryptosweepjob.FieldTotalTasks:
+		m.ResetTotalTasks()
+		return nil
+	case cryptosweepjob.FieldCompletedTasks:
+		m.ResetCompletedTasks()
+		return nil
+	case cryptosweepjob.FieldTotalSwept:
+		m.ResetTotalSwept()
+		return nil
+	case cryptosweepjob.FieldCollectionAddress:
+		m.ResetCollectionAddress()
+		return nil
+	case cryptosweepjob.FieldError:
+		m.ResetError()
+		return nil
+	case cryptosweepjob.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case cryptosweepjob.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case cryptosweepjob.FieldFinishedAt:
+		m.ResetFinishedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoSweepJob field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CryptoSweepJobMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CryptoSweepJobMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CryptoSweepJobMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CryptoSweepJobMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CryptoSweepJobMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CryptoSweepJobMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CryptoSweepJobMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CryptoSweepJob unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CryptoSweepJobMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CryptoSweepJob edge %s", name)
+}
+
+// CryptoSweepTaskMutation represents an operation that mutates the CryptoSweepTask nodes in the graph.
+type CryptoSweepTaskMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int64
+	job_id              *int64
+	addjob_id           *int64
+	network             *string
+	user_id             *int64
+	adduser_id          *int64
+	address             *string
+	derivation_index    *int64
+	addderivation_index *int64
+	amount              *float64
+	addamount           *float64
+	status              *string
+	gas_fund_tx         *string
+	sweep_tx            *string
+	error               *string
+	created_at          *time.Time
+	updated_at          *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*CryptoSweepTask, error)
+	predicates          []predicate.CryptoSweepTask
+}
+
+var _ ent.Mutation = (*CryptoSweepTaskMutation)(nil)
+
+// cryptosweeptaskOption allows management of the mutation configuration using functional options.
+type cryptosweeptaskOption func(*CryptoSweepTaskMutation)
+
+// newCryptoSweepTaskMutation creates new mutation for the CryptoSweepTask entity.
+func newCryptoSweepTaskMutation(c config, op Op, opts ...cryptosweeptaskOption) *CryptoSweepTaskMutation {
+	m := &CryptoSweepTaskMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCryptoSweepTask,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCryptoSweepTaskID sets the ID field of the mutation.
+func withCryptoSweepTaskID(id int64) cryptosweeptaskOption {
+	return func(m *CryptoSweepTaskMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CryptoSweepTask
+		)
+		m.oldValue = func(ctx context.Context) (*CryptoSweepTask, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CryptoSweepTask.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCryptoSweepTask sets the old CryptoSweepTask of the mutation.
+func withCryptoSweepTask(node *CryptoSweepTask) cryptosweeptaskOption {
+	return func(m *CryptoSweepTaskMutation) {
+		m.oldValue = func(context.Context) (*CryptoSweepTask, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CryptoSweepTaskMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CryptoSweepTaskMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CryptoSweepTaskMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CryptoSweepTaskMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CryptoSweepTask.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetJobID sets the "job_id" field.
+func (m *CryptoSweepTaskMutation) SetJobID(i int64) {
+	m.job_id = &i
+	m.addjob_id = nil
+}
+
+// JobID returns the value of the "job_id" field in the mutation.
+func (m *CryptoSweepTaskMutation) JobID() (r int64, exists bool) {
+	v := m.job_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldJobID returns the old "job_id" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldJobID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldJobID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldJobID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldJobID: %w", err)
+	}
+	return oldValue.JobID, nil
+}
+
+// AddJobID adds i to the "job_id" field.
+func (m *CryptoSweepTaskMutation) AddJobID(i int64) {
+	if m.addjob_id != nil {
+		*m.addjob_id += i
+	} else {
+		m.addjob_id = &i
+	}
+}
+
+// AddedJobID returns the value that was added to the "job_id" field in this mutation.
+func (m *CryptoSweepTaskMutation) AddedJobID() (r int64, exists bool) {
+	v := m.addjob_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetJobID resets all changes to the "job_id" field.
+func (m *CryptoSweepTaskMutation) ResetJobID() {
+	m.job_id = nil
+	m.addjob_id = nil
+}
+
+// SetNetwork sets the "network" field.
+func (m *CryptoSweepTaskMutation) SetNetwork(s string) {
+	m.network = &s
+}
+
+// Network returns the value of the "network" field in the mutation.
+func (m *CryptoSweepTaskMutation) Network() (r string, exists bool) {
+	v := m.network
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNetwork returns the old "network" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldNetwork(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNetwork is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNetwork requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNetwork: %w", err)
+	}
+	return oldValue.Network, nil
+}
+
+// ResetNetwork resets all changes to the "network" field.
+func (m *CryptoSweepTaskMutation) ResetNetwork() {
+	m.network = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *CryptoSweepTaskMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *CryptoSweepTaskMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *CryptoSweepTaskMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *CryptoSweepTaskMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *CryptoSweepTaskMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetAddress sets the "address" field.
+func (m *CryptoSweepTaskMutation) SetAddress(s string) {
+	m.address = &s
+}
+
+// Address returns the value of the "address" field in the mutation.
+func (m *CryptoSweepTaskMutation) Address() (r string, exists bool) {
+	v := m.address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddress returns the old "address" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
+	}
+	return oldValue.Address, nil
+}
+
+// ResetAddress resets all changes to the "address" field.
+func (m *CryptoSweepTaskMutation) ResetAddress() {
+	m.address = nil
+}
+
+// SetDerivationIndex sets the "derivation_index" field.
+func (m *CryptoSweepTaskMutation) SetDerivationIndex(i int64) {
+	m.derivation_index = &i
+	m.addderivation_index = nil
+}
+
+// DerivationIndex returns the value of the "derivation_index" field in the mutation.
+func (m *CryptoSweepTaskMutation) DerivationIndex() (r int64, exists bool) {
+	v := m.derivation_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDerivationIndex returns the old "derivation_index" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldDerivationIndex(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDerivationIndex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDerivationIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDerivationIndex: %w", err)
+	}
+	return oldValue.DerivationIndex, nil
+}
+
+// AddDerivationIndex adds i to the "derivation_index" field.
+func (m *CryptoSweepTaskMutation) AddDerivationIndex(i int64) {
+	if m.addderivation_index != nil {
+		*m.addderivation_index += i
+	} else {
+		m.addderivation_index = &i
+	}
+}
+
+// AddedDerivationIndex returns the value that was added to the "derivation_index" field in this mutation.
+func (m *CryptoSweepTaskMutation) AddedDerivationIndex() (r int64, exists bool) {
+	v := m.addderivation_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDerivationIndex resets all changes to the "derivation_index" field.
+func (m *CryptoSweepTaskMutation) ResetDerivationIndex() {
+	m.derivation_index = nil
+	m.addderivation_index = nil
+}
+
+// SetAmount sets the "amount" field.
+func (m *CryptoSweepTaskMutation) SetAmount(f float64) {
+	m.amount = &f
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *CryptoSweepTaskMutation) Amount() (r float64, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds f to the "amount" field.
+func (m *CryptoSweepTaskMutation) AddAmount(f float64) {
+	if m.addamount != nil {
+		*m.addamount += f
+	} else {
+		m.addamount = &f
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *CryptoSweepTaskMutation) AddedAmount() (r float64, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *CryptoSweepTaskMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *CryptoSweepTaskMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *CryptoSweepTaskMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *CryptoSweepTaskMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetGasFundTx sets the "gas_fund_tx" field.
+func (m *CryptoSweepTaskMutation) SetGasFundTx(s string) {
+	m.gas_fund_tx = &s
+}
+
+// GasFundTx returns the value of the "gas_fund_tx" field in the mutation.
+func (m *CryptoSweepTaskMutation) GasFundTx() (r string, exists bool) {
+	v := m.gas_fund_tx
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGasFundTx returns the old "gas_fund_tx" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldGasFundTx(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGasFundTx is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGasFundTx requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGasFundTx: %w", err)
+	}
+	return oldValue.GasFundTx, nil
+}
+
+// ResetGasFundTx resets all changes to the "gas_fund_tx" field.
+func (m *CryptoSweepTaskMutation) ResetGasFundTx() {
+	m.gas_fund_tx = nil
+}
+
+// SetSweepTx sets the "sweep_tx" field.
+func (m *CryptoSweepTaskMutation) SetSweepTx(s string) {
+	m.sweep_tx = &s
+}
+
+// SweepTx returns the value of the "sweep_tx" field in the mutation.
+func (m *CryptoSweepTaskMutation) SweepTx() (r string, exists bool) {
+	v := m.sweep_tx
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSweepTx returns the old "sweep_tx" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldSweepTx(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSweepTx is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSweepTx requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSweepTx: %w", err)
+	}
+	return oldValue.SweepTx, nil
+}
+
+// ResetSweepTx resets all changes to the "sweep_tx" field.
+func (m *CryptoSweepTaskMutation) ResetSweepTx() {
+	m.sweep_tx = nil
+}
+
+// SetError sets the "error" field.
+func (m *CryptoSweepTaskMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *CryptoSweepTaskMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *CryptoSweepTaskMutation) ResetError() {
+	m.error = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CryptoSweepTaskMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CryptoSweepTaskMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CryptoSweepTaskMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CryptoSweepTaskMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CryptoSweepTaskMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CryptoSweepTask entity.
+// If the CryptoSweepTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoSweepTaskMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CryptoSweepTaskMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the CryptoSweepTaskMutation builder.
+func (m *CryptoSweepTaskMutation) Where(ps ...predicate.CryptoSweepTask) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CryptoSweepTaskMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CryptoSweepTaskMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CryptoSweepTask, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CryptoSweepTaskMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CryptoSweepTaskMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CryptoSweepTask).
+func (m *CryptoSweepTaskMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CryptoSweepTaskMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.job_id != nil {
+		fields = append(fields, cryptosweeptask.FieldJobID)
+	}
+	if m.network != nil {
+		fields = append(fields, cryptosweeptask.FieldNetwork)
+	}
+	if m.user_id != nil {
+		fields = append(fields, cryptosweeptask.FieldUserID)
+	}
+	if m.address != nil {
+		fields = append(fields, cryptosweeptask.FieldAddress)
+	}
+	if m.derivation_index != nil {
+		fields = append(fields, cryptosweeptask.FieldDerivationIndex)
+	}
+	if m.amount != nil {
+		fields = append(fields, cryptosweeptask.FieldAmount)
+	}
+	if m.status != nil {
+		fields = append(fields, cryptosweeptask.FieldStatus)
+	}
+	if m.gas_fund_tx != nil {
+		fields = append(fields, cryptosweeptask.FieldGasFundTx)
+	}
+	if m.sweep_tx != nil {
+		fields = append(fields, cryptosweeptask.FieldSweepTx)
+	}
+	if m.error != nil {
+		fields = append(fields, cryptosweeptask.FieldError)
+	}
+	if m.created_at != nil {
+		fields = append(fields, cryptosweeptask.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, cryptosweeptask.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CryptoSweepTaskMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case cryptosweeptask.FieldJobID:
+		return m.JobID()
+	case cryptosweeptask.FieldNetwork:
+		return m.Network()
+	case cryptosweeptask.FieldUserID:
+		return m.UserID()
+	case cryptosweeptask.FieldAddress:
+		return m.Address()
+	case cryptosweeptask.FieldDerivationIndex:
+		return m.DerivationIndex()
+	case cryptosweeptask.FieldAmount:
+		return m.Amount()
+	case cryptosweeptask.FieldStatus:
+		return m.Status()
+	case cryptosweeptask.FieldGasFundTx:
+		return m.GasFundTx()
+	case cryptosweeptask.FieldSweepTx:
+		return m.SweepTx()
+	case cryptosweeptask.FieldError:
+		return m.Error()
+	case cryptosweeptask.FieldCreatedAt:
+		return m.CreatedAt()
+	case cryptosweeptask.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CryptoSweepTaskMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case cryptosweeptask.FieldJobID:
+		return m.OldJobID(ctx)
+	case cryptosweeptask.FieldNetwork:
+		return m.OldNetwork(ctx)
+	case cryptosweeptask.FieldUserID:
+		return m.OldUserID(ctx)
+	case cryptosweeptask.FieldAddress:
+		return m.OldAddress(ctx)
+	case cryptosweeptask.FieldDerivationIndex:
+		return m.OldDerivationIndex(ctx)
+	case cryptosweeptask.FieldAmount:
+		return m.OldAmount(ctx)
+	case cryptosweeptask.FieldStatus:
+		return m.OldStatus(ctx)
+	case cryptosweeptask.FieldGasFundTx:
+		return m.OldGasFundTx(ctx)
+	case cryptosweeptask.FieldSweepTx:
+		return m.OldSweepTx(ctx)
+	case cryptosweeptask.FieldError:
+		return m.OldError(ctx)
+	case cryptosweeptask.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case cryptosweeptask.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CryptoSweepTask field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CryptoSweepTaskMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case cryptosweeptask.FieldJobID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetJobID(v)
+		return nil
+	case cryptosweeptask.FieldNetwork:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNetwork(v)
+		return nil
+	case cryptosweeptask.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case cryptosweeptask.FieldAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddress(v)
+		return nil
+	case cryptosweeptask.FieldDerivationIndex:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDerivationIndex(v)
+		return nil
+	case cryptosweeptask.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
+	case cryptosweeptask.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case cryptosweeptask.FieldGasFundTx:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGasFundTx(v)
+		return nil
+	case cryptosweeptask.FieldSweepTx:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSweepTx(v)
+		return nil
+	case cryptosweeptask.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
+		return nil
+	case cryptosweeptask.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case cryptosweeptask.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoSweepTask field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CryptoSweepTaskMutation) AddedFields() []string {
+	var fields []string
+	if m.addjob_id != nil {
+		fields = append(fields, cryptosweeptask.FieldJobID)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, cryptosweeptask.FieldUserID)
+	}
+	if m.addderivation_index != nil {
+		fields = append(fields, cryptosweeptask.FieldDerivationIndex)
+	}
+	if m.addamount != nil {
+		fields = append(fields, cryptosweeptask.FieldAmount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CryptoSweepTaskMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case cryptosweeptask.FieldJobID:
+		return m.AddedJobID()
+	case cryptosweeptask.FieldUserID:
+		return m.AddedUserID()
+	case cryptosweeptask.FieldDerivationIndex:
+		return m.AddedDerivationIndex()
+	case cryptosweeptask.FieldAmount:
+		return m.AddedAmount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CryptoSweepTaskMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case cryptosweeptask.FieldJobID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddJobID(v)
+		return nil
+	case cryptosweeptask.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	case cryptosweeptask.FieldDerivationIndex:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDerivationIndex(v)
+		return nil
+	case cryptosweeptask.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoSweepTask numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CryptoSweepTaskMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CryptoSweepTaskMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CryptoSweepTaskMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown CryptoSweepTask nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CryptoSweepTaskMutation) ResetField(name string) error {
+	switch name {
+	case cryptosweeptask.FieldJobID:
+		m.ResetJobID()
+		return nil
+	case cryptosweeptask.FieldNetwork:
+		m.ResetNetwork()
+		return nil
+	case cryptosweeptask.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case cryptosweeptask.FieldAddress:
+		m.ResetAddress()
+		return nil
+	case cryptosweeptask.FieldDerivationIndex:
+		m.ResetDerivationIndex()
+		return nil
+	case cryptosweeptask.FieldAmount:
+		m.ResetAmount()
+		return nil
+	case cryptosweeptask.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case cryptosweeptask.FieldGasFundTx:
+		m.ResetGasFundTx()
+		return nil
+	case cryptosweeptask.FieldSweepTx:
+		m.ResetSweepTx()
+		return nil
+	case cryptosweeptask.FieldError:
+		m.ResetError()
+		return nil
+	case cryptosweeptask.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case cryptosweeptask.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoSweepTask field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CryptoSweepTaskMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CryptoSweepTaskMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CryptoSweepTaskMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CryptoSweepTaskMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CryptoSweepTaskMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CryptoSweepTaskMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CryptoSweepTaskMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CryptoSweepTask unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CryptoSweepTaskMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CryptoSweepTask edge %s", name)
+}
+
+// CryptoWalletConfigMutation represents an operation that mutates the CryptoWalletConfig nodes in the graph.
+type CryptoWalletConfigMutation struct {
+	config
+	op                       Op
+	typ                      string
+	id                       *int64
+	encrypted_mnemonic       *string
+	next_derivation_index    *int64
+	addnext_derivation_index *int64
+	collection_address       *string
+	fee_address              *string
+	eth_collection_address   *string
+	eth_fee_address          *string
+	initialized              *bool
+	created_at               *time.Time
+	updated_at               *time.Time
+	clearedFields            map[string]struct{}
+	done                     bool
+	oldValue                 func(context.Context) (*CryptoWalletConfig, error)
+	predicates               []predicate.CryptoWalletConfig
+}
+
+var _ ent.Mutation = (*CryptoWalletConfigMutation)(nil)
+
+// cryptowalletconfigOption allows management of the mutation configuration using functional options.
+type cryptowalletconfigOption func(*CryptoWalletConfigMutation)
+
+// newCryptoWalletConfigMutation creates new mutation for the CryptoWalletConfig entity.
+func newCryptoWalletConfigMutation(c config, op Op, opts ...cryptowalletconfigOption) *CryptoWalletConfigMutation {
+	m := &CryptoWalletConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCryptoWalletConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCryptoWalletConfigID sets the ID field of the mutation.
+func withCryptoWalletConfigID(id int64) cryptowalletconfigOption {
+	return func(m *CryptoWalletConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CryptoWalletConfig
+		)
+		m.oldValue = func(ctx context.Context) (*CryptoWalletConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CryptoWalletConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCryptoWalletConfig sets the old CryptoWalletConfig of the mutation.
+func withCryptoWalletConfig(node *CryptoWalletConfig) cryptowalletconfigOption {
+	return func(m *CryptoWalletConfigMutation) {
+		m.oldValue = func(context.Context) (*CryptoWalletConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CryptoWalletConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CryptoWalletConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CryptoWalletConfigMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CryptoWalletConfigMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CryptoWalletConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetEncryptedMnemonic sets the "encrypted_mnemonic" field.
+func (m *CryptoWalletConfigMutation) SetEncryptedMnemonic(s string) {
+	m.encrypted_mnemonic = &s
+}
+
+// EncryptedMnemonic returns the value of the "encrypted_mnemonic" field in the mutation.
+func (m *CryptoWalletConfigMutation) EncryptedMnemonic() (r string, exists bool) {
+	v := m.encrypted_mnemonic
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEncryptedMnemonic returns the old "encrypted_mnemonic" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldEncryptedMnemonic(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEncryptedMnemonic is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEncryptedMnemonic requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEncryptedMnemonic: %w", err)
+	}
+	return oldValue.EncryptedMnemonic, nil
+}
+
+// ResetEncryptedMnemonic resets all changes to the "encrypted_mnemonic" field.
+func (m *CryptoWalletConfigMutation) ResetEncryptedMnemonic() {
+	m.encrypted_mnemonic = nil
+}
+
+// SetNextDerivationIndex sets the "next_derivation_index" field.
+func (m *CryptoWalletConfigMutation) SetNextDerivationIndex(i int64) {
+	m.next_derivation_index = &i
+	m.addnext_derivation_index = nil
+}
+
+// NextDerivationIndex returns the value of the "next_derivation_index" field in the mutation.
+func (m *CryptoWalletConfigMutation) NextDerivationIndex() (r int64, exists bool) {
+	v := m.next_derivation_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNextDerivationIndex returns the old "next_derivation_index" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldNextDerivationIndex(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNextDerivationIndex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNextDerivationIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNextDerivationIndex: %w", err)
+	}
+	return oldValue.NextDerivationIndex, nil
+}
+
+// AddNextDerivationIndex adds i to the "next_derivation_index" field.
+func (m *CryptoWalletConfigMutation) AddNextDerivationIndex(i int64) {
+	if m.addnext_derivation_index != nil {
+		*m.addnext_derivation_index += i
+	} else {
+		m.addnext_derivation_index = &i
+	}
+}
+
+// AddedNextDerivationIndex returns the value that was added to the "next_derivation_index" field in this mutation.
+func (m *CryptoWalletConfigMutation) AddedNextDerivationIndex() (r int64, exists bool) {
+	v := m.addnext_derivation_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetNextDerivationIndex resets all changes to the "next_derivation_index" field.
+func (m *CryptoWalletConfigMutation) ResetNextDerivationIndex() {
+	m.next_derivation_index = nil
+	m.addnext_derivation_index = nil
+}
+
+// SetCollectionAddress sets the "collection_address" field.
+func (m *CryptoWalletConfigMutation) SetCollectionAddress(s string) {
+	m.collection_address = &s
+}
+
+// CollectionAddress returns the value of the "collection_address" field in the mutation.
+func (m *CryptoWalletConfigMutation) CollectionAddress() (r string, exists bool) {
+	v := m.collection_address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCollectionAddress returns the old "collection_address" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldCollectionAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCollectionAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCollectionAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCollectionAddress: %w", err)
+	}
+	return oldValue.CollectionAddress, nil
+}
+
+// ResetCollectionAddress resets all changes to the "collection_address" field.
+func (m *CryptoWalletConfigMutation) ResetCollectionAddress() {
+	m.collection_address = nil
+}
+
+// SetFeeAddress sets the "fee_address" field.
+func (m *CryptoWalletConfigMutation) SetFeeAddress(s string) {
+	m.fee_address = &s
+}
+
+// FeeAddress returns the value of the "fee_address" field in the mutation.
+func (m *CryptoWalletConfigMutation) FeeAddress() (r string, exists bool) {
+	v := m.fee_address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeeAddress returns the old "fee_address" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldFeeAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeeAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeeAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeeAddress: %w", err)
+	}
+	return oldValue.FeeAddress, nil
+}
+
+// ResetFeeAddress resets all changes to the "fee_address" field.
+func (m *CryptoWalletConfigMutation) ResetFeeAddress() {
+	m.fee_address = nil
+}
+
+// SetEthCollectionAddress sets the "eth_collection_address" field.
+func (m *CryptoWalletConfigMutation) SetEthCollectionAddress(s string) {
+	m.eth_collection_address = &s
+}
+
+// EthCollectionAddress returns the value of the "eth_collection_address" field in the mutation.
+func (m *CryptoWalletConfigMutation) EthCollectionAddress() (r string, exists bool) {
+	v := m.eth_collection_address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEthCollectionAddress returns the old "eth_collection_address" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldEthCollectionAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEthCollectionAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEthCollectionAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEthCollectionAddress: %w", err)
+	}
+	return oldValue.EthCollectionAddress, nil
+}
+
+// ResetEthCollectionAddress resets all changes to the "eth_collection_address" field.
+func (m *CryptoWalletConfigMutation) ResetEthCollectionAddress() {
+	m.eth_collection_address = nil
+}
+
+// SetEthFeeAddress sets the "eth_fee_address" field.
+func (m *CryptoWalletConfigMutation) SetEthFeeAddress(s string) {
+	m.eth_fee_address = &s
+}
+
+// EthFeeAddress returns the value of the "eth_fee_address" field in the mutation.
+func (m *CryptoWalletConfigMutation) EthFeeAddress() (r string, exists bool) {
+	v := m.eth_fee_address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEthFeeAddress returns the old "eth_fee_address" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldEthFeeAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEthFeeAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEthFeeAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEthFeeAddress: %w", err)
+	}
+	return oldValue.EthFeeAddress, nil
+}
+
+// ResetEthFeeAddress resets all changes to the "eth_fee_address" field.
+func (m *CryptoWalletConfigMutation) ResetEthFeeAddress() {
+	m.eth_fee_address = nil
+}
+
+// SetInitialized sets the "initialized" field.
+func (m *CryptoWalletConfigMutation) SetInitialized(b bool) {
+	m.initialized = &b
+}
+
+// Initialized returns the value of the "initialized" field in the mutation.
+func (m *CryptoWalletConfigMutation) Initialized() (r bool, exists bool) {
+	v := m.initialized
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInitialized returns the old "initialized" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldInitialized(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInitialized is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInitialized requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInitialized: %w", err)
+	}
+	return oldValue.Initialized, nil
+}
+
+// ResetInitialized resets all changes to the "initialized" field.
+func (m *CryptoWalletConfigMutation) ResetInitialized() {
+	m.initialized = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CryptoWalletConfigMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CryptoWalletConfigMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CryptoWalletConfigMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CryptoWalletConfigMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CryptoWalletConfigMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CryptoWalletConfig entity.
+// If the CryptoWalletConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CryptoWalletConfigMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CryptoWalletConfigMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the CryptoWalletConfigMutation builder.
+func (m *CryptoWalletConfigMutation) Where(ps ...predicate.CryptoWalletConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CryptoWalletConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CryptoWalletConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CryptoWalletConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CryptoWalletConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CryptoWalletConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CryptoWalletConfig).
+func (m *CryptoWalletConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CryptoWalletConfigMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.encrypted_mnemonic != nil {
+		fields = append(fields, cryptowalletconfig.FieldEncryptedMnemonic)
+	}
+	if m.next_derivation_index != nil {
+		fields = append(fields, cryptowalletconfig.FieldNextDerivationIndex)
+	}
+	if m.collection_address != nil {
+		fields = append(fields, cryptowalletconfig.FieldCollectionAddress)
+	}
+	if m.fee_address != nil {
+		fields = append(fields, cryptowalletconfig.FieldFeeAddress)
+	}
+	if m.eth_collection_address != nil {
+		fields = append(fields, cryptowalletconfig.FieldEthCollectionAddress)
+	}
+	if m.eth_fee_address != nil {
+		fields = append(fields, cryptowalletconfig.FieldEthFeeAddress)
+	}
+	if m.initialized != nil {
+		fields = append(fields, cryptowalletconfig.FieldInitialized)
+	}
+	if m.created_at != nil {
+		fields = append(fields, cryptowalletconfig.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, cryptowalletconfig.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CryptoWalletConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case cryptowalletconfig.FieldEncryptedMnemonic:
+		return m.EncryptedMnemonic()
+	case cryptowalletconfig.FieldNextDerivationIndex:
+		return m.NextDerivationIndex()
+	case cryptowalletconfig.FieldCollectionAddress:
+		return m.CollectionAddress()
+	case cryptowalletconfig.FieldFeeAddress:
+		return m.FeeAddress()
+	case cryptowalletconfig.FieldEthCollectionAddress:
+		return m.EthCollectionAddress()
+	case cryptowalletconfig.FieldEthFeeAddress:
+		return m.EthFeeAddress()
+	case cryptowalletconfig.FieldInitialized:
+		return m.Initialized()
+	case cryptowalletconfig.FieldCreatedAt:
+		return m.CreatedAt()
+	case cryptowalletconfig.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CryptoWalletConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case cryptowalletconfig.FieldEncryptedMnemonic:
+		return m.OldEncryptedMnemonic(ctx)
+	case cryptowalletconfig.FieldNextDerivationIndex:
+		return m.OldNextDerivationIndex(ctx)
+	case cryptowalletconfig.FieldCollectionAddress:
+		return m.OldCollectionAddress(ctx)
+	case cryptowalletconfig.FieldFeeAddress:
+		return m.OldFeeAddress(ctx)
+	case cryptowalletconfig.FieldEthCollectionAddress:
+		return m.OldEthCollectionAddress(ctx)
+	case cryptowalletconfig.FieldEthFeeAddress:
+		return m.OldEthFeeAddress(ctx)
+	case cryptowalletconfig.FieldInitialized:
+		return m.OldInitialized(ctx)
+	case cryptowalletconfig.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case cryptowalletconfig.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CryptoWalletConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CryptoWalletConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case cryptowalletconfig.FieldEncryptedMnemonic:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEncryptedMnemonic(v)
+		return nil
+	case cryptowalletconfig.FieldNextDerivationIndex:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNextDerivationIndex(v)
+		return nil
+	case cryptowalletconfig.FieldCollectionAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCollectionAddress(v)
+		return nil
+	case cryptowalletconfig.FieldFeeAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeeAddress(v)
+		return nil
+	case cryptowalletconfig.FieldEthCollectionAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEthCollectionAddress(v)
+		return nil
+	case cryptowalletconfig.FieldEthFeeAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEthFeeAddress(v)
+		return nil
+	case cryptowalletconfig.FieldInitialized:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInitialized(v)
+		return nil
+	case cryptowalletconfig.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case cryptowalletconfig.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoWalletConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CryptoWalletConfigMutation) AddedFields() []string {
+	var fields []string
+	if m.addnext_derivation_index != nil {
+		fields = append(fields, cryptowalletconfig.FieldNextDerivationIndex)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CryptoWalletConfigMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case cryptowalletconfig.FieldNextDerivationIndex:
+		return m.AddedNextDerivationIndex()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CryptoWalletConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case cryptowalletconfig.FieldNextDerivationIndex:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddNextDerivationIndex(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoWalletConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CryptoWalletConfigMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CryptoWalletConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CryptoWalletConfigMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown CryptoWalletConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CryptoWalletConfigMutation) ResetField(name string) error {
+	switch name {
+	case cryptowalletconfig.FieldEncryptedMnemonic:
+		m.ResetEncryptedMnemonic()
+		return nil
+	case cryptowalletconfig.FieldNextDerivationIndex:
+		m.ResetNextDerivationIndex()
+		return nil
+	case cryptowalletconfig.FieldCollectionAddress:
+		m.ResetCollectionAddress()
+		return nil
+	case cryptowalletconfig.FieldFeeAddress:
+		m.ResetFeeAddress()
+		return nil
+	case cryptowalletconfig.FieldEthCollectionAddress:
+		m.ResetEthCollectionAddress()
+		return nil
+	case cryptowalletconfig.FieldEthFeeAddress:
+		m.ResetEthFeeAddress()
+		return nil
+	case cryptowalletconfig.FieldInitialized:
+		m.ResetInitialized()
+		return nil
+	case cryptowalletconfig.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case cryptowalletconfig.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CryptoWalletConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CryptoWalletConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CryptoWalletConfigMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CryptoWalletConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CryptoWalletConfigMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CryptoWalletConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CryptoWalletConfigMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CryptoWalletConfigMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CryptoWalletConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CryptoWalletConfigMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CryptoWalletConfig edge %s", name)
 }
 
 // ErrorPassthroughRuleMutation represents an operation that mutates the ErrorPassthroughRule nodes in the graph.
@@ -33305,6 +36154,747 @@ func (m *TLSFingerprintProfileMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown TLSFingerprintProfile edge %s", name)
 }
 
+// TRC20ConsumedTxMutation represents an operation that mutates the TRC20ConsumedTx nodes in the graph.
+type TRC20ConsumedTxMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int64
+	tx_hash       *string
+	network       *string
+	order_id      *int64
+	addorder_id   *int64
+	address       *string
+	amount        *float64
+	addamount     *float64
+	confirmed_at  *time.Time
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*TRC20ConsumedTx, error)
+	predicates    []predicate.TRC20ConsumedTx
+}
+
+var _ ent.Mutation = (*TRC20ConsumedTxMutation)(nil)
+
+// trc20consumedtxOption allows management of the mutation configuration using functional options.
+type trc20consumedtxOption func(*TRC20ConsumedTxMutation)
+
+// newTRC20ConsumedTxMutation creates new mutation for the TRC20ConsumedTx entity.
+func newTRC20ConsumedTxMutation(c config, op Op, opts ...trc20consumedtxOption) *TRC20ConsumedTxMutation {
+	m := &TRC20ConsumedTxMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTRC20ConsumedTx,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTRC20ConsumedTxID sets the ID field of the mutation.
+func withTRC20ConsumedTxID(id int64) trc20consumedtxOption {
+	return func(m *TRC20ConsumedTxMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *TRC20ConsumedTx
+		)
+		m.oldValue = func(ctx context.Context) (*TRC20ConsumedTx, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().TRC20ConsumedTx.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTRC20ConsumedTx sets the old TRC20ConsumedTx of the mutation.
+func withTRC20ConsumedTx(node *TRC20ConsumedTx) trc20consumedtxOption {
+	return func(m *TRC20ConsumedTxMutation) {
+		m.oldValue = func(context.Context) (*TRC20ConsumedTx, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TRC20ConsumedTxMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TRC20ConsumedTxMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TRC20ConsumedTxMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TRC20ConsumedTxMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().TRC20ConsumedTx.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTxHash sets the "tx_hash" field.
+func (m *TRC20ConsumedTxMutation) SetTxHash(s string) {
+	m.tx_hash = &s
+}
+
+// TxHash returns the value of the "tx_hash" field in the mutation.
+func (m *TRC20ConsumedTxMutation) TxHash() (r string, exists bool) {
+	v := m.tx_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTxHash returns the old "tx_hash" field's value of the TRC20ConsumedTx entity.
+// If the TRC20ConsumedTx object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TRC20ConsumedTxMutation) OldTxHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTxHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTxHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTxHash: %w", err)
+	}
+	return oldValue.TxHash, nil
+}
+
+// ResetTxHash resets all changes to the "tx_hash" field.
+func (m *TRC20ConsumedTxMutation) ResetTxHash() {
+	m.tx_hash = nil
+}
+
+// SetNetwork sets the "network" field.
+func (m *TRC20ConsumedTxMutation) SetNetwork(s string) {
+	m.network = &s
+}
+
+// Network returns the value of the "network" field in the mutation.
+func (m *TRC20ConsumedTxMutation) Network() (r string, exists bool) {
+	v := m.network
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNetwork returns the old "network" field's value of the TRC20ConsumedTx entity.
+// If the TRC20ConsumedTx object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TRC20ConsumedTxMutation) OldNetwork(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNetwork is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNetwork requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNetwork: %w", err)
+	}
+	return oldValue.Network, nil
+}
+
+// ResetNetwork resets all changes to the "network" field.
+func (m *TRC20ConsumedTxMutation) ResetNetwork() {
+	m.network = nil
+}
+
+// SetOrderID sets the "order_id" field.
+func (m *TRC20ConsumedTxMutation) SetOrderID(i int64) {
+	m.order_id = &i
+	m.addorder_id = nil
+}
+
+// OrderID returns the value of the "order_id" field in the mutation.
+func (m *TRC20ConsumedTxMutation) OrderID() (r int64, exists bool) {
+	v := m.order_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrderID returns the old "order_id" field's value of the TRC20ConsumedTx entity.
+// If the TRC20ConsumedTx object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TRC20ConsumedTxMutation) OldOrderID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrderID: %w", err)
+	}
+	return oldValue.OrderID, nil
+}
+
+// AddOrderID adds i to the "order_id" field.
+func (m *TRC20ConsumedTxMutation) AddOrderID(i int64) {
+	if m.addorder_id != nil {
+		*m.addorder_id += i
+	} else {
+		m.addorder_id = &i
+	}
+}
+
+// AddedOrderID returns the value that was added to the "order_id" field in this mutation.
+func (m *TRC20ConsumedTxMutation) AddedOrderID() (r int64, exists bool) {
+	v := m.addorder_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOrderID resets all changes to the "order_id" field.
+func (m *TRC20ConsumedTxMutation) ResetOrderID() {
+	m.order_id = nil
+	m.addorder_id = nil
+}
+
+// SetAddress sets the "address" field.
+func (m *TRC20ConsumedTxMutation) SetAddress(s string) {
+	m.address = &s
+}
+
+// Address returns the value of the "address" field in the mutation.
+func (m *TRC20ConsumedTxMutation) Address() (r string, exists bool) {
+	v := m.address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddress returns the old "address" field's value of the TRC20ConsumedTx entity.
+// If the TRC20ConsumedTx object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TRC20ConsumedTxMutation) OldAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
+	}
+	return oldValue.Address, nil
+}
+
+// ResetAddress resets all changes to the "address" field.
+func (m *TRC20ConsumedTxMutation) ResetAddress() {
+	m.address = nil
+}
+
+// SetAmount sets the "amount" field.
+func (m *TRC20ConsumedTxMutation) SetAmount(f float64) {
+	m.amount = &f
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *TRC20ConsumedTxMutation) Amount() (r float64, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the TRC20ConsumedTx entity.
+// If the TRC20ConsumedTx object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TRC20ConsumedTxMutation) OldAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds f to the "amount" field.
+func (m *TRC20ConsumedTxMutation) AddAmount(f float64) {
+	if m.addamount != nil {
+		*m.addamount += f
+	} else {
+		m.addamount = &f
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *TRC20ConsumedTxMutation) AddedAmount() (r float64, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *TRC20ConsumedTxMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
+// SetConfirmedAt sets the "confirmed_at" field.
+func (m *TRC20ConsumedTxMutation) SetConfirmedAt(t time.Time) {
+	m.confirmed_at = &t
+}
+
+// ConfirmedAt returns the value of the "confirmed_at" field in the mutation.
+func (m *TRC20ConsumedTxMutation) ConfirmedAt() (r time.Time, exists bool) {
+	v := m.confirmed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmedAt returns the old "confirmed_at" field's value of the TRC20ConsumedTx entity.
+// If the TRC20ConsumedTx object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TRC20ConsumedTxMutation) OldConfirmedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmedAt: %w", err)
+	}
+	return oldValue.ConfirmedAt, nil
+}
+
+// ClearConfirmedAt clears the value of the "confirmed_at" field.
+func (m *TRC20ConsumedTxMutation) ClearConfirmedAt() {
+	m.confirmed_at = nil
+	m.clearedFields[trc20consumedtx.FieldConfirmedAt] = struct{}{}
+}
+
+// ConfirmedAtCleared returns if the "confirmed_at" field was cleared in this mutation.
+func (m *TRC20ConsumedTxMutation) ConfirmedAtCleared() bool {
+	_, ok := m.clearedFields[trc20consumedtx.FieldConfirmedAt]
+	return ok
+}
+
+// ResetConfirmedAt resets all changes to the "confirmed_at" field.
+func (m *TRC20ConsumedTxMutation) ResetConfirmedAt() {
+	m.confirmed_at = nil
+	delete(m.clearedFields, trc20consumedtx.FieldConfirmedAt)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *TRC20ConsumedTxMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *TRC20ConsumedTxMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the TRC20ConsumedTx entity.
+// If the TRC20ConsumedTx object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TRC20ConsumedTxMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *TRC20ConsumedTxMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// Where appends a list predicates to the TRC20ConsumedTxMutation builder.
+func (m *TRC20ConsumedTxMutation) Where(ps ...predicate.TRC20ConsumedTx) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TRC20ConsumedTxMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TRC20ConsumedTxMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.TRC20ConsumedTx, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TRC20ConsumedTxMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TRC20ConsumedTxMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (TRC20ConsumedTx).
+func (m *TRC20ConsumedTxMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TRC20ConsumedTxMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.tx_hash != nil {
+		fields = append(fields, trc20consumedtx.FieldTxHash)
+	}
+	if m.network != nil {
+		fields = append(fields, trc20consumedtx.FieldNetwork)
+	}
+	if m.order_id != nil {
+		fields = append(fields, trc20consumedtx.FieldOrderID)
+	}
+	if m.address != nil {
+		fields = append(fields, trc20consumedtx.FieldAddress)
+	}
+	if m.amount != nil {
+		fields = append(fields, trc20consumedtx.FieldAmount)
+	}
+	if m.confirmed_at != nil {
+		fields = append(fields, trc20consumedtx.FieldConfirmedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, trc20consumedtx.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TRC20ConsumedTxMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case trc20consumedtx.FieldTxHash:
+		return m.TxHash()
+	case trc20consumedtx.FieldNetwork:
+		return m.Network()
+	case trc20consumedtx.FieldOrderID:
+		return m.OrderID()
+	case trc20consumedtx.FieldAddress:
+		return m.Address()
+	case trc20consumedtx.FieldAmount:
+		return m.Amount()
+	case trc20consumedtx.FieldConfirmedAt:
+		return m.ConfirmedAt()
+	case trc20consumedtx.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TRC20ConsumedTxMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case trc20consumedtx.FieldTxHash:
+		return m.OldTxHash(ctx)
+	case trc20consumedtx.FieldNetwork:
+		return m.OldNetwork(ctx)
+	case trc20consumedtx.FieldOrderID:
+		return m.OldOrderID(ctx)
+	case trc20consumedtx.FieldAddress:
+		return m.OldAddress(ctx)
+	case trc20consumedtx.FieldAmount:
+		return m.OldAmount(ctx)
+	case trc20consumedtx.FieldConfirmedAt:
+		return m.OldConfirmedAt(ctx)
+	case trc20consumedtx.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown TRC20ConsumedTx field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TRC20ConsumedTxMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case trc20consumedtx.FieldTxHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTxHash(v)
+		return nil
+	case trc20consumedtx.FieldNetwork:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNetwork(v)
+		return nil
+	case trc20consumedtx.FieldOrderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrderID(v)
+		return nil
+	case trc20consumedtx.FieldAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddress(v)
+		return nil
+	case trc20consumedtx.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
+	case trc20consumedtx.FieldConfirmedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmedAt(v)
+		return nil
+	case trc20consumedtx.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TRC20ConsumedTx field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TRC20ConsumedTxMutation) AddedFields() []string {
+	var fields []string
+	if m.addorder_id != nil {
+		fields = append(fields, trc20consumedtx.FieldOrderID)
+	}
+	if m.addamount != nil {
+		fields = append(fields, trc20consumedtx.FieldAmount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TRC20ConsumedTxMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case trc20consumedtx.FieldOrderID:
+		return m.AddedOrderID()
+	case trc20consumedtx.FieldAmount:
+		return m.AddedAmount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TRC20ConsumedTxMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case trc20consumedtx.FieldOrderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOrderID(v)
+		return nil
+	case trc20consumedtx.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TRC20ConsumedTx numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TRC20ConsumedTxMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(trc20consumedtx.FieldConfirmedAt) {
+		fields = append(fields, trc20consumedtx.FieldConfirmedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TRC20ConsumedTxMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TRC20ConsumedTxMutation) ClearField(name string) error {
+	switch name {
+	case trc20consumedtx.FieldConfirmedAt:
+		m.ClearConfirmedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown TRC20ConsumedTx nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TRC20ConsumedTxMutation) ResetField(name string) error {
+	switch name {
+	case trc20consumedtx.FieldTxHash:
+		m.ResetTxHash()
+		return nil
+	case trc20consumedtx.FieldNetwork:
+		m.ResetNetwork()
+		return nil
+	case trc20consumedtx.FieldOrderID:
+		m.ResetOrderID()
+		return nil
+	case trc20consumedtx.FieldAddress:
+		m.ResetAddress()
+		return nil
+	case trc20consumedtx.FieldAmount:
+		m.ResetAmount()
+		return nil
+	case trc20consumedtx.FieldConfirmedAt:
+		m.ResetConfirmedAt()
+		return nil
+	case trc20consumedtx.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown TRC20ConsumedTx field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TRC20ConsumedTxMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TRC20ConsumedTxMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TRC20ConsumedTxMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TRC20ConsumedTxMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TRC20ConsumedTxMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TRC20ConsumedTxMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TRC20ConsumedTxMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown TRC20ConsumedTx unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TRC20ConsumedTxMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown TRC20ConsumedTx edge %s", name)
+}
+
 // UsageCleanupTaskMutation represents an operation that mutates the UsageCleanupTask nodes in the graph.
 type UsageCleanupTaskMutation struct {
 	config
@@ -43194,6 +46784,834 @@ func (m *UserAttributeValueMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown UserAttributeValue edge %s", name)
+}
+
+// UserCryptoAddressMutation represents an operation that mutates the UserCryptoAddress nodes in the graph.
+type UserCryptoAddressMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int64
+	user_id             *int64
+	adduser_id          *int64
+	network             *string
+	address             *string
+	derivation_index    *int64
+	addderivation_index *int64
+	last_balance        *float64
+	addlast_balance     *float64
+	last_balance_at     *time.Time
+	created_at          *time.Time
+	updated_at          *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*UserCryptoAddress, error)
+	predicates          []predicate.UserCryptoAddress
+}
+
+var _ ent.Mutation = (*UserCryptoAddressMutation)(nil)
+
+// usercryptoaddressOption allows management of the mutation configuration using functional options.
+type usercryptoaddressOption func(*UserCryptoAddressMutation)
+
+// newUserCryptoAddressMutation creates new mutation for the UserCryptoAddress entity.
+func newUserCryptoAddressMutation(c config, op Op, opts ...usercryptoaddressOption) *UserCryptoAddressMutation {
+	m := &UserCryptoAddressMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUserCryptoAddress,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUserCryptoAddressID sets the ID field of the mutation.
+func withUserCryptoAddressID(id int64) usercryptoaddressOption {
+	return func(m *UserCryptoAddressMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UserCryptoAddress
+		)
+		m.oldValue = func(ctx context.Context) (*UserCryptoAddress, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UserCryptoAddress.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUserCryptoAddress sets the old UserCryptoAddress of the mutation.
+func withUserCryptoAddress(node *UserCryptoAddress) usercryptoaddressOption {
+	return func(m *UserCryptoAddressMutation) {
+		m.oldValue = func(context.Context) (*UserCryptoAddress, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UserCryptoAddressMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UserCryptoAddressMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *UserCryptoAddressMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *UserCryptoAddressMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().UserCryptoAddress.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetUserID sets the "user_id" field.
+func (m *UserCryptoAddressMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *UserCryptoAddressMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the UserCryptoAddress entity.
+// If the UserCryptoAddress object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserCryptoAddressMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *UserCryptoAddressMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *UserCryptoAddressMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *UserCryptoAddressMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetNetwork sets the "network" field.
+func (m *UserCryptoAddressMutation) SetNetwork(s string) {
+	m.network = &s
+}
+
+// Network returns the value of the "network" field in the mutation.
+func (m *UserCryptoAddressMutation) Network() (r string, exists bool) {
+	v := m.network
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNetwork returns the old "network" field's value of the UserCryptoAddress entity.
+// If the UserCryptoAddress object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserCryptoAddressMutation) OldNetwork(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNetwork is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNetwork requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNetwork: %w", err)
+	}
+	return oldValue.Network, nil
+}
+
+// ResetNetwork resets all changes to the "network" field.
+func (m *UserCryptoAddressMutation) ResetNetwork() {
+	m.network = nil
+}
+
+// SetAddress sets the "address" field.
+func (m *UserCryptoAddressMutation) SetAddress(s string) {
+	m.address = &s
+}
+
+// Address returns the value of the "address" field in the mutation.
+func (m *UserCryptoAddressMutation) Address() (r string, exists bool) {
+	v := m.address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddress returns the old "address" field's value of the UserCryptoAddress entity.
+// If the UserCryptoAddress object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserCryptoAddressMutation) OldAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
+	}
+	return oldValue.Address, nil
+}
+
+// ResetAddress resets all changes to the "address" field.
+func (m *UserCryptoAddressMutation) ResetAddress() {
+	m.address = nil
+}
+
+// SetDerivationIndex sets the "derivation_index" field.
+func (m *UserCryptoAddressMutation) SetDerivationIndex(i int64) {
+	m.derivation_index = &i
+	m.addderivation_index = nil
+}
+
+// DerivationIndex returns the value of the "derivation_index" field in the mutation.
+func (m *UserCryptoAddressMutation) DerivationIndex() (r int64, exists bool) {
+	v := m.derivation_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDerivationIndex returns the old "derivation_index" field's value of the UserCryptoAddress entity.
+// If the UserCryptoAddress object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserCryptoAddressMutation) OldDerivationIndex(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDerivationIndex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDerivationIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDerivationIndex: %w", err)
+	}
+	return oldValue.DerivationIndex, nil
+}
+
+// AddDerivationIndex adds i to the "derivation_index" field.
+func (m *UserCryptoAddressMutation) AddDerivationIndex(i int64) {
+	if m.addderivation_index != nil {
+		*m.addderivation_index += i
+	} else {
+		m.addderivation_index = &i
+	}
+}
+
+// AddedDerivationIndex returns the value that was added to the "derivation_index" field in this mutation.
+func (m *UserCryptoAddressMutation) AddedDerivationIndex() (r int64, exists bool) {
+	v := m.addderivation_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDerivationIndex resets all changes to the "derivation_index" field.
+func (m *UserCryptoAddressMutation) ResetDerivationIndex() {
+	m.derivation_index = nil
+	m.addderivation_index = nil
+}
+
+// SetLastBalance sets the "last_balance" field.
+func (m *UserCryptoAddressMutation) SetLastBalance(f float64) {
+	m.last_balance = &f
+	m.addlast_balance = nil
+}
+
+// LastBalance returns the value of the "last_balance" field in the mutation.
+func (m *UserCryptoAddressMutation) LastBalance() (r float64, exists bool) {
+	v := m.last_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastBalance returns the old "last_balance" field's value of the UserCryptoAddress entity.
+// If the UserCryptoAddress object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserCryptoAddressMutation) OldLastBalance(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastBalance is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastBalance requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastBalance: %w", err)
+	}
+	return oldValue.LastBalance, nil
+}
+
+// AddLastBalance adds f to the "last_balance" field.
+func (m *UserCryptoAddressMutation) AddLastBalance(f float64) {
+	if m.addlast_balance != nil {
+		*m.addlast_balance += f
+	} else {
+		m.addlast_balance = &f
+	}
+}
+
+// AddedLastBalance returns the value that was added to the "last_balance" field in this mutation.
+func (m *UserCryptoAddressMutation) AddedLastBalance() (r float64, exists bool) {
+	v := m.addlast_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLastBalance resets all changes to the "last_balance" field.
+func (m *UserCryptoAddressMutation) ResetLastBalance() {
+	m.last_balance = nil
+	m.addlast_balance = nil
+}
+
+// SetLastBalanceAt sets the "last_balance_at" field.
+func (m *UserCryptoAddressMutation) SetLastBalanceAt(t time.Time) {
+	m.last_balance_at = &t
+}
+
+// LastBalanceAt returns the value of the "last_balance_at" field in the mutation.
+func (m *UserCryptoAddressMutation) LastBalanceAt() (r time.Time, exists bool) {
+	v := m.last_balance_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastBalanceAt returns the old "last_balance_at" field's value of the UserCryptoAddress entity.
+// If the UserCryptoAddress object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserCryptoAddressMutation) OldLastBalanceAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastBalanceAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastBalanceAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastBalanceAt: %w", err)
+	}
+	return oldValue.LastBalanceAt, nil
+}
+
+// ClearLastBalanceAt clears the value of the "last_balance_at" field.
+func (m *UserCryptoAddressMutation) ClearLastBalanceAt() {
+	m.last_balance_at = nil
+	m.clearedFields[usercryptoaddress.FieldLastBalanceAt] = struct{}{}
+}
+
+// LastBalanceAtCleared returns if the "last_balance_at" field was cleared in this mutation.
+func (m *UserCryptoAddressMutation) LastBalanceAtCleared() bool {
+	_, ok := m.clearedFields[usercryptoaddress.FieldLastBalanceAt]
+	return ok
+}
+
+// ResetLastBalanceAt resets all changes to the "last_balance_at" field.
+func (m *UserCryptoAddressMutation) ResetLastBalanceAt() {
+	m.last_balance_at = nil
+	delete(m.clearedFields, usercryptoaddress.FieldLastBalanceAt)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UserCryptoAddressMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UserCryptoAddressMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UserCryptoAddress entity.
+// If the UserCryptoAddress object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserCryptoAddressMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UserCryptoAddressMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *UserCryptoAddressMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *UserCryptoAddressMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the UserCryptoAddress entity.
+// If the UserCryptoAddress object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserCryptoAddressMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *UserCryptoAddressMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the UserCryptoAddressMutation builder.
+func (m *UserCryptoAddressMutation) Where(ps ...predicate.UserCryptoAddress) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the UserCryptoAddressMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UserCryptoAddressMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.UserCryptoAddress, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *UserCryptoAddressMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UserCryptoAddressMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (UserCryptoAddress).
+func (m *UserCryptoAddressMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UserCryptoAddressMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.user_id != nil {
+		fields = append(fields, usercryptoaddress.FieldUserID)
+	}
+	if m.network != nil {
+		fields = append(fields, usercryptoaddress.FieldNetwork)
+	}
+	if m.address != nil {
+		fields = append(fields, usercryptoaddress.FieldAddress)
+	}
+	if m.derivation_index != nil {
+		fields = append(fields, usercryptoaddress.FieldDerivationIndex)
+	}
+	if m.last_balance != nil {
+		fields = append(fields, usercryptoaddress.FieldLastBalance)
+	}
+	if m.last_balance_at != nil {
+		fields = append(fields, usercryptoaddress.FieldLastBalanceAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, usercryptoaddress.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, usercryptoaddress.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UserCryptoAddressMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case usercryptoaddress.FieldUserID:
+		return m.UserID()
+	case usercryptoaddress.FieldNetwork:
+		return m.Network()
+	case usercryptoaddress.FieldAddress:
+		return m.Address()
+	case usercryptoaddress.FieldDerivationIndex:
+		return m.DerivationIndex()
+	case usercryptoaddress.FieldLastBalance:
+		return m.LastBalance()
+	case usercryptoaddress.FieldLastBalanceAt:
+		return m.LastBalanceAt()
+	case usercryptoaddress.FieldCreatedAt:
+		return m.CreatedAt()
+	case usercryptoaddress.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UserCryptoAddressMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case usercryptoaddress.FieldUserID:
+		return m.OldUserID(ctx)
+	case usercryptoaddress.FieldNetwork:
+		return m.OldNetwork(ctx)
+	case usercryptoaddress.FieldAddress:
+		return m.OldAddress(ctx)
+	case usercryptoaddress.FieldDerivationIndex:
+		return m.OldDerivationIndex(ctx)
+	case usercryptoaddress.FieldLastBalance:
+		return m.OldLastBalance(ctx)
+	case usercryptoaddress.FieldLastBalanceAt:
+		return m.OldLastBalanceAt(ctx)
+	case usercryptoaddress.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case usercryptoaddress.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown UserCryptoAddress field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserCryptoAddressMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case usercryptoaddress.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case usercryptoaddress.FieldNetwork:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNetwork(v)
+		return nil
+	case usercryptoaddress.FieldAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddress(v)
+		return nil
+	case usercryptoaddress.FieldDerivationIndex:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDerivationIndex(v)
+		return nil
+	case usercryptoaddress.FieldLastBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastBalance(v)
+		return nil
+	case usercryptoaddress.FieldLastBalanceAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastBalanceAt(v)
+		return nil
+	case usercryptoaddress.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case usercryptoaddress.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UserCryptoAddress field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UserCryptoAddressMutation) AddedFields() []string {
+	var fields []string
+	if m.adduser_id != nil {
+		fields = append(fields, usercryptoaddress.FieldUserID)
+	}
+	if m.addderivation_index != nil {
+		fields = append(fields, usercryptoaddress.FieldDerivationIndex)
+	}
+	if m.addlast_balance != nil {
+		fields = append(fields, usercryptoaddress.FieldLastBalance)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UserCryptoAddressMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case usercryptoaddress.FieldUserID:
+		return m.AddedUserID()
+	case usercryptoaddress.FieldDerivationIndex:
+		return m.AddedDerivationIndex()
+	case usercryptoaddress.FieldLastBalance:
+		return m.AddedLastBalance()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserCryptoAddressMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case usercryptoaddress.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	case usercryptoaddress.FieldDerivationIndex:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDerivationIndex(v)
+		return nil
+	case usercryptoaddress.FieldLastBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLastBalance(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UserCryptoAddress numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UserCryptoAddressMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(usercryptoaddress.FieldLastBalanceAt) {
+		fields = append(fields, usercryptoaddress.FieldLastBalanceAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UserCryptoAddressMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UserCryptoAddressMutation) ClearField(name string) error {
+	switch name {
+	case usercryptoaddress.FieldLastBalanceAt:
+		m.ClearLastBalanceAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UserCryptoAddress nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UserCryptoAddressMutation) ResetField(name string) error {
+	switch name {
+	case usercryptoaddress.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case usercryptoaddress.FieldNetwork:
+		m.ResetNetwork()
+		return nil
+	case usercryptoaddress.FieldAddress:
+		m.ResetAddress()
+		return nil
+	case usercryptoaddress.FieldDerivationIndex:
+		m.ResetDerivationIndex()
+		return nil
+	case usercryptoaddress.FieldLastBalance:
+		m.ResetLastBalance()
+		return nil
+	case usercryptoaddress.FieldLastBalanceAt:
+		m.ResetLastBalanceAt()
+		return nil
+	case usercryptoaddress.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case usercryptoaddress.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UserCryptoAddress field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UserCryptoAddressMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UserCryptoAddressMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UserCryptoAddressMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UserCryptoAddressMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UserCryptoAddressMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UserCryptoAddressMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UserCryptoAddressMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown UserCryptoAddress unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UserCryptoAddressMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown UserCryptoAddress edge %s", name)
 }
 
 // UserPlatformQuotaMutation represents an operation that mutates the UserPlatformQuota nodes in the graph.
