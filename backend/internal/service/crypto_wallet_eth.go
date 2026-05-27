@@ -15,10 +15,12 @@ import (
 )
 
 // defaultEthConfirmSeconds is the minimum age an inbound ETH transfer must reach
-// before it is treated as final. ETH blocks are ~12s; ~800s ≈ 66 blocks ≈ 13min,
-// matching Ethereum's economic finality (~2 epochs) so a credited deposit cannot
-// be reorged out from under us.
-const defaultEthConfirmSeconds = 800
+// before it is treated as final. ETH blocks are ~12s; ~180s ≈ 15 blocks ≈ 3min.
+// Post-Merge deep reorgs don't realistically occur, so 15 confirmations is a
+// sound credit threshold for typical recharge amounts (well short of the ~13min
+// full economic-finality window, which would hurt UX and crowd the 30min order
+// timeout). Raise per-instance via the confirmSeconds config for high-value use.
+const defaultEthConfirmSeconds = 180
 
 // ethSettings holds on-chain parameters resolved from the active ERC20 instance.
 type ethSettings struct {

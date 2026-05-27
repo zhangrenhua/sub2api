@@ -188,7 +188,7 @@ export const PROVIDER_CONFIG_FIELDS: Record<string, ConfigFieldDef[]> = {
     { key: 'etherscanApiBase', label: 'Etherscan API Base', sensitive: false, optional: true, defaultValue: 'https://api.etherscan.io/v2/api' },
     { key: 'etherscanApiKey', label: 'Etherscan API Key', sensitive: true, optional: true, clearable: true },
     { key: 'ethRpcUrl', label: 'Ethereum RPC URL', sensitive: true, optional: true, clearable: true, hintKey: 'admin.settings.payment.field_ethRpcUrlHint' },
-    { key: 'confirmSeconds', label: 'Confirmation Seconds', sensitive: false, optional: true, defaultValue: '800' },
+    { key: 'confirmSeconds', label: 'Confirmation Seconds', sensitive: false, optional: true, defaultValue: '180' },
     { key: 'gasTopUpWei', label: 'Gas Top-up (wei)', sensitive: false, optional: true, defaultValue: '3000000000000000' },
     { key: 'sweepMinUsdt', label: 'Sweep Min (USDT)', sensitive: false, optional: true, defaultValue: '50' },
   ],
