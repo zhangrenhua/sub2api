@@ -262,6 +262,33 @@
             </p>
           </div>
         </section>
+
+        <!-- Supported Payments -->
+        <section class="mb-12">
+          <div class="mb-6 text-center">
+            <h2 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+              {{ t('home.payments.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-dark-400">
+              {{ t('home.payments.subtitle') }}
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <div
+              v-for="pm in paymentMethods"
+              :key="pm.label"
+              class="inline-flex items-center gap-2 rounded-full border border-gray-200/60 bg-white/70 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm dark:border-dark-700/60 dark:bg-dark-800/70 dark:text-dark-200"
+            >
+              <img v-if="pm.icon" :src="pm.icon" :alt="pm.label" class="h-5 w-5 object-contain" />
+              <span
+                v-else
+                class="flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                :class="pm.badgeClass"
+              >{{ pm.badge }}</span>
+              {{ pm.label }}
+            </div>
+          </div>
+        </section>
       </div>
     </main>
 
@@ -295,6 +322,9 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
+import alipayIcon from '@/assets/icons/alipay.svg'
+import wxpayIcon from '@/assets/icons/wxpay.svg'
+import usdtIcon from '@/assets/icons/usdt.svg'
 
 const { t } = useI18n()
 
@@ -324,6 +354,20 @@ const userInitial = computed(() => {
 })
 
 const currentYear = computed(() => new Date().getFullYear())
+
+interface PaymentMethodChip {
+  label: string
+  icon?: string
+  badge?: string
+  badgeClass?: string
+}
+
+const paymentMethods: PaymentMethodChip[] = [
+  { label: t('payment.methods.alipay'), icon: alipayIcon },
+  { label: t('payment.methods.wxpay'), icon: wxpayIcon },
+  { label: 'USDT (TRC20 / ERC20)', icon: usdtIcon },
+  { label: 'PayPal', badge: 'P', badgeClass: 'bg-[#003087]' },
+]
 
 interface ModelCard {
   key: string

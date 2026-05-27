@@ -54,6 +54,10 @@ export default {
       balanceQuota: '用多少付多少',
       balanceQuotaDesc: '按实际使用量计费，支持设置配额上限，团队用量一目了然。'
     },
+    payments: {
+      title: '支持多种在线支付',
+      subtitle: '支持支付宝、微信支付、USDT（TRC20 / ERC20）、PayPal 等多种方式便捷充值。'
+    },
     // 优势对比
     comparison: {
       title: '为什么选择我们？',

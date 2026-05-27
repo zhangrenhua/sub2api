@@ -54,6 +54,10 @@ export default {
       balanceQuota: 'Pay What You Use',
       balanceQuotaDesc: 'Usage-based billing with quota limits. Full visibility into team consumption.'
     },
+    payments: {
+      title: 'Multiple Payment Options',
+      subtitle: 'Top up easily with Alipay, WeChat Pay, USDT (TRC20 / ERC20), PayPal and more.'
+    },
     // Comparison section
     comparison: {
       title: 'Why Choose Us?',

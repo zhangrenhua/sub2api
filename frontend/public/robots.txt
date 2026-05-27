@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# 功能性/隐私页面不需要被索引
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /setup
+Disallow: /auth/
+Disallow: /email-verify
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://cc-vibe.com/sitemap.xml
