@@ -22,16 +22,15 @@ func NewCryptoWalletHandler(walletService *service.CryptoWalletService, totpServ
 	return &CryptoWalletHandler{walletService: walletService, totpService: totpService}
 }
 
-// requireTOTP verifies the caller's TOTP code for a sensitive money-moving
-// operation. Returns the admin user id on success.
-func (h *CryptoWalletHandler) requireTOTP(c *gin.Context, code string) (int64, bool) {
+// currentAdminID returns the authenticated admin's user id.
+//
+// TOTP gating on wallet operations is disabled: these endpoints are protected
+// by admin authentication only. (The totpService dependency is retained for
+// easy re-introduction of step-up verification later.)
+func (h *CryptoWalletHandler) currentAdminID(c *gin.Context) (int64, bool) {
 	subject, ok := middleware.GetAuthSubjectFromContext(c)
 	if !ok {
 		response.Unauthorized(c, "unauthorized")
-		return 0, false
-	}
-	if err := h.totpService.VerifyCode(c.Request.Context(), subject.UserID, code); err != nil {
-		response.ErrorFrom(c, err)
 		return 0, false
 	}
 	return subject.UserID, true
@@ -75,7 +74,7 @@ func (h *CryptoWalletHandler) RefreshBalances(c *gin.Context) {
 
 type initWalletRequest struct {
 	Mnemonic string `json:"mnemonic"`
-	TotpCode string `json:"totp_code" binding:"required"`
+	TotpCode string `json:"totp_code"`
 }
 
 // InitWallet initializes or imports the master mnemonic (TOTP-gated, one-time).
@@ -86,7 +85,7 @@ func (h *CryptoWalletHandler) InitWallet(c *gin.Context) {
 		response.BadRequest(c, "invalid request")
 		return
 	}
-	if _, ok := h.requireTOTP(c, req.TotpCode); !ok {
+	if _, ok := h.currentAdminID(c); !ok {
 		return
 	}
 	res, err := h.walletService.InitWallet(c.Request.Context(), req.Mnemonic)
@@ -100,7 +99,7 @@ func (h *CryptoWalletHandler) InitWallet(c *gin.Context) {
 
 type collectionAddressRequest struct {
 	Address  string `json:"address" binding:"required"`
-	TotpCode string `json:"totp_code" binding:"required"`
+	TotpCode string `json:"totp_code"`
 }
 
 // SetCollectionAddress updates the sweep destination (TOTP-gated).
@@ -111,7 +110,7 @@ func (h *CryptoWalletHandler) SetCollectionAddress(c *gin.Context) {
 		response.BadRequest(c, "invalid request")
 		return
 	}
-	if _, ok := h.requireTOTP(c, req.TotpCode); !ok {
+	if _, ok := h.currentAdminID(c); !ok {
 		return
 	}
 	if err := h.walletService.SetCollectionAddress(c.Request.Context(), req.Address); err != nil {
@@ -122,7 +121,7 @@ func (h *CryptoWalletHandler) SetCollectionAddress(c *gin.Context) {
 }
 
 type sweepRequest struct {
-	TotpCode string `json:"totp_code" binding:"required"`
+	TotpCode string `json:"totp_code"`
 }
 
 // StartSweep triggers a one-click TRC20 consolidation (TOTP-gated).
@@ -133,7 +132,7 @@ func (h *CryptoWalletHandler) StartSweep(c *gin.Context) {
 		response.BadRequest(c, "invalid request")
 		return
 	}
-	uid, ok := h.requireTOTP(c, req.TotpCode)
+	uid, ok := h.currentAdminID(c)
 	if !ok {
 		return
 	}
@@ -153,7 +152,7 @@ func (h *CryptoWalletHandler) SetEthCollectionAddress(c *gin.Context) {
 		response.BadRequest(c, "invalid request")
 		return
 	}
-	if _, ok := h.requireTOTP(c, req.TotpCode); !ok {
+	if _, ok := h.currentAdminID(c); !ok {
 		return
 	}
 	if err := h.walletService.SetEthCollectionAddress(c.Request.Context(), req.Address); err != nil {
@@ -171,7 +170,7 @@ func (h *CryptoWalletHandler) StartSweepEth(c *gin.Context) {
 		response.BadRequest(c, "invalid request")
 		return
 	}
-	uid, ok := h.requireTOTP(c, req.TotpCode)
+	uid, ok := h.currentAdminID(c)
 	if !ok {
 		return
 	}

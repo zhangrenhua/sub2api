@@ -25,7 +25,6 @@
             :placeholder="t('payment.crypto.importPlaceholder')"
           />
           <div class="flex items-center gap-3">
-            <input v-model="totpCode" maxlength="6" class="input w-32" :placeholder="t('payment.crypto.totpCode')" />
             <button @click="handleInit" :disabled="busy" class="btn btn-primary">{{ t('payment.crypto.initButton') }}</button>
           </div>
         </div>
@@ -71,7 +70,6 @@
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('payment.crypto.collectionAddress') }}</h3>
           <div class="flex flex-wrap items-center gap-3">
             <input v-model="collectionAddress" class="input min-w-0 flex-1 font-mono text-sm" :placeholder="t('payment.crypto.collectionPlaceholder')" />
-            <input v-model="totpCode" maxlength="6" class="input w-32" :placeholder="t('payment.crypto.totpCode')" />
             <button @click="handleSetCollection" :disabled="busy" class="btn btn-primary">{{ t('common.save') }}</button>
           </div>
           <p class="text-xs text-gray-400">{{ t('payment.crypto.collectionHint') }}</p>
@@ -103,7 +101,6 @@
             <h4 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('payment.crypto.ethCollectionAddress') }}</h4>
             <div class="flex flex-wrap items-center gap-3">
               <input v-model="ethCollectionAddress" class="input min-w-0 flex-1 font-mono text-sm" placeholder="0x..." />
-              <input v-model="totpCode" maxlength="6" class="input w-32" :placeholder="t('payment.crypto.totpCode')" />
               <button @click="handleSetEthCollection" :disabled="busy" class="btn btn-primary">{{ t('common.save') }}</button>
             </div>
             <p class="text-xs text-gray-400">{{ t('payment.crypto.collectionHint') }}</p>
@@ -167,9 +164,6 @@
         @confirm="handleSweep"
         @cancel="showSweep = false"
       >
-        <template #default>
-          <input v-model="totpCode" maxlength="6" class="input mt-3 w-full" :placeholder="t('payment.crypto.totpCode')" />
-        </template>
       </ConfirmDialog>
 
       <!-- ERC20 sweep confirmation -->
@@ -181,9 +175,6 @@
         @confirm="handleSweepEth"
         @cancel="showSweepEth = false"
       >
-        <template #default>
-          <input v-model="totpCode" maxlength="6" class="input mt-3 w-full" :placeholder="t('payment.crypto.totpCode')" />
-        </template>
       </ConfirmDialog>
     </div>
   </AppLayout>
@@ -218,7 +209,6 @@ const importMnemonic = ref('')
 const generatedMnemonic = ref('')
 const collectionAddress = ref('')
 const ethCollectionAddress = ref('')
-const totpCode = ref('')
 const showSweep = ref(false)
 const showSweepEth = ref(false)
 
@@ -273,11 +263,9 @@ async function handleInit() {
   try {
     const res = await adminCryptoWalletAPI.initWallet({
       mnemonic: importMnemonic.value.trim() || undefined,
-      totp_code: totpCode.value
     })
     if (res.mnemonic) generatedMnemonic.value = res.mnemonic
     importMnemonic.value = ''
-    totpCode.value = ''
     appStore.showSuccess(t('payment.crypto.initSuccess'))
     await refreshAll()
   } catch (err) { fail(err) } finally { busy.value = false }
@@ -286,8 +274,7 @@ async function handleInit() {
 async function handleSetCollection() {
   busy.value = true
   try {
-    await adminCryptoWalletAPI.setCollectionAddress({ address: collectionAddress.value.trim(), totp_code: totpCode.value })
-    totpCode.value = ''
+    await adminCryptoWalletAPI.setCollectionAddress({ address: collectionAddress.value.trim() })
     appStore.showSuccess(t('common.saved'))
     await loadOverview()
   } catch (err) { fail(err) } finally { busy.value = false }
@@ -305,8 +292,7 @@ async function handleRefreshBalances() {
 async function handleSweep() {
   busy.value = true
   try {
-    await adminCryptoWalletAPI.startSweep({ totp_code: totpCode.value })
-    totpCode.value = ''
+    await adminCryptoWalletAPI.startSweep()
     showSweep.value = false
     appStore.showSuccess(t('payment.crypto.sweepStarted'))
     await loadJobs()
@@ -316,8 +302,7 @@ async function handleSweep() {
 async function handleSetEthCollection() {
   busy.value = true
   try {
-    await adminCryptoWalletAPI.setEthCollectionAddress({ address: ethCollectionAddress.value.trim(), totp_code: totpCode.value })
-    totpCode.value = ''
+    await adminCryptoWalletAPI.setEthCollectionAddress({ address: ethCollectionAddress.value.trim() })
     appStore.showSuccess(t('common.saved'))
     await loadOverview()
   } catch (err) { fail(err) } finally { busy.value = false }
@@ -326,8 +311,7 @@ async function handleSetEthCollection() {
 async function handleSweepEth() {
   busy.value = true
   try {
-    await adminCryptoWalletAPI.startSweepEth({ totp_code: totpCode.value })
-    totpCode.value = ''
+    await adminCryptoWalletAPI.startSweepEth()
     showSweepEth.value = false
     appStore.showSuccess(t('payment.crypto.sweepStarted'))
     await loadJobs()

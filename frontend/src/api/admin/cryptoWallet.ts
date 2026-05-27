@@ -100,31 +100,31 @@ export const adminCryptoWalletAPI = {
   },
 
   /**
-   * Initialize/import the master mnemonic (TOTP-gated, one-time).
+   * Initialize/import the master mnemonic (one-time).
    * Leave mnemonic empty to generate a fresh one (returned once for backup).
    */
-  async initWallet(data: { mnemonic?: string; totp_code: string }): Promise<InitWalletResult> {
+  async initWallet(data: { mnemonic?: string }): Promise<InitWalletResult> {
     return (await apiClient.post<InitWalletResult>('/admin/payment/crypto/wallet/init', data)).data
   },
 
-  /** Set the TRC20 sweep destination (cold) address (TOTP-gated). */
-  async setCollectionAddress(data: { address: string; totp_code: string }): Promise<void> {
+  /** Set the TRC20 sweep destination (cold) address. */
+  async setCollectionAddress(data: { address: string }): Promise<void> {
     await apiClient.put('/admin/payment/crypto/wallet/collection-address', data)
   },
 
-  /** Set the ERC20 (ETH) sweep destination (cold) address (TOTP-gated). */
-  async setEthCollectionAddress(data: { address: string; totp_code: string }): Promise<void> {
+  /** Set the ERC20 (ETH) sweep destination (cold) address. */
+  async setEthCollectionAddress(data: { address: string }): Promise<void> {
     await apiClient.put('/admin/payment/crypto/wallet/eth-collection-address', data)
   },
 
-  /** Trigger a one-click TRC20 consolidation (TOTP-gated). */
-  async startSweep(data: { totp_code: string }): Promise<SweepJob> {
-    return (await apiClient.post<SweepJob>('/admin/payment/crypto/sweep', data)).data
+  /** Trigger a one-click TRC20 consolidation. */
+  async startSweep(): Promise<SweepJob> {
+    return (await apiClient.post<SweepJob>('/admin/payment/crypto/sweep')).data
   },
 
-  /** Trigger a one-click ERC20 consolidation (TOTP-gated). */
-  async startSweepEth(data: { totp_code: string }): Promise<SweepJob> {
-    return (await apiClient.post<SweepJob>('/admin/payment/crypto/eth-sweep', data)).data
+  /** Trigger a one-click ERC20 consolidation. */
+  async startSweepEth(): Promise<SweepJob> {
+    return (await apiClient.post<SweepJob>('/admin/payment/crypto/eth-sweep')).data
   },
 
   /** Sweep job + per-address task progress. */
