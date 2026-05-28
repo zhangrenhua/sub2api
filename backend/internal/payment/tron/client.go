@@ -8,7 +8,9 @@
 package tron
 
 import (
+	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	tronaddr "github.com/fbsobreira/gotron-sdk/pkg/address"
 	"github.com/shopspring/decimal"
 )
 
@@ -149,23 +152,55 @@ func (c *Client) InboundTRC20Transfers(ctx context.Context, address, contract st
 
 // TRC20Balance returns the address's balance of the given token contract as a
 // human USDT amount.
+//
+// It reads the balance directly from the token contract via a constant
+// (read-only) call, NOT from the /v1/accounts account-state endpoint: a deposit
+// address that has only ever received TRC20 (and never any TRX) is not an
+// "activated" TRON account, so /v1/accounts reports it empty even though the
+// contract holds a real token balance for it — which is exactly the case for
+// fresh per-user deposit addresses.
 func (c *Client) TRC20Balance(ctx context.Context, address, contract string) (float64, error) {
-	acc, err := c.account(ctx, address)
+	addr, err := tronaddr.Base58ToAddress(strings.TrimSpace(address))
+	if err != nil {
+		return 0, fmt.Errorf("tron: bad address %q: %w", address, err)
+	}
+	// ABI-encode balanceOf(address): the 20-byte address (Base58 minus the 0x41
+	// network prefix) left-padded to 32 bytes.
+	h := hex.EncodeToString(addr.Bytes()[1:])
+	param := strings.Repeat("0", 64-len(h)) + h
+
+	body, err := c.post(ctx, c.apiBase+"/wallet/triggerconstantcontract", map[string]any{
+		"owner_address":     strings.TrimSpace(address),
+		"contract_address":  strings.TrimSpace(contract),
+		"function_selector": "balanceOf(address)",
+		"parameter":         param,
+		"visible":           true,
+	})
 	if err != nil {
 		return 0, err
 	}
-	for _, t := range acc.TRC20 {
-		for caddr, raw := range t {
-			if strings.EqualFold(caddr, contract) {
-				v, ok := new(big.Int).SetString(strings.TrimSpace(raw), 10)
-				if !ok {
-					return 0, nil
-				}
-				return decimal.NewFromBigInt(v, -usdtDecimals).InexactFloat64(), nil
-			}
-		}
+	var resp struct {
+		Result struct {
+			Result  bool   `json:"result"`
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"result"`
+		ConstantResult []string `json:"constant_result"`
 	}
-	return 0, nil
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return 0, fmt.Errorf("tron: parse balanceOf: %w", err)
+	}
+	if !resp.Result.Result {
+		return 0, fmt.Errorf("tron: balanceOf failed: %s %s", resp.Result.Code, resp.Result.Message)
+	}
+	if len(resp.ConstantResult) == 0 || strings.TrimSpace(resp.ConstantResult[0]) == "" {
+		return 0, nil
+	}
+	v, ok := new(big.Int).SetString(strings.TrimSpace(resp.ConstantResult[0]), 16)
+	if !ok {
+		return 0, nil
+	}
+	return decimal.NewFromBigInt(v, -usdtDecimals).InexactFloat64(), nil
 }
 
 // TRXBalance returns the address's native TRX balance (used to gauge gas runway
@@ -239,6 +274,38 @@ func (c *Client) get(ctx context.Context, endpoint string) ([]byte, error) {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
+	if c.apiKey != "" {
+		req.Header.Set("TRON-PRO-API-KEY", c.apiKey)
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("tron: request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
+	if err != nil {
+		return nil, fmt.Errorf("tron: read body: %w", err)
+	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return nil, fmt.Errorf("tron: HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+	return body, nil
+}
+
+func (c *Client) post(ctx context.Context, endpoint string, payload any) ([]byte, error) {
+	if err := c.throttle(ctx); err != nil {
+		return nil, err
+	}
+	buf, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("tron: marshal request: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(buf))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	if c.apiKey != "" {
 		req.Header.Set("TRON-PRO-API-KEY", c.apiKey)
 	}
