@@ -128,7 +128,7 @@
       </Transition>
 
       <!-- Article -->
-      <article class="help-prose min-w-0 flex-1">
+      <article class="help-prose min-w-0 flex-1 text-gray-800 dark:text-gray-200">
         <!-- Hero -->
         <div class="mb-10 rounded-2xl border border-primary-100 bg-gradient-to-br from-primary-50 to-white p-8 dark:border-primary-900/40 dark:from-primary-950/40 dark:to-dark-900">
           <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-primary-700 shadow-sm dark:bg-dark-800/70 dark:text-primary-300">
@@ -146,7 +146,7 @@
           :key="section.id"
           class="help-section"
         >
-          <h2>{{ section.title }}</h2>
+          <h2 class="dark:!text-white dark:!border-dark-700">{{ section.title }}</h2>
           <HelpBlock
             v-for="(block, i) in section.blocks"
             :key="i"
@@ -259,11 +259,7 @@ watch(locale, async () => {
 
 <style scoped>
 .help-prose {
-  color: rgb(31 41 55);
   line-height: 1.7;
-}
-:global(.dark) .help-prose {
-  color: rgb(229 231 235);
 }
 
 .help-section {
@@ -281,7 +277,7 @@ watch(locale, async () => {
   color: rgb(17 24 39);
 }
 :global(.dark) .help-prose :deep(h2) {
-  color: rgb(255 255 255);
+  color: rgb(255 255 255) !important;
   border-color: rgb(38 38 47);
 }
 
@@ -293,7 +289,7 @@ watch(locale, async () => {
   color: rgb(17 24 39);
 }
 :global(.dark) .help-prose :deep(h3) {
-  color: rgb(243 244 246);
+  color: rgb(243 244 246) !important;
 }
 
 .help-prose :deep(h4) {
@@ -304,7 +300,7 @@ watch(locale, async () => {
   color: rgb(55 65 81);
 }
 :global(.dark) .help-prose :deep(h4) {
-  color: rgb(209 213 219);
+  color: rgb(209 213 219) !important;
 }
 
 .help-prose :deep(p) {
