@@ -14,6 +14,7 @@ export default {
     // User-focused value proposition
     heroSubtitle: 'One Key, All AI Models',
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
+    trialHint: 'Free trial credits on sign-up — no credit card required',
     tags: {
       subscriptionToApi: 'Subscription to API',
       stickySession: 'Session Persistence',

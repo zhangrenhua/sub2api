@@ -316,7 +316,7 @@ export const zh: HelpFactory = (base) => ({
         { t: 'p', html: '支持的模型清单：' },
         { t: 'code', lang: 'bash', code: 'gpt-5.4\ngpt-5.5\ngpt-image-2' },
         { t: 'callout', variant: 'warning', html: 'Codex 用户创建秘钥的时候，分组一定要选择 <strong>Codex</strong> 的分组。' },
-        { t: 'h3', text: '在 Codex CLI 中使用' },
+        { t: 'h3', text: '在 Codex 中使用' },
         { t: 'code', lang: 'bash', code: 'vi ~/.codex/config.toml' },
         { t: 'code', lang: 'toml', code: `model_provider = "OpenAI"\nmodel = "gpt-5.4"\nreview_model = "gpt-5.4"\nmodel_reasoning_effort = "xhigh"\ndisable_response_storage = true\nnetwork_access = "enabled"\nmodel_context_window = 200000\nmodel_auto_compact_token_limit = 160000\n\n[model_providers.OpenAI]\nname = "OpenAI"\nbase_url = "${base}/v1"\nwire_api = "responses"\nrequires_openai_auth = true` },
         { t: 'code', lang: 'bash', code: 'vi ~/.codex/auth.json' },

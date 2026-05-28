@@ -168,8 +168,13 @@
             </a>
           </div>
 
+          <!-- Trial hint -->
+          <p v-if="!isAuthenticated" class="mt-4 text-sm text-gray-500 dark:text-dark-400">
+            🎁 {{ t('home.trialHint') }}
+          </p>
+
           <!-- Feature tags -->
-          <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
             <span class="inline-flex items-center gap-2 rounded-full border border-gray-200/50 bg-white/60 px-4 py-1.5 text-xs font-medium text-gray-600 backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/60 dark:text-dark-300">
               <Icon name="swap" size="xs" class="text-primary-500" />
               {{ t('home.tags.subscriptionToApi') }}
