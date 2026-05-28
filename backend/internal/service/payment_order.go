@@ -101,6 +101,13 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 			return nil, err
 		}
 	}
+	// PayPal: plans are priced in CNY; convert to USD using the configured rate.
+	if sel != nil && sel.ProviderKey == payment.TypePayPal {
+		payAmountStr, payAmount, err = paypalPayAmountCNYtoUSD(payAmount, sel)
+		if err != nil {
+			return nil, err
+		}
+	}
 	oauthResp, err := s.maybeBuildWeChatOAuthRequiredResponseForSelection(ctx, req, limitAmount, payAmount, feeRate, sel)
 	if err != nil {
 		return nil, err
@@ -312,6 +319,9 @@ func buildPaymentOrderProviderSnapshot(sel *payment.InstanceSelection, req Creat
 			snapshot["merchant_id"] = accountID
 		}
 		snapshot["currency"] = paymentProviderConfigCurrency(providerKey, sel.Config)
+	}
+	if providerKey == payment.TypePayPal {
+		snapshot["currency"] = "USD"
 	}
 
 	if len(snapshot) == 1 {
@@ -673,6 +683,27 @@ func cryptoPayAmountCNYtoUSDT(req CreateOrderRequest, limitAmount, cnyPayAmount 
 	usdtStr := usdt.StringFixed(2)
 	usdtVal, _ := usdt.Float64()
 	return usdtStr, usdtVal, nil
+}
+
+// paypalPayAmountCNYtoUSD converts a CNY pay amount to USD using the instance's
+// configured rate ("cnyPerUsd"). Default rate is 7.3 if not set.
+func paypalPayAmountCNYtoUSD(cnyPayAmount float64, sel *payment.InstanceSelection) (string, float64, error) {
+	var cfg map[string]string
+	if sel != nil {
+		cfg = sel.Config
+	}
+	const defaultCNYPerUSD = 7.3
+	rate := defaultCNYPerUSD
+	if v, err := strconv.ParseFloat(strings.TrimSpace(cfg["cnyPerUsd"]), 64); err == nil && v > 0 {
+		rate = v
+	}
+	usd := decimal.NewFromFloat(cnyPayAmount).Div(decimal.NewFromFloat(rate)).Round(2)
+	if usd.LessThanOrEqual(decimal.Zero) {
+		return "", 0, infraerrors.BadRequest("INVALID_AMOUNT", "converted USD amount is not positive")
+	}
+	usdStr := usd.StringFixed(2)
+	usdVal, _ := usd.Float64()
+	return usdStr, usdVal, nil
 }
 
 func calculateCreateOrderPayAmount(limitAmount, feeRate float64, currency string) (string, float64, error) {

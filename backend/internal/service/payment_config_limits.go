@@ -37,6 +37,9 @@ func (s *PaymentConfigService) GetAvailableMethodLimits(ctx context.Context) (*M
 		if pt == payment.TypeTRC20 || pt == payment.TypeERC20 {
 			ml.Rate = cryptoCNYPerUSDT(insts)
 		}
+		if pt == payment.TypePayPal {
+			ml.Rate = paypalCNYPerUSD(insts)
+		}
 		resp.Methods[ml.PaymentType] = ml
 	}
 	resp.GlobalMin, resp.GlobalMax = pcComputeGlobalRange(resp.Methods)
@@ -188,6 +191,24 @@ func cryptoCNYPerUSDT(instances []*dbent.PaymentProviderInstance) float64 {
 		}
 	}
 	return 0
+}
+
+// paypalCNYPerUSD extracts the configured CNY→USD rate from the first PayPal
+// instance that has one. Returns 7.3 as default when unconfigured.
+func paypalCNYPerUSD(instances []*dbent.PaymentProviderInstance) float64 {
+	for _, inst := range instances {
+		if strings.TrimSpace(inst.Config) == "" {
+			continue
+		}
+		var cfg map[string]string
+		if err := json.Unmarshal([]byte(inst.Config), &cfg); err != nil {
+			continue
+		}
+		if rate, err := strconv.ParseFloat(strings.TrimSpace(cfg["cnyPerUsd"]), 64); err == nil && rate > 0 {
+			return rate
+		}
+	}
+	return 7.3
 }
 
 func pcGroupByPaymentType(instances []*dbent.PaymentProviderInstance) map[string][]*dbent.PaymentProviderInstance {

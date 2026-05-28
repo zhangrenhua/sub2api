@@ -12,6 +12,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 )
 
 // --- Dashboard & Analytics ---
@@ -53,13 +54,27 @@ func (s *PaymentService) GetDashboardStats(ctx context.Context, days int) (*Dash
 	return st, nil
 }
 
+// orderCNYAmount returns the CNY-equivalent amount for statistics aggregation.
+// For USDT/PayPal orders the pay_amount is in a foreign currency (USDT/USD),
+// so we use the order's Amount field which always stores the CNY order value.
+// For CNY-denominated orders we use PayAmount which includes the service fee.
+func orderCNYAmount(o *dbent.PaymentOrder) float64 {
+	switch o.PaymentType {
+	case payment.TypeTRC20, payment.TypeERC20, payment.TypePayPal:
+		return o.Amount
+	default:
+		return o.PayAmount
+	}
+}
+
 func computeBasicStats(st *DashboardStats, orders []*dbent.PaymentOrder, todayStart time.Time) {
 	var totalAmount, todayAmount float64
 	var todayCount int
 	for _, o := range orders {
-		totalAmount += o.PayAmount
+		amt := orderCNYAmount(o)
+		totalAmount += amt
 		if o.PaidAt != nil && !o.PaidAt.Before(todayStart) {
-			todayAmount += o.PayAmount
+			todayAmount += amt
 			todayCount++
 		}
 	}
@@ -84,7 +99,7 @@ func buildDailySeries(orders []*dbent.PaymentOrder, since time.Time, days int) [
 			ds = &DailyStats{Date: date}
 			dailyMap[date] = ds
 		}
-		ds.Amount += o.PayAmount
+		ds.Amount += orderCNYAmount(o)
 		ds.Count++
 	}
 	series := make([]DailyStats, 0, days)
@@ -108,7 +123,7 @@ func buildMethodDistribution(orders []*dbent.PaymentOrder) []PaymentMethodStat {
 			ms = &PaymentMethodStat{Type: o.PaymentType}
 			methodMap[o.PaymentType] = ms
 		}
-		ms.Amount += o.PayAmount
+		ms.Amount += orderCNYAmount(o)
 		ms.Count++
 	}
 	methods := make([]PaymentMethodStat, 0, len(methodMap))
@@ -127,7 +142,7 @@ func buildTopUsers(orders []*dbent.PaymentOrder) []TopUserStat {
 			us = &TopUserStat{UserID: o.UserID, Email: o.UserEmail}
 			userMap[o.UserID] = us
 		}
-		us.Amount += o.PayAmount
+		us.Amount += orderCNYAmount(o)
 	}
 	userList := make([]*TopUserStat, 0, len(userMap))
 	for _, us := range userMap {

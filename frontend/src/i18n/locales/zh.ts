@@ -6960,6 +6960,9 @@ export default {
     usdtPayable: '应付 USDT',
     usdtRateNote: '按 1 USDT = ¥{rate} 折算',
     usdtPayableNote: '应付 {amount} USDT（1 USDT = ¥{rate}）',
+    paypalPayable: '应付 USD',
+    paypalRateNote: '按 1 USD = ¥{rate} 折算',
+    paypalPayableNote: '应付 {amount} USD（1 USD = ¥{rate}）',
     createOrder: '确认支付',
     methods: {
       easypay: '易支付',

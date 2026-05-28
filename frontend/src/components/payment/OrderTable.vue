@@ -14,7 +14,7 @@
     </template>
     <template #cell-pay_amount="{ value, row }">
       <div class="text-sm">
-        <span class="font-medium text-gray-900 dark:text-white">¥{{ value.toFixed(2) }}</span>
+        <span class="font-medium text-gray-900 dark:text-white">{{ formatPayAmount(value, row.payment_type, row.currency) }}</span>
         <span v-if="row.fee_rate > 0" class="ml-1 text-xs text-gray-400" :title="t('payment.orders.fee') + ': ' + row.fee_rate + '%'">
           ({{ t('payment.orders.fee') }} {{ row.fee_rate }}%)
         </span>
@@ -55,6 +55,16 @@ const props = defineProps<{
 }>()
 
 function formatDate(dateStr: string) { return new Date(dateStr).toLocaleString() }
+
+function formatPayAmount(amount: number, paymentType: string, currency?: string): string {
+  if (paymentType === 'usdt_trc20' || paymentType === 'usdt_erc20') {
+    return `${amount.toFixed(2)} USDT`
+  }
+  if (paymentType === 'paypal' || currency === 'USD') {
+    return `$${amount.toFixed(2)}`
+  }
+  return `¥${amount.toFixed(2)}`
+}
 
 const columns = computed((): Column[] => {
   const cols: Column[] = [

@@ -6778,6 +6778,9 @@ export default {
     usdtPayable: 'USDT Payable',
     usdtRateNote: 'Converted at 1 USDT = ¥{rate}',
     usdtPayableNote: 'Pay {amount} USDT (1 USDT = ¥{rate})',
+    paypalPayable: 'USD Payable',
+    paypalRateNote: 'Converted at 1 USD = ¥{rate}',
+    paypalPayableNote: 'Pay {amount} USD (1 USD = ¥{rate})',
     createOrder: 'Confirm Payment',
     methods: {
       easypay: 'EasyPay',

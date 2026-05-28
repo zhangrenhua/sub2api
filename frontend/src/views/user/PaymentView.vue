@@ -87,6 +87,13 @@
                 <p v-if="isUsdtMethod && usdtRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
                   {{ t('payment.usdtRateNote', { rate: usdtRate }) }}
                 </p>
+                <div v-if="isPaypalMethod && paypalRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
+                  <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.paypalPayable') }}</span>
+                  <span class="text-lg font-bold text-[#003087]">{{ paypalPayDisplay }} USD</span>
+                </div>
+                <p v-if="isPaypalMethod && paypalRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('payment.paypalRateNote', { rate: paypalRate }) }}
+                </p>
               </div>
             </div>
             <button :class="['btn w-full py-2.5 text-base font-medium', paymentButtonClass]" :disabled="!canSubmit || submitting" @click="handleSubmitRecharge">
@@ -95,6 +102,7 @@
                 {{ t('common.processing') }}
               </span>
               <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ usdtPayDisplay }} USDT</span>
+              <span v-else-if="isPaypalMethod && paypalRate > 0">{{ t('payment.createOrder') }} {{ paypalPayDisplay }} USD</span>
               <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(totalAmount) }}</span>
             </button>
             </template>
@@ -177,10 +185,20 @@
                   <p v-if="isUsdtMethod && usdtRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
                     {{ t('payment.usdtRateNote', { rate: usdtRate }) }}
                   </p>
+                  <div v-if="isPaypalMethod && paypalRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.paypalPayable') }}</span>
+                    <span class="text-lg font-bold text-[#003087]">{{ subPaypalPayDisplay }} USD</span>
+                  </div>
+                  <p v-if="isPaypalMethod && paypalRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('payment.paypalRateNote', { rate: paypalRate }) }}
+                  </p>
                 </div>
               </div>
               <p v-else-if="isUsdtMethod && usdtRate > 0" class="px-1 text-center text-xs text-gray-500 dark:text-gray-400">
                 {{ t('payment.usdtPayableNote', { amount: subUsdtPayDisplay, rate: usdtRate }) }}
+              </p>
+              <p v-else-if="isPaypalMethod && paypalRate > 0" class="px-1 text-center text-xs text-gray-500 dark:text-gray-400">
+                {{ t('payment.paypalPayableNote', { amount: subPaypalPayDisplay, rate: paypalRate }) }}
               </p>
               <button :class="['btn w-full py-2.5 text-base font-medium', paymentButtonClass]" :disabled="!canSubmitSubscription || submitting" @click="confirmSubscribe">
                 <span v-if="submitting" class="flex items-center justify-center gap-2">
@@ -188,6 +206,7 @@
                   {{ t('common.processing') }}
                 </span>
                 <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ subUsdtPayDisplay }} USDT</span>
+                <span v-else-if="isPaypalMethod && paypalRate > 0">{{ t('payment.createOrder') }} {{ subPaypalPayDisplay }} USD</span>
                 <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(feeRate > 0 ? subTotalAmount : selectedPlan.price) }}</span>
               </button>
               <button class="btn btn-secondary w-full" @click="selectedPlan = null">{{ t('common.cancel') }}</button>
@@ -659,6 +678,17 @@ const usdtPayDisplay = computed(() =>
 const subUsdtPayDisplay = computed(() => {
   const cny = feeRate.value > 0 ? subTotalAmount.value : (selectedPlan.value?.price ?? 0)
   return usdtRate.value > 0 ? (cny / usdtRate.value).toFixed(2) : ''
+})
+
+// PayPal: plans/recharge are priced in CNY; show the converted USD amount.
+const isPaypalMethod = computed(() => selectedMethod.value === 'paypal')
+const paypalRate = computed(() => selectedLimit.value?.rate ?? 0)
+const paypalPayDisplay = computed(() =>
+  paypalRate.value > 0 ? (totalAmount.value / paypalRate.value).toFixed(2) : ''
+)
+const subPaypalPayDisplay = computed(() => {
+  const cny = feeRate.value > 0 ? subTotalAmount.value : (selectedPlan.value?.price ?? 0)
+  return paypalRate.value > 0 ? (cny / paypalRate.value).toFixed(2) : ''
 })
 
 const canSubmitSubscription = computed(() =>
