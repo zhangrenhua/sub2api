@@ -93,6 +93,33 @@ func (h *AffiliateHandler) UpdateUserSettings(c *gin.Context) {
 	response.Success(c, gin.H{"user_id": userID})
 }
 
+// BindUserInviter manually binds an inviter to a user by the inviter's affiliate
+// code — the admin fix for users whose inviter was missed at registration. Only
+// binds when the user currently has no inviter; an already-bound user yields a
+// 409 so the admin knows nothing changed.
+// POST /api/v1/admin/affiliates/users/:user_id/bind-inviter
+type BindUserInviterRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+func (h *AffiliateHandler) BindUserInviter(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	if err != nil || userID <= 0 {
+		response.BadRequest(c, "Invalid user_id")
+		return
+	}
+	var req BindUserInviterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if err := h.affiliateService.AdminBindInviterByCode(c.Request.Context(), userID, req.Code); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"user_id": userID})
+}
+
 // ClearUserSettings removes ALL of a user's custom affiliate settings — clears
 // the exclusive rebate rate AND regenerates the invite code as a new system
 // random one. Conceptually this "removes the user from the custom list".

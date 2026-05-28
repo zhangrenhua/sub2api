@@ -335,6 +335,55 @@ func (s *AffiliateService) BindInviterByCode(ctx context.Context, userID int64, 
 	return nil
 }
 
+// AdminBindInviterByCode binds an inviter to userID by the inviter's affiliate
+// code on an admin's behalf — the manual fix for users whose inviter was missed
+// at registration. Unlike BindInviterByCode (the silent registration path), it
+// surfaces "already bound" / disabled-feature as errors so the admin gets clear
+// feedback, and it still refuses to overwrite an existing inviter.
+func (s *AffiliateService) AdminBindInviterByCode(ctx context.Context, userID int64, rawCode string) error {
+	if s == nil || s.repo == nil {
+		return infraerrors.ServiceUnavailable("SERVICE_UNAVAILABLE", "affiliate service unavailable")
+	}
+	if userID <= 0 {
+		return infraerrors.BadRequest("INVALID_USER", "invalid user")
+	}
+	if !s.IsEnabled(ctx) {
+		return infraerrors.BadRequest("AFFILIATE_DISABLED", "affiliate feature is disabled")
+	}
+	code := strings.ToUpper(strings.TrimSpace(rawCode))
+	if !isValidAffiliateCodeFormat(code) {
+		return ErrAffiliateCodeInvalid
+	}
+
+	selfSummary, err := s.repo.EnsureUserAffiliate(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if selfSummary.InviterID != nil {
+		return ErrAffiliateAlreadyBound
+	}
+
+	inviterSummary, err := s.repo.GetAffiliateByCode(ctx, code)
+	if err != nil {
+		if errors.Is(err, ErrAffiliateProfileNotFound) {
+			return ErrAffiliateCodeInvalid
+		}
+		return err
+	}
+	if inviterSummary == nil || inviterSummary.UserID <= 0 || inviterSummary.UserID == userID {
+		return ErrAffiliateCodeInvalid
+	}
+
+	bound, err := s.repo.BindInviter(ctx, userID, inviterSummary.UserID)
+	if err != nil {
+		return err
+	}
+	if !bound {
+		return ErrAffiliateAlreadyBound
+	}
+	return nil
+}
+
 func (s *AffiliateService) AccrueInviteRebate(ctx context.Context, inviteeUserID int64, baseRechargeAmount float64) (float64, error) {
 	return s.AccrueInviteRebateForOrder(ctx, inviteeUserID, baseRechargeAmount, nil)
 }

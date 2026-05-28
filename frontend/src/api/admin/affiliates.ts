@@ -144,6 +144,21 @@ export async function updateUserSettings(
   return data
 }
 
+// bindUserInviter manually binds an inviter to a user by the inviter's affiliate
+// code (admin fix for users whose inviter was missed at registration). The
+// backend only binds when the user has no inviter yet; an already-bound user
+// returns 409 (AFFILIATE_ALREADY_BOUND).
+export async function bindUserInviter(
+  userId: number,
+  code: string,
+): Promise<{ user_id: number }> {
+  const { data } = await apiClient.post<{ user_id: number }>(
+    `/admin/affiliates/users/${userId}/bind-inviter`,
+    { code },
+  )
+  return data
+}
+
 export async function clearUserSettings(
   userId: number,
 ): Promise<{ user_id: number }> {
@@ -219,6 +234,7 @@ export const affiliatesAPI = {
   listUsers,
   lookupUsers,
   updateUserSettings,
+  bindUserInviter,
   clearUserSettings,
   batchSetRate,
   listInviteRecords,
