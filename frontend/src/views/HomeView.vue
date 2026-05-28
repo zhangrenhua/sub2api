@@ -185,6 +185,33 @@
           </div>
         </section>
 
+        <!-- Supported Payments -->
+        <section class="mb-12">
+          <div class="mb-6 text-center">
+            <h2 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+              {{ t('home.payments.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-dark-400">
+              {{ t('home.payments.subtitle') }}
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <div
+              v-for="pm in paymentMethods"
+              :key="pm.label"
+              class="inline-flex items-center gap-2 rounded-full border border-gray-200/60 bg-white/70 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm dark:border-dark-700/60 dark:bg-dark-800/70 dark:text-dark-200"
+            >
+              <img v-if="pm.icon" :src="pm.icon" :alt="pm.label" class="h-5 w-5 object-contain" />
+              <span
+                v-else
+                class="flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                :class="pm.badgeClass"
+              >{{ pm.badge }}</span>
+              {{ pm.label }}
+            </div>
+          </div>
+        </section>
+
         <!-- AI Models Grid -->
         <section class="mb-16">
           <div class="mb-8 text-center">
@@ -263,32 +290,6 @@
           </div>
         </section>
 
-        <!-- Supported Payments -->
-        <section class="mb-12">
-          <div class="mb-6 text-center">
-            <h2 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
-              {{ t('home.payments.title') }}
-            </h2>
-            <p class="text-sm text-gray-600 dark:text-dark-400">
-              {{ t('home.payments.subtitle') }}
-            </p>
-          </div>
-          <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-            <div
-              v-for="pm in paymentMethods"
-              :key="pm.label"
-              class="inline-flex items-center gap-2 rounded-full border border-gray-200/60 bg-white/70 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm dark:border-dark-700/60 dark:bg-dark-800/70 dark:text-dark-200"
-            >
-              <img v-if="pm.icon" :src="pm.icon" :alt="pm.label" class="h-5 w-5 object-contain" />
-              <span
-                v-else
-                class="flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                :class="pm.badgeClass"
-              >{{ pm.badge }}</span>
-              {{ pm.label }}
-            </div>
-          </div>
-        </section>
       </div>
     </main>
 
