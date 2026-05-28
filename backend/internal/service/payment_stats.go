@@ -37,8 +37,15 @@ func (s *PaymentService) GetDashboardStats(ctx context.Context, days int) (*Dash
 		return nil, err
 	}
 
+	balanceMultiplier := 1.0
+	if s.configService != nil {
+		if cfg, cerr := s.configService.GetPaymentConfig(ctx); cerr == nil && cfg != nil {
+			balanceMultiplier = normalizeBalanceRechargeMultiplier(cfg.BalanceRechargeMultiplier)
+		}
+	}
+
 	st := &DashboardStats{}
-	computeBasicStats(st, orders, todayStart)
+	computeBasicStats(st, orders, todayStart, balanceMultiplier)
 
 	st.PendingOrders, err = s.entClient.PaymentOrder.Query().
 		Where(paymentorder.StatusEQ(OrderStatusPending)).
@@ -47,31 +54,35 @@ func (s *PaymentService) GetDashboardStats(ctx context.Context, days int) (*Dash
 		return nil, err
 	}
 
-	st.DailySeries = buildDailySeries(orders, since, days)
-	st.PaymentMethods = buildMethodDistribution(orders)
-	st.TopUsers = buildTopUsers(orders)
+	st.DailySeries = buildDailySeries(orders, since, days, balanceMultiplier)
+	st.PaymentMethods = buildMethodDistribution(orders, balanceMultiplier)
+	st.TopUsers = buildTopUsers(orders, balanceMultiplier)
 
 	return st, nil
 }
 
 // orderCNYAmount returns the CNY-equivalent amount for statistics aggregation.
-// For USDT/PayPal orders the pay_amount is in a foreign currency (USDT/USD),
-// so we use the order's Amount field which always stores the CNY order value.
-// For CNY-denominated orders we use PayAmount which includes the service fee.
-func orderCNYAmount(o *dbent.PaymentOrder) float64 {
+// For USDT/PayPal orders pay_amount is in a foreign currency (USDT/USD), so we
+// use Amount which stores the CNY-denominated order value. For balance orders,
+// Amount = req.Amount * BalanceRechargeMultiplier, so we divide back out to
+// recover the actual CNY paid.
+func orderCNYAmount(o *dbent.PaymentOrder, balanceMultiplier float64) float64 {
 	switch o.PaymentType {
 	case payment.TypeTRC20, payment.TypeERC20, payment.TypePayPal:
+		if o.OrderType == payment.OrderTypeBalance && balanceMultiplier > 1 {
+			return math.Round(o.Amount/balanceMultiplier*100) / 100
+		}
 		return o.Amount
 	default:
 		return o.PayAmount
 	}
 }
 
-func computeBasicStats(st *DashboardStats, orders []*dbent.PaymentOrder, todayStart time.Time) {
+func computeBasicStats(st *DashboardStats, orders []*dbent.PaymentOrder, todayStart time.Time, balanceMultiplier float64) {
 	var totalAmount, todayAmount float64
 	var todayCount int
 	for _, o := range orders {
-		amt := orderCNYAmount(o)
+		amt := orderCNYAmount(o, balanceMultiplier)
 		totalAmount += amt
 		if o.PaidAt != nil && !o.PaidAt.Before(todayStart) {
 			todayAmount += amt
@@ -87,7 +98,7 @@ func computeBasicStats(st *DashboardStats, orders []*dbent.PaymentOrder, todaySt
 	}
 }
 
-func buildDailySeries(orders []*dbent.PaymentOrder, since time.Time, days int) []DailyStats {
+func buildDailySeries(orders []*dbent.PaymentOrder, since time.Time, days int, balanceMultiplier float64) []DailyStats {
 	dailyMap := make(map[string]*DailyStats)
 	for _, o := range orders {
 		if o.PaidAt == nil {
@@ -99,7 +110,7 @@ func buildDailySeries(orders []*dbent.PaymentOrder, since time.Time, days int) [
 			ds = &DailyStats{Date: date}
 			dailyMap[date] = ds
 		}
-		ds.Amount += orderCNYAmount(o)
+		ds.Amount += orderCNYAmount(o, balanceMultiplier)
 		ds.Count++
 	}
 	series := make([]DailyStats, 0, days)
@@ -115,7 +126,7 @@ func buildDailySeries(orders []*dbent.PaymentOrder, since time.Time, days int) [
 	return series
 }
 
-func buildMethodDistribution(orders []*dbent.PaymentOrder) []PaymentMethodStat {
+func buildMethodDistribution(orders []*dbent.PaymentOrder, balanceMultiplier float64) []PaymentMethodStat {
 	methodMap := make(map[string]*PaymentMethodStat)
 	for _, o := range orders {
 		ms, ok := methodMap[o.PaymentType]
@@ -123,7 +134,7 @@ func buildMethodDistribution(orders []*dbent.PaymentOrder) []PaymentMethodStat {
 			ms = &PaymentMethodStat{Type: o.PaymentType}
 			methodMap[o.PaymentType] = ms
 		}
-		ms.Amount += orderCNYAmount(o)
+		ms.Amount += orderCNYAmount(o, balanceMultiplier)
 		ms.Count++
 	}
 	methods := make([]PaymentMethodStat, 0, len(methodMap))
@@ -134,7 +145,7 @@ func buildMethodDistribution(orders []*dbent.PaymentOrder) []PaymentMethodStat {
 	return methods
 }
 
-func buildTopUsers(orders []*dbent.PaymentOrder) []TopUserStat {
+func buildTopUsers(orders []*dbent.PaymentOrder, balanceMultiplier float64) []TopUserStat {
 	userMap := make(map[int64]*TopUserStat)
 	for _, o := range orders {
 		us, ok := userMap[o.UserID]
@@ -142,7 +153,7 @@ func buildTopUsers(orders []*dbent.PaymentOrder) []TopUserStat {
 			us = &TopUserStat{UserID: o.UserID, Email: o.UserEmail}
 			userMap[o.UserID] = us
 		}
-		us.Amount += orderCNYAmount(o)
+		us.Amount += orderCNYAmount(o, balanceMultiplier)
 	}
 	userList := make([]*TopUserStat, 0, len(userMap))
 	for _, us := range userMap {
