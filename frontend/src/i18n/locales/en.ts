@@ -121,7 +121,7 @@ export default {
       description: 'One key, access the leading large language models',
       viewDocs: 'View Docs',
       list: {
-        claudeOpus: { name: 'Claude Opus 4.7', desc: "Anthropic's flagship reasoning model" },
+        claudeOpus: { name: 'Claude Opus 4.8', desc: "Anthropic's flagship reasoning model" },
         claudeSonnet: { name: 'Claude Sonnet 4.6', desc: 'Powerful and cost-effective all-rounder' },
         claudeHaiku: { name: 'Claude Haiku 4.5', desc: 'Blazing-fast, low-cost' },
         gpt5: { name: 'GPT-5', desc: "OpenAI's latest generation model" },
