@@ -142,11 +142,14 @@ func (s *RateLimitService) CheckErrorPolicy(ctx context.Context, account *Accoun
 		slog.Info("account_error_code_skipped", "account_id", account.ID, "status_code", statusCode)
 		return ErrorPolicySkipped
 	}
-	if account.IsPoolMode() {
-		return ErrorPolicySkipped
-	}
+	// 临时不可调度规则为管理员显式配置（opt-in），即使在池模式下也应生效。
+	// 注意：tryTempUnschedulable 内部已按 IsTempUnschedulableEnabled + 规则匹配 双重门控，
+	// 未配置规则的池模式账号不受影响。
 	if s.tryTempUnschedulable(ctx, account, statusCode, responseBody) {
 		return ErrorPolicyTempUnscheduled
+	}
+	if account.IsPoolMode() {
+		return ErrorPolicySkipped
 	}
 	return ErrorPolicyNone
 }
@@ -155,6 +158,14 @@ func (s *RateLimitService) CheckErrorPolicy(ctx context.Context, account *Accoun
 // 返回是否应该停止该账号的调度
 func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Account, statusCode int, headers http.Header, responseBody []byte, requestedModel ...string) (shouldDisable bool) {
 	customErrorCodesEnabled := account.IsCustomErrorCodesEnabled()
+
+	// 先尝试临时不可调度规则（401除外，401 走下方 token 刷新窗口逻辑）。
+	// 该规则为管理员显式配置（opt-in），优先于池模式跳过、自定义错误码过滤与 model-404 冷却生效，
+	// 命中后直接返回，不执行后续禁用逻辑。tryTempUnschedulable 内部已按
+	// IsTempUnschedulableEnabled + 规则匹配 双重门控，未配置规则的账号不受影响。
+	if statusCode != 401 && s.tryTempUnschedulable(ctx, account, statusCode, responseBody) {
+		return true
+	}
 
 	// 池模式默认不标记本地账号状态；仅当用户显式配置自定义错误码时按本地策略处理。
 	if account.IsPoolMode() && !customErrorCodesEnabled {
@@ -171,14 +182,6 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 
 	if len(requestedModel) > 0 && s.HandleUpstreamModelNotFound(ctx, account, requestedModel[0], statusCode, responseBody) {
 		return true
-	}
-
-	// 先尝试临时不可调度规则（401除外）
-	// 如果匹配成功，直接返回，不执行后续禁用逻辑
-	if statusCode != 401 {
-		if s.tryTempUnschedulable(ctx, account, statusCode, responseBody) {
-			return true
-		}
 	}
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(responseBody))
