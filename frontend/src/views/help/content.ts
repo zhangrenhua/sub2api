@@ -325,7 +325,7 @@ export const zh: HelpFactory = (base) => ({
       title: '9. CodeX 使用教程',
       blocks: [
         { t: 'p', html: '支持的模型清单：' },
-        { t: 'code', lang: 'bash', code: 'gpt-5.4\ngpt-5.5\ngpt-image-2' },
+        { t: 'code', lang: 'bash', code: 'gpt-5.2\ngpt-5.3\ngpt-5.4\ngpt-5.4-mini\ngpt-5.5\ngpt-image-2\ngpt-5.3-codex\ncodex-auto-review' },
         { t: 'callout', variant: 'warning', html: 'Codex 用户创建秘钥的时候，分组一定要选择 <strong>Codex</strong> 的分组。' },
         { t: 'h3', text: '在 Codex 中使用' },
         { t: 'code', lang: 'bash', code: 'vi ~/.codex/config.toml' },
@@ -885,7 +885,7 @@ export const en: HelpFactory = (base) => ({
       title: '9. Codex setup',
       blocks: [
         { t: 'p', html: 'Supported models:' },
-        { t: 'code', lang: 'bash', code: 'gpt-5.4\ngpt-5.5\ngpt-image-2' },
+        { t: 'code', lang: 'bash', code: 'gpt-5.2\ngpt-5.3\ngpt-5.4\ngpt-5.4-mini\ngpt-5.5\ngpt-image-2\ngpt-5.3-codex\ncodex-auto-review' },
         { t: 'callout', variant: 'warning', html: 'When creating an API key, Codex users must pick the <strong>Codex</strong> group.' },
         { t: 'h3', text: 'Codex CLI' },
         { t: 'code', lang: 'bash', code: 'vi ~/.codex/config.toml' },
