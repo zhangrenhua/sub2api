@@ -409,10 +409,13 @@ export const zh: HelpFactory = (base) => ({
         ]},
         { t: 'h4', text: '1) 创建任务' },
         { t: 'code', lang: 'bash', code: `curl ${base}/videos \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "sora-v3-fast",\n    "prompt": "雨夜霓虹街道，镜头缓慢推进，电影感光影",\n    "aspect_ratio": "16:9",\n    "resolution": "480p",\n    "seconds": "5"\n  }'` },
-        { t: 'p', html: '返回示例：<code>{ "id": "task_xxx", "status": "queued", ... }</code>' },
+        { t: 'p', html: '返回（任务已入队）：' },
+        { t: 'code', lang: 'json', code: '{\n  "id": "task_xxx",\n  "object": "video",\n  "model": "sora-v3-fast",\n  "status": "queued",\n  "progress": 0,\n  "created_at": 1779560000\n}' },
         { t: 'h4', text: '2) 轮询状态' },
         { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}"` },
-        { t: 'p', html: '状态：<code>queued</code> / <code>in_progress</code> / <code>completed</code> / <code>failed</code>。' },
+        { t: 'p', html: '完成（<code>status=completed</code>）返回：' },
+        { t: 'code', lang: 'json', code: '{\n  "id": "task_xxx",\n  "status": "completed",\n  "progress": 100,\n  "seconds": "5",\n  "size": "854x480",\n  "video_url": ".../v1/videos/task_xxx/content"\n}' },
+        { t: 'p', html: '状态值：<code>queued</code> / <code>in_progress</code> / <code>completed</code> / <code>failed</code>。' },
         { t: 'h4', text: '3) 下载视频' },
         { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx/content \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -o out.mp4` },
         { t: 'h3', text: '参数说明' },
@@ -424,6 +427,8 @@ export const zh: HelpFactory = (base) => ({
           ['<code>seconds</code>', '是', '时长：5 / 10 / 15'],
           ['<code>image_url</code>', '否', '参考图，传了即图生视频']
         ]},
+        { t: 'h4', text: '失败返回示例' },
+        { t: 'code', lang: 'json', code: '// 403 余额不足\n{ "code": "INSUFFICIENT_BALANCE", "message": "Insufficient account balance" }\n\n// 403 分组未开视频\n{ "error": { "type": "permission_error", "message": "Video generation is not enabled for this group" } }\n\n// 503 无可用账号\n{ "error": { "type": "api_error", "message": "No available compatible accounts" } }' },
         { t: 'callout', variant: 'tip', html: '💡 计费在<strong>创建成功</strong>时按「时长 × 模型每秒价（按分辨率档）」扣费；失败的创建（鉴权/余额/上游错误）不计费；轮询与下载不计费。' },
         { t: 'callout', variant: 'warning', html: '生成通常需要几分钟。请通过 <code>GET /v1/videos/{task_id}/content</code> 下载（自动路由到创建任务的同一账号），不要直接使用返回里的上游 video_url。' }
       ]
@@ -1006,10 +1011,13 @@ export const en: HelpFactory = (base) => ({
         ]},
         { t: 'h4', text: '1) Create a job' },
         { t: 'code', lang: 'bash', code: `curl ${base}/videos \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "sora-v3-fast",\n    "prompt": "A neon-lit rainy street, slow dolly-in, cinematic",\n    "aspect_ratio": "16:9",\n    "resolution": "480p",\n    "seconds": "5"\n  }'` },
-        { t: 'p', html: 'Response: <code>{ "id": "task_xxx", "status": "queued", ... }</code>' },
+        { t: 'p', html: 'Response (job queued):' },
+        { t: 'code', lang: 'json', code: '{\n  "id": "task_xxx",\n  "object": "video",\n  "model": "sora-v3-fast",\n  "status": "queued",\n  "progress": 0,\n  "created_at": 1779560000\n}' },
         { t: 'h4', text: '2) Poll status' },
         { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}"` },
-        { t: 'p', html: 'Status: <code>queued</code> / <code>in_progress</code> / <code>completed</code> / <code>failed</code>.' },
+        { t: 'p', html: 'Completed (<code>status=completed</code>) response:' },
+        { t: 'code', lang: 'json', code: '{\n  "id": "task_xxx",\n  "status": "completed",\n  "progress": 100,\n  "seconds": "5",\n  "size": "854x480",\n  "video_url": ".../v1/videos/task_xxx/content"\n}' },
+        { t: 'p', html: 'Status values: <code>queued</code> / <code>in_progress</code> / <code>completed</code> / <code>failed</code>.' },
         { t: 'h4', text: '3) Download' },
         { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx/content \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -o out.mp4` },
         { t: 'h3', text: 'Parameters' },
@@ -1021,6 +1029,8 @@ export const en: HelpFactory = (base) => ({
           ['<code>seconds</code>', 'yes', 'duration: 5 / 10 / 15'],
           ['<code>image_url</code>', 'no', 'reference image (image-to-video)']
         ]},
+        { t: 'h4', text: 'Failure responses' },
+        { t: 'code', lang: 'json', code: '// 403 insufficient balance\n{ "code": "INSUFFICIENT_BALANCE", "message": "Insufficient account balance" }\n\n// 403 video not enabled for the group\n{ "error": { "type": "permission_error", "message": "Video generation is not enabled for this group" } }\n\n// 503 no available accounts\n{ "error": { "type": "api_error", "message": "No available compatible accounts" } }' },
         { t: 'callout', variant: 'tip', html: '💡 Billing happens on <strong>successful create</strong> = duration × per-second price (by resolution tier). Failed creates (auth/balance/upstream errors) are not billed; polling and download are free.' },
         { t: 'callout', variant: 'warning', html: 'Generation usually takes a few minutes. Download via <code>GET /v1/videos/{task_id}/content</code> (auto-routes to the creating account); do not use the upstream video_url from the response directly.' }
       ]
