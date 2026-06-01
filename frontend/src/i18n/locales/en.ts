@@ -2226,6 +2226,23 @@ export default {
         finalPricePreview: 'Final per-image price preview',
         notConfigured: 'Not configured'
       },
+      videoPricing: {
+        title: 'Video Generation Pricing',
+        description: 'Configure video generation access and base video prices. Leave empty to use default prices.',
+        allowVideoGeneration: 'Allow video generation for this group',
+        independentMultiplier: 'Use independent video multiplier',
+        videoMultiplier: 'Video multiplier',
+        pricePerSecond: 'Per-second price (standard)',
+        pricePerSecondHd: 'Per-second price (HD)',
+        modeHint: 'By default, video billing uses video price × current effective group multiplier. Independent mode uses video price × video multiplier.',
+        finalPricePreview: 'Final per-second price preview',
+        notConfigured: 'Not configured',
+        perModelTitle: 'Per-model pricing',
+        perModelHint: 'Set independent per-second prices for specific models, overriding the default per-second price for those models. Leave empty to use the default prices.',
+        modelName: 'Model name',
+        addModel: '+ Add model',
+        removeModel: 'Remove model'
+      },
       modelsList: {
         title: 'Custom /v1/models Model List',
         hint: 'Only changes the /v1/models response. Whitelist model calls and account routing are unchanged.',

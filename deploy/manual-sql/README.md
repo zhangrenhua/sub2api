@@ -11,8 +11,10 @@
 
 1. `144_crypto_wallet.sql`      — USDT/TRC20 自托管钱包相关表（建表）
 2. `145_crypto_wallet_erc20.sql` — ERC20(以太坊)支持（在上述表上加列）
+3. `146_group_video_pricing.sql` — 视频生成（Sora）分组开关与计费列（在 groups 表加列）
 
 > ⚠️ 必须先 144 再 145：145 是对 144 创建的表做 `ALTER`，顺序颠倒会因表不存在而失败。
+> 146 独立于 144/145，可单独执行。
 
 ## 如何执行
 

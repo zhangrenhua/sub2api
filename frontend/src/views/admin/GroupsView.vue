@@ -853,6 +853,159 @@
           </div>
         </div>
 
+        <!-- 视频生成计费配置 -->
+        <div
+          v-if="
+            createForm.platform === 'antigravity' ||
+            createForm.platform === 'gemini' ||
+            createForm.platform === 'openai'
+          "
+          class="border-t pt-4"
+        >
+          <label
+            class="block mb-2 font-medium text-gray-700 dark:text-gray-300"
+          >
+            {{ t("admin.groups.videoPricing.title") }}
+          </label>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            {{ t("admin.groups.videoPricing.description") }}
+          </p>
+          <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                v-model="createForm.allow_video_generation"
+                type="checkbox"
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              {{ t("admin.groups.videoPricing.allowVideoGeneration") }}
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                v-model="createForm.video_rate_independent"
+                type="checkbox"
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              {{ t("admin.groups.videoPricing.independentMultiplier") }}
+            </label>
+          </div>
+          <div
+            v-if="createForm.video_rate_independent"
+            class="mb-4"
+          >
+            <label class="input-label">{{
+              t("admin.groups.videoPricing.videoMultiplier")
+            }}</label>
+            <input
+              v-model.number="createForm.video_rate_multiplier"
+              type="number"
+              step="0.0001"
+              min="0"
+              class="input"
+              placeholder="1"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="input-label">{{
+                t("admin.groups.videoPricing.pricePerSecond")
+              }} ($)</label>
+              <input
+                v-model.number="createForm.video_price_per_second"
+                type="number"
+                step="0.001"
+                min="0"
+                class="input"
+                placeholder="0.1"
+              />
+            </div>
+            <div>
+              <label class="input-label">{{
+                t("admin.groups.videoPricing.pricePerSecondHd")
+              }} ($)</label>
+              <input
+                v-model.number="createForm.video_price_per_second_hd"
+                type="number"
+                step="0.001"
+                min="0"
+                class="input"
+                placeholder="0.2"
+              />
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="mb-1 flex items-center justify-between">
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t("admin.groups.videoPricing.perModelTitle") }}
+              </label>
+              <button
+                type="button"
+                @click="addCreateVideoModelPrice"
+                class="flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+              >
+                <Icon name="plus" size="sm" />
+                {{ t("admin.groups.videoPricing.addModel") }}
+              </button>
+            </div>
+            <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+              {{ t("admin.groups.videoPricing.perModelHint") }}
+            </p>
+            <div class="space-y-2">
+              <div
+                v-for="(row, index) in createForm.video_model_pricing.models"
+                :key="index"
+                class="flex items-center gap-2"
+              >
+                <input
+                  v-model="row.model"
+                  type="text"
+                  class="input flex-1"
+                  :placeholder="t('admin.groups.videoPricing.modelName')"
+                />
+                <input
+                  v-model.number="row.price_per_second"
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  class="input w-28"
+                  placeholder="0.1"
+                />
+                <input
+                  v-model.number="row.price_per_second_hd"
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  class="input w-28"
+                  placeholder="0.2"
+                />
+                <button
+                  type="button"
+                  @click="removeCreateVideoModelPrice(index)"
+                  class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                  :title="t('admin.groups.videoPricing.removeModel')"
+                >
+                  <Icon name="trash" size="sm" />
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            {{ t("admin.groups.videoPricing.modeHint") }}
+          </p>
+          <div class="mt-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+            <div class="mb-1 font-medium">
+              {{ t("admin.groups.videoPricing.finalPricePreview") }}
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div
+                v-for="item in createVideoFinalPricePreview"
+                :key="item.label"
+              >
+                {{ item.label }}: {{ item.value }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 支持的模型系列（仅 antigravity 平台） -->
         <div v-if="createForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -2141,6 +2294,159 @@
           </div>
         </div>
 
+        <!-- 视频生成计费配置 -->
+        <div
+          v-if="
+            editForm.platform === 'antigravity' ||
+            editForm.platform === 'gemini' ||
+            editForm.platform === 'openai'
+          "
+          class="border-t pt-4"
+        >
+          <label
+            class="block mb-2 font-medium text-gray-700 dark:text-gray-300"
+          >
+            {{ t("admin.groups.videoPricing.title") }}
+          </label>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            {{ t("admin.groups.videoPricing.description") }}
+          </p>
+          <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                v-model="editForm.allow_video_generation"
+                type="checkbox"
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              {{ t("admin.groups.videoPricing.allowVideoGeneration") }}
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                v-model="editForm.video_rate_independent"
+                type="checkbox"
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              {{ t("admin.groups.videoPricing.independentMultiplier") }}
+            </label>
+          </div>
+          <div
+            v-if="editForm.video_rate_independent"
+            class="mb-4"
+          >
+            <label class="input-label">{{
+              t("admin.groups.videoPricing.videoMultiplier")
+            }}</label>
+            <input
+              v-model.number="editForm.video_rate_multiplier"
+              type="number"
+              step="0.0001"
+              min="0"
+              class="input"
+              placeholder="1"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="input-label">{{
+                t("admin.groups.videoPricing.pricePerSecond")
+              }} ($)</label>
+              <input
+                v-model.number="editForm.video_price_per_second"
+                type="number"
+                step="0.001"
+                min="0"
+                class="input"
+                placeholder="0.1"
+              />
+            </div>
+            <div>
+              <label class="input-label">{{
+                t("admin.groups.videoPricing.pricePerSecondHd")
+              }} ($)</label>
+              <input
+                v-model.number="editForm.video_price_per_second_hd"
+                type="number"
+                step="0.001"
+                min="0"
+                class="input"
+                placeholder="0.2"
+              />
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="mb-1 flex items-center justify-between">
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t("admin.groups.videoPricing.perModelTitle") }}
+              </label>
+              <button
+                type="button"
+                @click="addEditVideoModelPrice"
+                class="flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+              >
+                <Icon name="plus" size="sm" />
+                {{ t("admin.groups.videoPricing.addModel") }}
+              </button>
+            </div>
+            <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+              {{ t("admin.groups.videoPricing.perModelHint") }}
+            </p>
+            <div class="space-y-2">
+              <div
+                v-for="(row, index) in editForm.video_model_pricing.models"
+                :key="index"
+                class="flex items-center gap-2"
+              >
+                <input
+                  v-model="row.model"
+                  type="text"
+                  class="input flex-1"
+                  :placeholder="t('admin.groups.videoPricing.modelName')"
+                />
+                <input
+                  v-model.number="row.price_per_second"
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  class="input w-28"
+                  placeholder="0.1"
+                />
+                <input
+                  v-model.number="row.price_per_second_hd"
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  class="input w-28"
+                  placeholder="0.2"
+                />
+                <button
+                  type="button"
+                  @click="removeEditVideoModelPrice(index)"
+                  class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                  :title="t('admin.groups.videoPricing.removeModel')"
+                >
+                  <Icon name="trash" size="sm" />
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            {{ t("admin.groups.videoPricing.modeHint") }}
+          </p>
+          <div class="mt-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+            <div class="mb-1 font-medium">
+              {{ t("admin.groups.videoPricing.finalPricePreview") }}
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div
+                v-for="item in editVideoFinalPricePreview"
+                :key="item.label"
+              >
+                {{ item.label }}: {{ item.value }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 支持的模型系列（仅 antigravity 平台） -->
         <div v-if="editForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -3340,6 +3646,19 @@ const createForm = reactive({
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
   image_price_4k: null as number | null,
+  // 视频生成计费配置
+  allow_video_generation: false,
+  video_rate_independent: false,
+  video_rate_multiplier: 1,
+  video_price_per_second: null as number | null,
+  video_price_per_second_hd: null as number | null,
+  video_model_pricing: {
+    models: [] as Array<{
+      model: string;
+      price_per_second: number | null;
+      price_per_second_hd: number | null;
+    }>,
+  },
   // Claude Code 客户端限制（仅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
@@ -3671,6 +3990,19 @@ const editForm = reactive({
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
   image_price_4k: null as number | null,
+  // 视频生成计费配置
+  allow_video_generation: false,
+  video_rate_independent: false,
+  video_rate_multiplier: 1,
+  video_price_per_second: null as number | null,
+  video_price_per_second_hd: null as number | null,
+  video_model_pricing: {
+    models: [] as Array<{
+      model: string;
+      price_per_second: number | null;
+      price_per_second_hd: number | null;
+    }>,
+  },
   // Claude Code 客户端限制（仅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
@@ -3751,6 +4083,41 @@ const createImageFinalPricePreview = computed(() =>
 );
 const editImageFinalPricePreview = computed(() =>
   buildImageFinalPricePreview(editForm),
+);
+
+type VideoPricingFormState = {
+  rate_multiplier: number;
+  video_rate_independent: boolean;
+  video_rate_multiplier: number;
+  video_price_per_second: number | string | null;
+  video_price_per_second_hd: number | string | null;
+};
+
+const videoPricingTiers = [
+  { key: "video_price_per_second", label: t("admin.groups.videoPricing.pricePerSecond") },
+  { key: "video_price_per_second_hd", label: t("admin.groups.videoPricing.pricePerSecondHd") },
+] as const;
+
+const buildVideoFinalPricePreview = (form: VideoPricingFormState) => {
+  const multiplier = form.video_rate_independent
+    ? normalizePreviewNumber(form.video_rate_multiplier, 1)
+    : normalizePreviewNumber(form.rate_multiplier, 1);
+  return videoPricingTiers.map((tier) => {
+    const basePrice = normalizePreviewNumber(form[tier.key]);
+    return {
+      label: tier.label,
+      value: basePrice > 0
+        ? formatImagePricePreview(basePrice * multiplier)
+        : t("admin.groups.videoPricing.notConfigured"),
+    };
+  });
+};
+
+const createVideoFinalPricePreview = computed(() =>
+  buildVideoFinalPricePreview(createForm),
+);
+const editVideoFinalPricePreview = computed(() =>
+  buildVideoFinalPricePreview(editForm),
 );
 
 // 根据分组类型返回不同的删除确认消息
@@ -3922,6 +4289,12 @@ const closeCreateModal = () => {
   createForm.image_price_1k = null;
   createForm.image_price_2k = null;
   createForm.image_price_4k = null;
+  createForm.allow_video_generation = false;
+  createForm.video_rate_independent = false;
+  createForm.video_rate_multiplier = 1;
+  createForm.video_price_per_second = null;
+  createForm.video_price_per_second_hd = null;
+  createForm.video_model_pricing = { models: [] };
   createForm.claude_code_only = false;
   createForm.fallback_group_id = null;
   createForm.fallback_group_id_on_invalid_request = null;
@@ -4002,6 +4375,9 @@ const handleCreateGroup = async () => {
               exact_model_mappings: createForm.exact_model_mappings,
             })
           : undefined,
+      video_model_pricing: buildVideoModelPricing(
+        createForm.video_model_pricing.models,
+      ),
     };
     // v-model.number 清空输入框时产生 ""，转为 null 让后端设为无限制
     const emptyToNull = (v: any) => (v === "" ? null : v);
@@ -4010,6 +4386,9 @@ const handleCreateGroup = async () => {
     requestData.monthly_limit_usd = emptyToNull(requestData.monthly_limit_usd);
     requestData.image_rate_multiplier = normalizeImageRateMultiplier(
       requestData.image_rate_multiplier,
+    );
+    requestData.video_rate_multiplier = normalizeImageRateMultiplier(
+      requestData.video_rate_multiplier,
     );
     await adminAPI.groups.create(requestData);
     appStore.showSuccess(t("admin.groups.groupCreated"));
@@ -4048,6 +4427,18 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.image_price_1k = group.image_price_1k;
   editForm.image_price_2k = group.image_price_2k;
   editForm.image_price_4k = group.image_price_4k;
+  editForm.allow_video_generation = group.allow_video_generation ?? false;
+  editForm.video_rate_independent = group.video_rate_independent ?? false;
+  editForm.video_rate_multiplier = group.video_rate_multiplier ?? 1;
+  editForm.video_price_per_second = group.video_price_per_second;
+  editForm.video_price_per_second_hd = group.video_price_per_second_hd;
+  editForm.video_model_pricing = {
+    models: (group.video_model_pricing?.models ?? []).map((row) => ({
+      model: row.model,
+      price_per_second: row.price_per_second,
+      price_per_second_hd: row.price_per_second_hd,
+    })),
+  };
   editForm.claude_code_only = group.claude_code_only || false;
   editForm.fallback_group_id = group.fallback_group_id;
   editForm.fallback_group_id_on_invalid_request =
@@ -4141,6 +4532,9 @@ const handleUpdateGroup = async () => {
               exact_model_mappings: editForm.exact_model_mappings,
             })
           : undefined,
+      video_model_pricing: buildVideoModelPricing(
+        editForm.video_model_pricing.models,
+      ),
     };
     // v-model.number 清空输入框时产生 ""，转为 null 让后端设为无限制
     const emptyToNull = (v: any) => (v === "" ? null : v);
@@ -4149,6 +4543,9 @@ const handleUpdateGroup = async () => {
     payload.monthly_limit_usd = emptyToNull(payload.monthly_limit_usd);
     payload.image_rate_multiplier = normalizeImageRateMultiplier(
       payload.image_rate_multiplier,
+    );
+    payload.video_rate_multiplier = normalizeImageRateMultiplier(
+      payload.video_rate_multiplier,
     );
     await adminAPI.groups.update(editingGroup.value.id, payload);
     appStore.showSuccess(t("admin.groups.groupUpdated"));
@@ -4186,6 +4583,49 @@ const removeEditMessagesDispatchMapping = (row: MessagesDispatchMappingRow) => {
   if (index !== -1) {
     editForm.exact_model_mappings.splice(index, 1);
   }
+};
+
+const addCreateVideoModelPrice = () => {
+  createForm.video_model_pricing.models.push({
+    model: "",
+    price_per_second: null,
+    price_per_second_hd: null,
+  });
+};
+
+const removeCreateVideoModelPrice = (index: number) => {
+  createForm.video_model_pricing.models.splice(index, 1);
+};
+
+const addEditVideoModelPrice = () => {
+  editForm.video_model_pricing.models.push({
+    model: "",
+    price_per_second: null,
+    price_per_second_hd: null,
+  });
+};
+
+const removeEditVideoModelPrice = (index: number) => {
+  editForm.video_model_pricing.models.splice(index, 1);
+};
+
+// 过滤空模型行并将空价格归一化为 null
+const buildVideoModelPricing = (models: {
+  model: string;
+  price_per_second: number | string | null;
+  price_per_second_hd: number | string | null;
+}[]) => {
+  const normalizePrice = (v: number | string | null) =>
+    v === "" || v === null || v === undefined ? null : Number(v);
+  return {
+    models: models
+      .filter((row) => row.model.trim() !== "")
+      .map((row) => ({
+        model: row.model.trim(),
+        price_per_second: normalizePrice(row.price_per_second),
+        price_per_second_hd: normalizePrice(row.price_per_second_hd),
+      })),
+  };
 };
 
 const handleRateMultipliers = (group: AdminGroup) => {

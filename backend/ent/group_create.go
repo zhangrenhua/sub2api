@@ -301,6 +301,90 @@ func (_c *GroupCreate) SetNillableImagePrice4k(v *float64) *GroupCreate {
 	return _c
 }
 
+// SetAllowVideoGeneration sets the "allow_video_generation" field.
+func (_c *GroupCreate) SetAllowVideoGeneration(v bool) *GroupCreate {
+	_c.mutation.SetAllowVideoGeneration(v)
+	return _c
+}
+
+// SetNillableAllowVideoGeneration sets the "allow_video_generation" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableAllowVideoGeneration(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetAllowVideoGeneration(*v)
+	}
+	return _c
+}
+
+// SetVideoRateIndependent sets the "video_rate_independent" field.
+func (_c *GroupCreate) SetVideoRateIndependent(v bool) *GroupCreate {
+	_c.mutation.SetVideoRateIndependent(v)
+	return _c
+}
+
+// SetNillableVideoRateIndependent sets the "video_rate_independent" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableVideoRateIndependent(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetVideoRateIndependent(*v)
+	}
+	return _c
+}
+
+// SetVideoRateMultiplier sets the "video_rate_multiplier" field.
+func (_c *GroupCreate) SetVideoRateMultiplier(v float64) *GroupCreate {
+	_c.mutation.SetVideoRateMultiplier(v)
+	return _c
+}
+
+// SetNillableVideoRateMultiplier sets the "video_rate_multiplier" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableVideoRateMultiplier(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetVideoRateMultiplier(*v)
+	}
+	return _c
+}
+
+// SetVideoPricePerSecond sets the "video_price_per_second" field.
+func (_c *GroupCreate) SetVideoPricePerSecond(v float64) *GroupCreate {
+	_c.mutation.SetVideoPricePerSecond(v)
+	return _c
+}
+
+// SetNillableVideoPricePerSecond sets the "video_price_per_second" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableVideoPricePerSecond(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetVideoPricePerSecond(*v)
+	}
+	return _c
+}
+
+// SetVideoPricePerSecondHd sets the "video_price_per_second_hd" field.
+func (_c *GroupCreate) SetVideoPricePerSecondHd(v float64) *GroupCreate {
+	_c.mutation.SetVideoPricePerSecondHd(v)
+	return _c
+}
+
+// SetNillableVideoPricePerSecondHd sets the "video_price_per_second_hd" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableVideoPricePerSecondHd(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetVideoPricePerSecondHd(*v)
+	}
+	return _c
+}
+
+// SetVideoModelPricing sets the "video_model_pricing" field.
+func (_c *GroupCreate) SetVideoModelPricing(v domain.GroupVideoPricingConfig) *GroupCreate {
+	_c.mutation.SetVideoModelPricing(v)
+	return _c
+}
+
+// SetNillableVideoModelPricing sets the "video_model_pricing" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableVideoModelPricing(v *domain.GroupVideoPricingConfig) *GroupCreate {
+	if v != nil {
+		_c.SetVideoModelPricing(*v)
+	}
+	return _c
+}
+
 // SetClaudeCodeOnly sets the "claude_code_only" field.
 func (_c *GroupCreate) SetClaudeCodeOnly(v bool) *GroupCreate {
 	_c.mutation.SetClaudeCodeOnly(v)
@@ -672,6 +756,22 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultImageRateMultiplier
 		_c.mutation.SetImageRateMultiplier(v)
 	}
+	if _, ok := _c.mutation.AllowVideoGeneration(); !ok {
+		v := group.DefaultAllowVideoGeneration
+		_c.mutation.SetAllowVideoGeneration(v)
+	}
+	if _, ok := _c.mutation.VideoRateIndependent(); !ok {
+		v := group.DefaultVideoRateIndependent
+		_c.mutation.SetVideoRateIndependent(v)
+	}
+	if _, ok := _c.mutation.VideoRateMultiplier(); !ok {
+		v := group.DefaultVideoRateMultiplier
+		_c.mutation.SetVideoRateMultiplier(v)
+	}
+	if _, ok := _c.mutation.VideoModelPricing(); !ok {
+		v := group.DefaultVideoModelPricing
+		_c.mutation.SetVideoModelPricing(v)
+	}
 	if _, ok := _c.mutation.ClaudeCodeOnly(); !ok {
 		v := group.DefaultClaudeCodeOnly
 		_c.mutation.SetClaudeCodeOnly(v)
@@ -780,6 +880,18 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ImageRateMultiplier(); !ok {
 		return &ValidationError{Name: "image_rate_multiplier", err: errors.New(`ent: missing required field "Group.image_rate_multiplier"`)}
+	}
+	if _, ok := _c.mutation.AllowVideoGeneration(); !ok {
+		return &ValidationError{Name: "allow_video_generation", err: errors.New(`ent: missing required field "Group.allow_video_generation"`)}
+	}
+	if _, ok := _c.mutation.VideoRateIndependent(); !ok {
+		return &ValidationError{Name: "video_rate_independent", err: errors.New(`ent: missing required field "Group.video_rate_independent"`)}
+	}
+	if _, ok := _c.mutation.VideoRateMultiplier(); !ok {
+		return &ValidationError{Name: "video_rate_multiplier", err: errors.New(`ent: missing required field "Group.video_rate_multiplier"`)}
+	}
+	if _, ok := _c.mutation.VideoModelPricing(); !ok {
+		return &ValidationError{Name: "video_model_pricing", err: errors.New(`ent: missing required field "Group.video_model_pricing"`)}
 	}
 	if _, ok := _c.mutation.ClaudeCodeOnly(); !ok {
 		return &ValidationError{Name: "claude_code_only", err: errors.New(`ent: missing required field "Group.claude_code_only"`)}
@@ -928,6 +1040,30 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ImagePrice4k(); ok {
 		_spec.SetField(group.FieldImagePrice4k, field.TypeFloat64, value)
 		_node.ImagePrice4k = &value
+	}
+	if value, ok := _c.mutation.AllowVideoGeneration(); ok {
+		_spec.SetField(group.FieldAllowVideoGeneration, field.TypeBool, value)
+		_node.AllowVideoGeneration = value
+	}
+	if value, ok := _c.mutation.VideoRateIndependent(); ok {
+		_spec.SetField(group.FieldVideoRateIndependent, field.TypeBool, value)
+		_node.VideoRateIndependent = value
+	}
+	if value, ok := _c.mutation.VideoRateMultiplier(); ok {
+		_spec.SetField(group.FieldVideoRateMultiplier, field.TypeFloat64, value)
+		_node.VideoRateMultiplier = value
+	}
+	if value, ok := _c.mutation.VideoPricePerSecond(); ok {
+		_spec.SetField(group.FieldVideoPricePerSecond, field.TypeFloat64, value)
+		_node.VideoPricePerSecond = &value
+	}
+	if value, ok := _c.mutation.VideoPricePerSecondHd(); ok {
+		_spec.SetField(group.FieldVideoPricePerSecondHd, field.TypeFloat64, value)
+		_node.VideoPricePerSecondHd = &value
+	}
+	if value, ok := _c.mutation.VideoModelPricing(); ok {
+		_spec.SetField(group.FieldVideoModelPricing, field.TypeJSON, value)
+		_node.VideoModelPricing = value
 	}
 	if value, ok := _c.mutation.ClaudeCodeOnly(); ok {
 		_spec.SetField(group.FieldClaudeCodeOnly, field.TypeBool, value)
@@ -1472,6 +1608,108 @@ func (u *GroupUpsert) AddImagePrice4k(v float64) *GroupUpsert {
 // ClearImagePrice4k clears the value of the "image_price_4k" field.
 func (u *GroupUpsert) ClearImagePrice4k() *GroupUpsert {
 	u.SetNull(group.FieldImagePrice4k)
+	return u
+}
+
+// SetAllowVideoGeneration sets the "allow_video_generation" field.
+func (u *GroupUpsert) SetAllowVideoGeneration(v bool) *GroupUpsert {
+	u.Set(group.FieldAllowVideoGeneration, v)
+	return u
+}
+
+// UpdateAllowVideoGeneration sets the "allow_video_generation" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateAllowVideoGeneration() *GroupUpsert {
+	u.SetExcluded(group.FieldAllowVideoGeneration)
+	return u
+}
+
+// SetVideoRateIndependent sets the "video_rate_independent" field.
+func (u *GroupUpsert) SetVideoRateIndependent(v bool) *GroupUpsert {
+	u.Set(group.FieldVideoRateIndependent, v)
+	return u
+}
+
+// UpdateVideoRateIndependent sets the "video_rate_independent" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateVideoRateIndependent() *GroupUpsert {
+	u.SetExcluded(group.FieldVideoRateIndependent)
+	return u
+}
+
+// SetVideoRateMultiplier sets the "video_rate_multiplier" field.
+func (u *GroupUpsert) SetVideoRateMultiplier(v float64) *GroupUpsert {
+	u.Set(group.FieldVideoRateMultiplier, v)
+	return u
+}
+
+// UpdateVideoRateMultiplier sets the "video_rate_multiplier" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateVideoRateMultiplier() *GroupUpsert {
+	u.SetExcluded(group.FieldVideoRateMultiplier)
+	return u
+}
+
+// AddVideoRateMultiplier adds v to the "video_rate_multiplier" field.
+func (u *GroupUpsert) AddVideoRateMultiplier(v float64) *GroupUpsert {
+	u.Add(group.FieldVideoRateMultiplier, v)
+	return u
+}
+
+// SetVideoPricePerSecond sets the "video_price_per_second" field.
+func (u *GroupUpsert) SetVideoPricePerSecond(v float64) *GroupUpsert {
+	u.Set(group.FieldVideoPricePerSecond, v)
+	return u
+}
+
+// UpdateVideoPricePerSecond sets the "video_price_per_second" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateVideoPricePerSecond() *GroupUpsert {
+	u.SetExcluded(group.FieldVideoPricePerSecond)
+	return u
+}
+
+// AddVideoPricePerSecond adds v to the "video_price_per_second" field.
+func (u *GroupUpsert) AddVideoPricePerSecond(v float64) *GroupUpsert {
+	u.Add(group.FieldVideoPricePerSecond, v)
+	return u
+}
+
+// ClearVideoPricePerSecond clears the value of the "video_price_per_second" field.
+func (u *GroupUpsert) ClearVideoPricePerSecond() *GroupUpsert {
+	u.SetNull(group.FieldVideoPricePerSecond)
+	return u
+}
+
+// SetVideoPricePerSecondHd sets the "video_price_per_second_hd" field.
+func (u *GroupUpsert) SetVideoPricePerSecondHd(v float64) *GroupUpsert {
+	u.Set(group.FieldVideoPricePerSecondHd, v)
+	return u
+}
+
+// UpdateVideoPricePerSecondHd sets the "video_price_per_second_hd" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateVideoPricePerSecondHd() *GroupUpsert {
+	u.SetExcluded(group.FieldVideoPricePerSecondHd)
+	return u
+}
+
+// AddVideoPricePerSecondHd adds v to the "video_price_per_second_hd" field.
+func (u *GroupUpsert) AddVideoPricePerSecondHd(v float64) *GroupUpsert {
+	u.Add(group.FieldVideoPricePerSecondHd, v)
+	return u
+}
+
+// ClearVideoPricePerSecondHd clears the value of the "video_price_per_second_hd" field.
+func (u *GroupUpsert) ClearVideoPricePerSecondHd() *GroupUpsert {
+	u.SetNull(group.FieldVideoPricePerSecondHd)
+	return u
+}
+
+// SetVideoModelPricing sets the "video_model_pricing" field.
+func (u *GroupUpsert) SetVideoModelPricing(v domain.GroupVideoPricingConfig) *GroupUpsert {
+	u.Set(group.FieldVideoModelPricing, v)
+	return u
+}
+
+// UpdateVideoModelPricing sets the "video_model_pricing" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateVideoModelPricing() *GroupUpsert {
+	u.SetExcluded(group.FieldVideoModelPricing)
 	return u
 }
 
@@ -2124,6 +2362,125 @@ func (u *GroupUpsertOne) UpdateImagePrice4k() *GroupUpsertOne {
 func (u *GroupUpsertOne) ClearImagePrice4k() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearImagePrice4k()
+	})
+}
+
+// SetAllowVideoGeneration sets the "allow_video_generation" field.
+func (u *GroupUpsertOne) SetAllowVideoGeneration(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetAllowVideoGeneration(v)
+	})
+}
+
+// UpdateAllowVideoGeneration sets the "allow_video_generation" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateAllowVideoGeneration() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateAllowVideoGeneration()
+	})
+}
+
+// SetVideoRateIndependent sets the "video_rate_independent" field.
+func (u *GroupUpsertOne) SetVideoRateIndependent(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoRateIndependent(v)
+	})
+}
+
+// UpdateVideoRateIndependent sets the "video_rate_independent" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateVideoRateIndependent() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoRateIndependent()
+	})
+}
+
+// SetVideoRateMultiplier sets the "video_rate_multiplier" field.
+func (u *GroupUpsertOne) SetVideoRateMultiplier(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoRateMultiplier(v)
+	})
+}
+
+// AddVideoRateMultiplier adds v to the "video_rate_multiplier" field.
+func (u *GroupUpsertOne) AddVideoRateMultiplier(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddVideoRateMultiplier(v)
+	})
+}
+
+// UpdateVideoRateMultiplier sets the "video_rate_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateVideoRateMultiplier() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoRateMultiplier()
+	})
+}
+
+// SetVideoPricePerSecond sets the "video_price_per_second" field.
+func (u *GroupUpsertOne) SetVideoPricePerSecond(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoPricePerSecond(v)
+	})
+}
+
+// AddVideoPricePerSecond adds v to the "video_price_per_second" field.
+func (u *GroupUpsertOne) AddVideoPricePerSecond(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddVideoPricePerSecond(v)
+	})
+}
+
+// UpdateVideoPricePerSecond sets the "video_price_per_second" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateVideoPricePerSecond() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoPricePerSecond()
+	})
+}
+
+// ClearVideoPricePerSecond clears the value of the "video_price_per_second" field.
+func (u *GroupUpsertOne) ClearVideoPricePerSecond() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearVideoPricePerSecond()
+	})
+}
+
+// SetVideoPricePerSecondHd sets the "video_price_per_second_hd" field.
+func (u *GroupUpsertOne) SetVideoPricePerSecondHd(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoPricePerSecondHd(v)
+	})
+}
+
+// AddVideoPricePerSecondHd adds v to the "video_price_per_second_hd" field.
+func (u *GroupUpsertOne) AddVideoPricePerSecondHd(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddVideoPricePerSecondHd(v)
+	})
+}
+
+// UpdateVideoPricePerSecondHd sets the "video_price_per_second_hd" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateVideoPricePerSecondHd() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoPricePerSecondHd()
+	})
+}
+
+// ClearVideoPricePerSecondHd clears the value of the "video_price_per_second_hd" field.
+func (u *GroupUpsertOne) ClearVideoPricePerSecondHd() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearVideoPricePerSecondHd()
+	})
+}
+
+// SetVideoModelPricing sets the "video_model_pricing" field.
+func (u *GroupUpsertOne) SetVideoModelPricing(v domain.GroupVideoPricingConfig) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoModelPricing(v)
+	})
+}
+
+// UpdateVideoModelPricing sets the "video_model_pricing" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateVideoModelPricing() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoModelPricing()
 	})
 }
 
@@ -2979,6 +3336,125 @@ func (u *GroupUpsertBulk) UpdateImagePrice4k() *GroupUpsertBulk {
 func (u *GroupUpsertBulk) ClearImagePrice4k() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearImagePrice4k()
+	})
+}
+
+// SetAllowVideoGeneration sets the "allow_video_generation" field.
+func (u *GroupUpsertBulk) SetAllowVideoGeneration(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetAllowVideoGeneration(v)
+	})
+}
+
+// UpdateAllowVideoGeneration sets the "allow_video_generation" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateAllowVideoGeneration() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateAllowVideoGeneration()
+	})
+}
+
+// SetVideoRateIndependent sets the "video_rate_independent" field.
+func (u *GroupUpsertBulk) SetVideoRateIndependent(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoRateIndependent(v)
+	})
+}
+
+// UpdateVideoRateIndependent sets the "video_rate_independent" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateVideoRateIndependent() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoRateIndependent()
+	})
+}
+
+// SetVideoRateMultiplier sets the "video_rate_multiplier" field.
+func (u *GroupUpsertBulk) SetVideoRateMultiplier(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoRateMultiplier(v)
+	})
+}
+
+// AddVideoRateMultiplier adds v to the "video_rate_multiplier" field.
+func (u *GroupUpsertBulk) AddVideoRateMultiplier(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddVideoRateMultiplier(v)
+	})
+}
+
+// UpdateVideoRateMultiplier sets the "video_rate_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateVideoRateMultiplier() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoRateMultiplier()
+	})
+}
+
+// SetVideoPricePerSecond sets the "video_price_per_second" field.
+func (u *GroupUpsertBulk) SetVideoPricePerSecond(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoPricePerSecond(v)
+	})
+}
+
+// AddVideoPricePerSecond adds v to the "video_price_per_second" field.
+func (u *GroupUpsertBulk) AddVideoPricePerSecond(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddVideoPricePerSecond(v)
+	})
+}
+
+// UpdateVideoPricePerSecond sets the "video_price_per_second" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateVideoPricePerSecond() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoPricePerSecond()
+	})
+}
+
+// ClearVideoPricePerSecond clears the value of the "video_price_per_second" field.
+func (u *GroupUpsertBulk) ClearVideoPricePerSecond() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearVideoPricePerSecond()
+	})
+}
+
+// SetVideoPricePerSecondHd sets the "video_price_per_second_hd" field.
+func (u *GroupUpsertBulk) SetVideoPricePerSecondHd(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoPricePerSecondHd(v)
+	})
+}
+
+// AddVideoPricePerSecondHd adds v to the "video_price_per_second_hd" field.
+func (u *GroupUpsertBulk) AddVideoPricePerSecondHd(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddVideoPricePerSecondHd(v)
+	})
+}
+
+// UpdateVideoPricePerSecondHd sets the "video_price_per_second_hd" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateVideoPricePerSecondHd() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoPricePerSecondHd()
+	})
+}
+
+// ClearVideoPricePerSecondHd clears the value of the "video_price_per_second_hd" field.
+func (u *GroupUpsertBulk) ClearVideoPricePerSecondHd() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearVideoPricePerSecondHd()
+	})
+}
+
+// SetVideoModelPricing sets the "video_model_pricing" field.
+func (u *GroupUpsertBulk) SetVideoModelPricing(v domain.GroupVideoPricingConfig) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetVideoModelPricing(v)
+	})
+}
+
+// UpdateVideoModelPricing sets the "video_model_pricing" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateVideoModelPricing() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateVideoModelPricing()
 	})
 }
 

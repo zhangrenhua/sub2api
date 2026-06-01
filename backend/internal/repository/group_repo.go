@@ -55,6 +55,11 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
+		SetAllowVideoGeneration(groupIn.AllowVideoGeneration).
+		SetVideoRateIndependent(groupIn.VideoRateIndependent).
+		SetVideoRateMultiplier(groupIn.VideoRateMultiplier).
+		SetNillableVideoPricePerSecond(groupIn.VideoPricePerSecond).
+		SetNillableVideoPricePerSecondHd(groupIn.VideoPricePerSecondHD).
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetNillableFallbackGroupID(groupIn.FallbackGroupID).
@@ -67,6 +72,7 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetDefaultMappedModel(groupIn.DefaultMappedModel).
 		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig).
 		SetModelsListConfig(groupIn.ModelsListConfig).
+		SetVideoModelPricing(groupIn.VideoModelPricing).
 		SetRpmLimit(groupIn.RPMLimit)
 
 	// 设置模型路由配置
@@ -133,6 +139,11 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
+		SetAllowVideoGeneration(groupIn.AllowVideoGeneration).
+		SetVideoRateIndependent(groupIn.VideoRateIndependent).
+		SetVideoRateMultiplier(groupIn.VideoRateMultiplier).
+		SetNillableVideoPricePerSecond(groupIn.VideoPricePerSecond).
+		SetNillableVideoPricePerSecondHd(groupIn.VideoPricePerSecondHD).
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
@@ -143,6 +154,7 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetDefaultMappedModel(groupIn.DefaultMappedModel).
 		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig).
 		SetModelsListConfig(groupIn.ModelsListConfig).
+		SetVideoModelPricing(groupIn.VideoModelPricing).
 		SetRpmLimit(groupIn.RPMLimit)
 
 	// 显式处理可空字段：nil 需要 clear，非 nil 需要 set。
@@ -175,6 +187,16 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		builder = builder.SetImagePrice4k(*groupIn.ImagePrice4K)
 	} else {
 		builder = builder.ClearImagePrice4k()
+	}
+	if groupIn.VideoPricePerSecond != nil {
+		builder = builder.SetVideoPricePerSecond(*groupIn.VideoPricePerSecond)
+	} else {
+		builder = builder.ClearVideoPricePerSecond()
+	}
+	if groupIn.VideoPricePerSecondHD != nil {
+		builder = builder.SetVideoPricePerSecondHd(*groupIn.VideoPricePerSecondHD)
+	} else {
+		builder = builder.ClearVideoPricePerSecondHd()
 	}
 
 	// 处理 FallbackGroupID：nil 时清除，否则设置

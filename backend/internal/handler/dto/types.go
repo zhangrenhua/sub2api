@@ -103,6 +103,13 @@ type Group struct {
 	ImagePrice2K         *float64 `json:"image_price_2k"`
 	ImagePrice4K         *float64 `json:"image_price_4k"`
 
+	// 视频生成计费配置（OpenAI Sora）
+	AllowVideoGeneration  bool     `json:"allow_video_generation"`
+	VideoRateIndependent  bool     `json:"video_rate_independent"`
+	VideoRateMultiplier   float64  `json:"video_rate_multiplier"`
+	VideoPricePerSecond   *float64 `json:"video_price_per_second"`
+	VideoPricePerSecondHD *float64 `json:"video_price_per_second_hd"`
+
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`
 	FallbackGroupID *int64 `json:"fallback_group_id"`
@@ -139,6 +146,7 @@ type AdminGroup struct {
 	DefaultMappedModel          string                                   `json:"default_mapped_model"`
 	MessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	ModelsListConfig            domain.GroupModelsListConfig             `json:"models_list_config"`
+	VideoModelPricing           domain.GroupVideoPricingConfig           `json:"video_model_pricing"`
 
 	// 支持的模型系列（仅 antigravity 平台使用）
 	SupportedModelScopes    []string       `json:"supported_model_scopes"`

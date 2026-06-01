@@ -98,6 +98,11 @@ type CreateGroupRequest struct {
 	ImagePrice1K                    *float64 `json:"image_price_1k"`
 	ImagePrice2K                    *float64 `json:"image_price_2k"`
 	ImagePrice4K                    *float64 `json:"image_price_4k"`
+	AllowVideoGeneration            bool     `json:"allow_video_generation"`
+	VideoRateIndependent            bool     `json:"video_rate_independent"`
+	VideoRateMultiplier             *float64 `json:"video_rate_multiplier"`
+	VideoPricePerSecond             *float64 `json:"video_price_per_second"`
+	VideoPricePerSecondHD           *float64 `json:"video_price_per_second_hd"`
 	ClaudeCodeOnly                  bool     `json:"claude_code_only"`
 	FallbackGroupID                 *int64   `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest *int64   `json:"fallback_group_id_on_invalid_request"`
@@ -114,6 +119,7 @@ type CreateGroupRequest struct {
 	DefaultMappedModel          string                                    `json:"default_mapped_model"`
 	MessagesDispatchModelConfig service.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	ModelsListConfig            service.GroupModelsListConfig             `json:"models_list_config"`
+	VideoModelPricing           service.GroupVideoPricingConfig           `json:"video_model_pricing"`
 	// 分组 RPM 上限（0 = 不限制）
 	RPMLimit int `json:"rpm_limit"`
 	// 从指定分组复制账号（创建后自动绑定）
@@ -139,6 +145,11 @@ type UpdateGroupRequest struct {
 	ImagePrice1K                    *float64 `json:"image_price_1k"`
 	ImagePrice2K                    *float64 `json:"image_price_2k"`
 	ImagePrice4K                    *float64 `json:"image_price_4k"`
+	AllowVideoGeneration            *bool    `json:"allow_video_generation"`
+	VideoRateIndependent            *bool    `json:"video_rate_independent"`
+	VideoRateMultiplier             *float64 `json:"video_rate_multiplier"`
+	VideoPricePerSecond             *float64 `json:"video_price_per_second"`
+	VideoPricePerSecondHD           *float64 `json:"video_price_per_second_hd"`
 	ClaudeCodeOnly                  *bool    `json:"claude_code_only"`
 	FallbackGroupID                 *int64   `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest *int64   `json:"fallback_group_id_on_invalid_request"`
@@ -155,6 +166,7 @@ type UpdateGroupRequest struct {
 	DefaultMappedModel          *string                                    `json:"default_mapped_model"`
 	MessagesDispatchModelConfig *service.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	ModelsListConfig            *service.GroupModelsListConfig             `json:"models_list_config"`
+	VideoModelPricing           *service.GroupVideoPricingConfig           `json:"video_model_pricing"`
 	// 分组 RPM 上限（0 = 不限制）；nil 表示未提供不改动
 	RPMLimit *int `json:"rpm_limit"`
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
@@ -287,6 +299,11 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		ImagePrice1K:                    req.ImagePrice1K,
 		ImagePrice2K:                    req.ImagePrice2K,
 		ImagePrice4K:                    req.ImagePrice4K,
+		AllowVideoGeneration:            req.AllowVideoGeneration,
+		VideoRateIndependent:            req.VideoRateIndependent,
+		VideoRateMultiplier:             req.VideoRateMultiplier,
+		VideoPricePerSecond:             req.VideoPricePerSecond,
+		VideoPricePerSecondHD:           req.VideoPricePerSecondHD,
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,
@@ -300,6 +317,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		DefaultMappedModel:              req.DefaultMappedModel,
 		MessagesDispatchModelConfig:     req.MessagesDispatchModelConfig,
 		ModelsListConfig:                req.ModelsListConfig,
+		VideoModelPricing:               req.VideoModelPricing,
 		RPMLimit:                        req.RPMLimit,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 	})
@@ -343,6 +361,11 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		ImagePrice1K:                    req.ImagePrice1K,
 		ImagePrice2K:                    req.ImagePrice2K,
 		ImagePrice4K:                    req.ImagePrice4K,
+		AllowVideoGeneration:            req.AllowVideoGeneration,
+		VideoRateIndependent:            req.VideoRateIndependent,
+		VideoRateMultiplier:             req.VideoRateMultiplier,
+		VideoPricePerSecond:             req.VideoPricePerSecond,
+		VideoPricePerSecondHD:           req.VideoPricePerSecondHD,
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,
@@ -356,6 +379,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		DefaultMappedModel:              req.DefaultMappedModel,
 		MessagesDispatchModelConfig:     req.MessagesDispatchModelConfig,
 		ModelsListConfig:                req.ModelsListConfig,
+		VideoModelPricing:               req.VideoModelPricing,
 		RPMLimit:                        req.RPMLimit,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 	})
