@@ -172,14 +172,26 @@ func extractOutTradeNo(rawBody, providerKey string) string {
 		}
 	case payment.TypePayPal:
 		// PayPal webhook body wraps the order under resource; we stored our
-		// internal order ID in resource.custom_id when creating the order.
+		// out_trade_no in custom_id when creating the order. Capture events
+		// (PAYMENT.CAPTURE.*) carry it at resource.custom_id, while order events
+		// (CHECKOUT.ORDER.APPROVED) carry it at resource.purchase_units[].custom_id.
 		var payload struct {
 			Resource struct {
-				CustomID string `json:"custom_id"`
+				CustomID      string `json:"custom_id"`
+				PurchaseUnits []struct {
+					CustomID string `json:"custom_id"`
+				} `json:"purchase_units"`
 			} `json:"resource"`
 		}
 		if err := json.Unmarshal([]byte(rawBody), &payload); err == nil {
-			return strings.TrimSpace(payload.Resource.CustomID)
+			if cid := strings.TrimSpace(payload.Resource.CustomID); cid != "" {
+				return cid
+			}
+			for _, pu := range payload.Resource.PurchaseUnits {
+				if cid := strings.TrimSpace(pu.CustomID); cid != "" {
+					return cid
+				}
+			}
 		}
 	}
 	// For other providers (Stripe, Alipay direct, WxPay direct), the registry

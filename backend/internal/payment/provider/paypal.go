@@ -324,20 +324,44 @@ func (p *PayPal) QueryOrder(ctx context.Context, tradeNo string) (*payment.Query
 	if err := p.doJSON(ctx, http.MethodGet, "/v2/checkout/orders/"+url.PathEscape(tradeNo), nil, &resp); err != nil {
 		return nil, fmt.Errorf("paypal query: %w", err)
 	}
+	// intent=CAPTURE orders sit at APPROVED after the buyer approves until the
+	// merchant captures. Capture here so the return-poll / reconciliation path
+	// can complete the order without waiting on a webhook.
+	if strings.EqualFold(strings.TrimSpace(resp.Status), "APPROVED") {
+		if captured, capErr := p.captureOrder(ctx, tradeNo); capErr == nil && captured != nil {
+			resp = *captured
+		} else if isPaypalAlreadyCaptured(capErr) {
+			// Race with the webhook-triggered capture: re-fetch the latest state.
+			var refetched paypalOrderResponse
+			if err := p.doJSON(ctx, http.MethodGet, "/v2/checkout/orders/"+url.PathEscape(tradeNo), nil, &refetched); err == nil {
+				resp = refetched
+			}
+		}
+		// Other capture errors: fall through with the APPROVED order (stays
+		// Pending); the next poll or the APPROVED webhook retries the capture.
+	}
 	status := paypalOrderProviderStatus(resp.Status)
 	amount := 0.0
-	if len(resp.PurchaseUnits) > 0 {
-		amount, _ = strconv.ParseFloat(resp.PurchaseUnits[0].Amount.Value, 64)
-	}
 	paidAt := ""
-	if len(resp.PurchaseUnits) > 0 && resp.PurchaseUnits[0].Payments != nil {
-		for _, capture := range resp.PurchaseUnits[0].Payments.Captures {
-			if strings.EqualFold(capture.Status, paypalOrderStatusCompleted) {
-				paidAt = capture.CreateTime
-				if status == payment.ProviderStatusPending {
-					status = payment.ProviderStatusPaid
+	if len(resp.PurchaseUnits) > 0 {
+		unit := resp.PurchaseUnits[0]
+		amount, _ = strconv.ParseFloat(unit.Amount.Value, 64)
+		if unit.Payments != nil {
+			for _, capture := range unit.Payments.Captures {
+				if strings.EqualFold(capture.Status, paypalOrderStatusCompleted) {
+					paidAt = capture.CreateTime
+					// Capture responses may omit the purchase-unit amount; the
+					// authoritative captured amount lives on the capture itself.
+					if amount == 0 {
+						if capAmt, err := strconv.ParseFloat(capture.Amount.Value, 64); err == nil && capAmt > 0 {
+							amount = capAmt
+						}
+					}
+					if status == payment.ProviderStatusPending {
+						status = payment.ProviderStatusPaid
+					}
+					break
 				}
-				break
 			}
 		}
 	}
@@ -359,6 +383,38 @@ func paypalOrderProviderStatus(status string) string {
 	default:
 		return payment.ProviderStatusPending
 	}
+}
+
+// --- Capture ---
+
+// captureOrder captures funds for an APPROVED order.
+//
+// PayPal Orders v2 with intent=CAPTURE does NOT move funds when the buyer
+// approves on the hosted page — the merchant must explicitly call this endpoint.
+// A successful capture transitions the order to COMPLETED and triggers the
+// PAYMENT.CAPTURE.COMPLETED webhook. Capturing an already-captured order returns
+// a 422 (ORDER_ALREADY_CAPTURED), which callers treat as a benign race.
+func (p *PayPal) captureOrder(ctx context.Context, orderID string) (*paypalOrderResponse, error) {
+	orderID = strings.TrimSpace(orderID)
+	if orderID == "" {
+		return nil, fmt.Errorf("paypal capture: orderID required")
+	}
+	var resp paypalOrderResponse
+	// The capture endpoint requires a (possibly empty) JSON body.
+	if err := p.doJSON(ctx, http.MethodPost, "/v2/checkout/orders/"+url.PathEscape(orderID)+"/capture", struct{}{}, &resp); err != nil {
+		return nil, fmt.Errorf("paypal capture: %w", err)
+	}
+	return &resp, nil
+}
+
+// isPaypalAlreadyCaptured reports whether a capture error means the order was
+// already captured/completed (safe to treat as success and re-query).
+func isPaypalAlreadyCaptured(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToUpper(err.Error())
+	return strings.Contains(msg, "ORDER_ALREADY_CAPTURED") || strings.Contains(msg, "ORDER_ALREADY_COMPLETED")
 }
 
 // --- VerifyNotification ---
@@ -438,6 +494,20 @@ func (p *PayPal) VerifyNotification(ctx context.Context, rawBody string, headers
 		status = payment.ProviderStatusSuccess
 	case paypalEventCaptureDenied:
 		status = payment.ProviderStatusFailed
+	case paypalEventOrderApproved:
+		// Buyer approved but funds are not yet captured (intent=CAPTURE requires an
+		// explicit capture). Capture now; the resulting PAYMENT.CAPTURE.COMPLETED
+		// webhook completes the order. resource.id here is the ORDER id.
+		// Return nil so this event itself does not mutate order state.
+		orderID := strings.TrimSpace(event.Resource.ID)
+		if orderID != "" {
+			if _, err := p.captureOrder(ctx, orderID); err != nil && !isPaypalAlreadyCaptured(err) {
+				// Surface a transient capture failure as an error so PayPal retries
+				// the APPROVED webhook (covers the buyer-closed-the-tab case).
+				return nil, fmt.Errorf("paypal capture on approved order %s: %w", orderID, err)
+			}
+		}
+		return nil, nil
 	default:
 		return nil, nil
 	}
