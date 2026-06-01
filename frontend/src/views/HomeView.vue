@@ -33,29 +33,6 @@
       ></div>
     </div>
 
-    <!-- Promo Banner: 88% off pricing for US customers -->
-    <div class="relative z-30 overflow-hidden bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-lg">
-      <div class="promo-stripes pointer-events-none absolute inset-0 opacity-20"></div>
-      <div class="relative mx-auto flex max-w-6xl flex-col items-center justify-center gap-2 px-6 py-3 text-center sm:flex-row sm:gap-4">
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/25 px-3 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur-sm ring-1 ring-white/30">
-          <span class="relative flex h-2 w-2">
-            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
-            <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
-          </span>
-          {{ t('home.promo.tag') }}
-        </span>
-        <p class="text-base font-extrabold leading-tight sm:text-lg md:text-xl">
-          <span class="text-yellow-200">{{ t('home.promo.from') }}</span>
-          <span class="mx-1.5 opacity-90">=</span>
-          <span>{{ t('home.promo.to') }}</span>
-          <span class="ml-2 opacity-90">{{ t('home.promo.tagline') }}</span>
-        </p>
-        <span class="hidden text-xs font-medium text-white/85 sm:inline md:text-sm">
-          {{ t('home.promo.subtitle') }}
-        </span>
-      </div>
-    </div>
-
     <!-- Header -->
     <header class="relative z-20 px-6 py-4">
       <nav class="mx-auto flex max-w-6xl items-center justify-between">
@@ -418,28 +395,3 @@ onMounted(() => {
   }
 })
 </script>
-
-<style scoped>
-.promo-stripes {
-  background-image: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.4) 25%,
-    transparent 25%,
-    transparent 50%,
-    rgba(255, 255, 255, 0.4) 50%,
-    rgba(255, 255, 255, 0.4) 75%,
-    transparent 75%
-  );
-  background-size: 24px 24px;
-  animation: promoStripes 3s linear infinite;
-}
-
-@keyframes promoStripes {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 24px 0;
-  }
-}
-</style>
