@@ -244,6 +244,7 @@ const (
 
 	// OEM设置
 	SettingKeySiteName                    = "site_name"                     // 网站名称
+	SettingKeySupportURL                  = "support_url"                   // 客服链接(Telegram), 空则隐藏悬浮入口
 	SettingKeySiteLogo                    = "site_logo"                     // 网站Logo (base64)
 	SettingKeySiteSubtitle                = "site_subtitle"                 // 网站副标题
 	SettingKeyAPIBaseURL                  = "api_base_url"                  // API端点地址（用于客户端配置和导入）

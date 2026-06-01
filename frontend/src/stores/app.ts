@@ -26,6 +26,7 @@ export const useAppStore = defineStore('app', () => {
   const publicSettingsLoaded = ref<boolean>(false)
   const publicSettingsLoading = ref<boolean>(false)
   const siteName = ref<string>('Sub2API')
+  const supportUrl = ref<string>('')
   const siteLogo = ref<string>('')
   const siteVersion = ref<string>('')
   const contactInfo = ref<string>('')
@@ -293,6 +294,7 @@ export const useAppStore = defineStore('app', () => {
     }
     cachedPublicSettings.value = config
     siteName.value = config.site_name || 'Sub2API'
+    supportUrl.value = config.support_url || ''
     siteLogo.value = config.site_logo || ''
     siteVersion.value = config.version || ''
     contactInfo.value = config.contact_info || ''
@@ -328,6 +330,7 @@ export const useAppStore = defineStore('app', () => {
         turnstile_enabled: false,
         turnstile_site_key: '',
         site_name: siteName.value,
+        support_url: supportUrl.value,
         site_logo: siteLogo.value,
         site_subtitle: '',
         api_base_url: apiBaseUrl.value,
@@ -413,6 +416,7 @@ export const useAppStore = defineStore('app', () => {
     // Public settings state
     publicSettingsLoaded,
     siteName,
+    supportUrl,
     siteLogo,
     siteVersion,
     contactInfo,

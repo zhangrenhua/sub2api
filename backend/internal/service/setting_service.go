@@ -711,6 +711,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyTurnstileSiteKey,
 		SettingKeyAPIKeyACLTrustForwardedIP,
 		SettingKeySiteName,
+		SettingKeySupportURL,
 		SettingKeySiteLogo,
 		SettingKeySiteSubtitle,
 		SettingKeyAPIBaseURL,
@@ -835,6 +836,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		TurnstileEnabled:                 settings[SettingKeyTurnstileEnabled] == "true",
 		TurnstileSiteKey:                 settings[SettingKeyTurnstileSiteKey],
 		SiteName:                         s.getStringOrDefault(settings, SettingKeySiteName, "Sub2API"),
+		SupportURL:                       s.getStringOrDefault(settings, SettingKeySupportURL, ""),
 		SiteLogo:                         settings[SettingKeySiteLogo],
 		SiteSubtitle:                     s.getStringOrDefault(settings, SettingKeySiteSubtitle, "Subscription to API Conversion Platform"),
 		APIBaseURL:                       settings[SettingKeyAPIBaseURL],
@@ -1136,6 +1138,7 @@ type PublicSettingsInjectionPayload struct {
 	TurnstileEnabled                 bool                     `json:"turnstile_enabled"`
 	TurnstileSiteKey                 string                   `json:"turnstile_site_key"`
 	SiteName                         string                   `json:"site_name"`
+	SupportURL                       string                   `json:"support_url"`
 	SiteLogo                         string                   `json:"site_logo"`
 	SiteSubtitle                     string                   `json:"site_subtitle"`
 	APIBaseURL                       string                   `json:"api_base_url"`
@@ -1201,6 +1204,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		TurnstileEnabled:                 settings.TurnstileEnabled,
 		TurnstileSiteKey:                 settings.TurnstileSiteKey,
 		SiteName:                         settings.SiteName,
+		SupportURL:                       settings.SupportURL,
 		SiteLogo:                         settings.SiteLogo,
 		SiteSubtitle:                     settings.SiteSubtitle,
 		APIBaseURL:                       settings.APIBaseURL,
@@ -1793,6 +1797,7 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 
 	// OEM设置
 	updates[SettingKeySiteName] = settings.SiteName
+	updates[SettingKeySupportURL] = settings.SupportURL
 	updates[SettingKeySiteLogo] = settings.SiteLogo
 	updates[SettingKeySiteSubtitle] = settings.SiteSubtitle
 	updates[SettingKeyAPIBaseURL] = settings.APIBaseURL
@@ -2683,6 +2688,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyLoginAgreementDocuments:                   loginAgreementDocumentsJSON,
 		SettingKeyAPIKeyACLTrustForwardedIP:                 "false",
 		SettingKeySiteName:                                  "Sub2API",
+		SettingKeySupportURL:                                "",
 		SettingKeySiteLogo:                                  "",
 		SettingKeyPurchaseSubscriptionEnabled:               "false",
 		SettingKeyPurchaseSubscriptionURL:                   "",
@@ -2872,6 +2878,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		TurnstileSecretKeyConfigured:     settings[SettingKeyTurnstileSecretKey] != "",
 		APIKeyACLTrustForwardedIP:        apiKeyACLTrustForwardedIP,
 		SiteName:                         s.getStringOrDefault(settings, SettingKeySiteName, "Sub2API"),
+		SupportURL:                       s.getStringOrDefault(settings, SettingKeySupportURL, ""),
 		SiteLogo:                         settings[SettingKeySiteLogo],
 		SiteSubtitle:                     s.getStringOrDefault(settings, SettingKeySiteSubtitle, "Subscription to API Conversion Platform"),
 		APIBaseURL:                       settings[SettingKeyAPIBaseURL],

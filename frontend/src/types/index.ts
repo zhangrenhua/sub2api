@@ -201,6 +201,7 @@ export interface PublicSettings {
   turnstile_enabled: boolean
   turnstile_site_key: string
   site_name: string
+  support_url: string
   site_logo: string
   site_subtitle: string
   api_base_url: string

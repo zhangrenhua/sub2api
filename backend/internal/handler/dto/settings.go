@@ -128,6 +128,7 @@ type SystemSettings struct {
 	GoogleOAuthFrontendRedirectURL    string `json:"google_oauth_frontend_redirect_url"`
 
 	SiteName                    string           `json:"site_name"`
+	SupportURL                  string           `json:"support_url"`
 	SiteLogo                    string           `json:"site_logo"`
 	SiteSubtitle                string           `json:"site_subtitle"`
 	APIBaseURL                  string           `json:"api_base_url"`
@@ -277,6 +278,7 @@ type PublicSettings struct {
 	TurnstileEnabled                 bool                     `json:"turnstile_enabled"`
 	TurnstileSiteKey                 string                   `json:"turnstile_site_key"`
 	SiteName                         string                   `json:"site_name"`
+	SupportURL                       string                   `json:"support_url"`
 	SiteLogo                         string                   `json:"site_logo"`
 	SiteSubtitle                     string                   `json:"site_subtitle"`
 	APIBaseURL                       string                   `json:"api_base_url"`

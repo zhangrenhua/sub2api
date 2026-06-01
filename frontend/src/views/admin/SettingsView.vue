@@ -4452,6 +4452,22 @@
                   <label
                     class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
+                    {{ t("admin.settings.site.supportUrl") }}
+                  </label>
+                  <input
+                    v-model="form.support_url"
+                    type="text"
+                    class="input"
+                    :placeholder="t('admin.settings.site.supportUrlPlaceholder')"
+                  />
+                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.site.supportUrlHint") }}
+                  </p>
+                </div>
+                <div>
+                  <label
+                    class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ t("admin.settings.site.siteSubtitle") }}
                   </label>
                   <input
@@ -7019,6 +7035,7 @@ const form = reactive<SettingsForm>({
   force_email_on_third_party_signup: false,
   default_user_rpm_limit: 0,
   site_name: "Sub2API",
+  support_url: "",
   site_logo: "",
   site_subtitle: "Subscription to API Conversion Platform",
   api_base_url: "",
@@ -8164,6 +8181,7 @@ async function saveSettings() {
       force_email_on_third_party_signup: form.force_email_on_third_party_signup,
       default_user_rpm_limit: form.default_user_rpm_limit,
       site_name: form.site_name,
+      support_url: form.support_url,
       site_logo: form.site_logo,
       site_subtitle: form.site_subtitle,
       api_base_url: form.api_base_url,

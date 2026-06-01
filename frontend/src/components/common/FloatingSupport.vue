@@ -1,5 +1,6 @@
 <template>
   <a
+    v-if="supportUrl"
     :href="supportUrl"
     target="_blank"
     rel="noopener noreferrer"
@@ -15,10 +16,14 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/stores/app'
 
 const { t } = useI18n()
+const appStore = useAppStore()
 
-// Online customer-support contact (Telegram).
-const supportUrl = 'https://t.me/+_QKy-eXZW5xjNmYx'
+// Online customer-support contact (Telegram), configured via system settings.
+// Empty string hides the floating widget entirely.
+const supportUrl = computed(() => appStore.supportUrl)
 </script>

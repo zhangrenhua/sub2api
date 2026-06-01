@@ -212,6 +212,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		GoogleOAuthRedirectURL:                 settings.GoogleOAuthRedirectURL,
 		GoogleOAuthFrontendRedirectURL:         settings.GoogleOAuthFrontendRedirectURL,
 		SiteName:                               settings.SiteName,
+		SupportURL:                             settings.SupportURL,
 		SiteLogo:                               settings.SiteLogo,
 		SiteSubtitle:                           settings.SiteSubtitle,
 		APIBaseURL:                             settings.APIBaseURL,
@@ -492,6 +493,7 @@ type UpdateSettingsRequest struct {
 
 	// OEM设置
 	SiteName                    string                `json:"site_name"`
+	SupportURL                  string                `json:"support_url"`
 	SiteLogo                    string                `json:"site_logo"`
 	SiteSubtitle                string                `json:"site_subtitle"`
 	APIBaseURL                  string                `json:"api_base_url"`
@@ -1565,6 +1567,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		GoogleOAuthRedirectURL:                 req.GoogleOAuthRedirectURL,
 		GoogleOAuthFrontendRedirectURL:         req.GoogleOAuthFrontendRedirectURL,
 		SiteName:                               req.SiteName,
+		SupportURL:                             req.SupportURL,
 		SiteLogo:                               req.SiteLogo,
 		SiteSubtitle:                           req.SiteSubtitle,
 		APIBaseURL:                             req.APIBaseURL,
@@ -2003,6 +2006,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		GoogleOAuthRedirectURL:                 updatedSettings.GoogleOAuthRedirectURL,
 		GoogleOAuthFrontendRedirectURL:         updatedSettings.GoogleOAuthFrontendRedirectURL,
 		SiteName:                               updatedSettings.SiteName,
+		SupportURL:                             updatedSettings.SupportURL,
 		SiteLogo:                               updatedSettings.SiteLogo,
 		SiteSubtitle:                           updatedSettings.SiteSubtitle,
 		APIBaseURL:                             updatedSettings.APIBaseURL,
@@ -2390,6 +2394,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.SiteName != after.SiteName {
 		changed = append(changed, "site_name")
+	}
+	if before.SupportURL != after.SupportURL {
+		changed = append(changed, "support_url")
 	}
 	if before.SiteLogo != after.SiteLogo {
 		changed = append(changed, "site_logo")

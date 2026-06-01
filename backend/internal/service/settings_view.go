@@ -128,6 +128,7 @@ type SystemSettings struct {
 	GoogleOAuthFrontendRedirectURL    string
 
 	SiteName                    string
+	SupportURL                  string
 	SiteLogo                    string
 	SiteSubtitle                string
 	APIBaseURL                  string
@@ -248,6 +249,7 @@ type PublicSettings struct {
 	TurnstileEnabled                 bool
 	TurnstileSiteKey                 string
 	SiteName                         string
+	SupportURL                       string
 	SiteLogo                         string
 	SiteSubtitle                     string
 	APIBaseURL                       string
