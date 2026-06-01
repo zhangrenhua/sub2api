@@ -59,6 +59,18 @@ type Group struct {
 	ImagePrice2k *float64 `json:"image_price_2k,omitempty"`
 	// ImagePrice4k holds the value of the "image_price_4k" field.
 	ImagePrice4k *float64 `json:"image_price_4k,omitempty"`
+	// 是否允许该分组使用视频生成能力
+	AllowVideoGeneration bool `json:"allow_video_generation,omitempty"`
+	// 视频生成是否使用独立倍率；false 表示共享分组有效倍率
+	VideoRateIndependent bool `json:"video_rate_independent,omitempty"`
+	// 视频生成独立倍率，仅 video_rate_independent=true 时生效
+	VideoRateMultiplier float64 `json:"video_rate_multiplier,omitempty"`
+	// 标准分辨率每秒视频价格（USD）
+	VideoPricePerSecond *float64 `json:"video_price_per_second,omitempty"`
+	// 高分辨率每秒视频价格（USD）
+	VideoPricePerSecondHd *float64 `json:"video_price_per_second_hd,omitempty"`
+	// 按模型的视频每秒价格（覆盖分组默认；模型名可自定义）
+	VideoModelPricing domain.GroupVideoPricingConfig `json:"video_model_pricing,omitempty"`
 	// 是否仅允许 Claude Code 客户端
 	ClaudeCodeOnly bool `json:"claude_code_only,omitempty"`
 	// 非 Claude Code 请求降级使用的分组 ID
@@ -195,11 +207,11 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig, group.FieldModelsListConfig:
+		case group.FieldVideoModelPricing, group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig, group.FieldModelsListConfig:
 			values[i] = new([]byte)
-		case group.FieldIsExclusive, group.FieldAllowImageGeneration, group.FieldImageRateIndependent, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet:
+		case group.FieldIsExclusive, group.FieldAllowImageGeneration, group.FieldImageRateIndependent, group.FieldAllowVideoGeneration, group.FieldVideoRateIndependent, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet:
 			values[i] = new(sql.NullBool)
-		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImageRateMultiplier, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k:
+		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImageRateMultiplier, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k, group.FieldVideoRateMultiplier, group.FieldVideoPricePerSecond, group.FieldVideoPricePerSecondHd:
 			values[i] = new(sql.NullFloat64)
 		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldRpmLimit:
 			values[i] = new(sql.NullInt64)
@@ -355,6 +367,46 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ImagePrice4k = new(float64)
 				*_m.ImagePrice4k = value.Float64
+			}
+		case group.FieldAllowVideoGeneration:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field allow_video_generation", values[i])
+			} else if value.Valid {
+				_m.AllowVideoGeneration = value.Bool
+			}
+		case group.FieldVideoRateIndependent:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field video_rate_independent", values[i])
+			} else if value.Valid {
+				_m.VideoRateIndependent = value.Bool
+			}
+		case group.FieldVideoRateMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field video_rate_multiplier", values[i])
+			} else if value.Valid {
+				_m.VideoRateMultiplier = value.Float64
+			}
+		case group.FieldVideoPricePerSecond:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field video_price_per_second", values[i])
+			} else if value.Valid {
+				_m.VideoPricePerSecond = new(float64)
+				*_m.VideoPricePerSecond = value.Float64
+			}
+		case group.FieldVideoPricePerSecondHd:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field video_price_per_second_hd", values[i])
+			} else if value.Valid {
+				_m.VideoPricePerSecondHd = new(float64)
+				*_m.VideoPricePerSecondHd = value.Float64
+			}
+		case group.FieldVideoModelPricing:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field video_model_pricing", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.VideoModelPricing); err != nil {
+					return fmt.Errorf("unmarshal field video_model_pricing: %w", err)
+				}
 			}
 		case group.FieldClaudeCodeOnly:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -607,6 +659,28 @@ func (_m *Group) String() string {
 		builder.WriteString("image_price_4k=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("allow_video_generation=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AllowVideoGeneration))
+	builder.WriteString(", ")
+	builder.WriteString("video_rate_independent=")
+	builder.WriteString(fmt.Sprintf("%v", _m.VideoRateIndependent))
+	builder.WriteString(", ")
+	builder.WriteString("video_rate_multiplier=")
+	builder.WriteString(fmt.Sprintf("%v", _m.VideoRateMultiplier))
+	builder.WriteString(", ")
+	if v := _m.VideoPricePerSecond; v != nil {
+		builder.WriteString("video_price_per_second=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.VideoPricePerSecondHd; v != nil {
+		builder.WriteString("video_price_per_second_hd=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("video_model_pricing=")
+	builder.WriteString(fmt.Sprintf("%v", _m.VideoModelPricing))
 	builder.WriteString(", ")
 	builder.WriteString("claude_code_only=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ClaudeCodeOnly))

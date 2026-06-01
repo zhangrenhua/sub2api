@@ -9,6 +9,7 @@ import (
 
 type OpenAIMessagesDispatchModelConfig = domain.OpenAIMessagesDispatchModelConfig
 type GroupModelsListConfig = domain.GroupModelsListConfig
+type GroupVideoPricingConfig = domain.GroupVideoPricingConfig
 
 type Group struct {
 	ID             int64
@@ -33,6 +34,15 @@ type Group struct {
 	ImagePrice1K         *float64
 	ImagePrice2K         *float64
 	ImagePrice4K         *float64
+
+	// 视频生成计费配置（OpenAI Sora）
+	AllowVideoGeneration  bool
+	VideoRateIndependent  bool
+	VideoRateMultiplier   float64
+	VideoPricePerSecond   *float64
+	VideoPricePerSecondHD *float64
+	// 按模型的视频每秒价格（覆盖上面的默认每秒价；模型名可自定义）
+	VideoModelPricing GroupVideoPricingConfig
 
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool
@@ -111,6 +121,41 @@ func (g *Group) GetImagePrice(imageSize string) *float64 {
 		// 未知尺寸默认按 2K 计费
 		return g.ImagePrice2K
 	}
+}
+
+// GetVideoPricePerSecond 根据分辨率层级返回分组默认每秒视频价格。
+// hd=true 返回高分辨率价格；未配置高分辨率价格时回退到标准价格。
+// 返回 nil 表示该分组未配置默认视频价格（调用方按 0 处理或拒绝）。
+func (g *Group) GetVideoPricePerSecond(hd bool) *float64 {
+	if hd {
+		if g.VideoPricePerSecondHD != nil {
+			return g.VideoPricePerSecondHD
+		}
+	}
+	return g.VideoPricePerSecond
+}
+
+// GetVideoModelPricePerSecond 返回指定模型的每秒价格：
+// 优先匹配按模型配置（VideoModelPricing），未命中则回退到分组默认每秒价。
+// 模型名匹配大小写不敏感。返回 nil 表示无可用价格。
+func (g *Group) GetVideoModelPricePerSecond(model string, hd bool) *float64 {
+	target := strings.ToLower(strings.TrimSpace(model))
+	if target != "" {
+		for _, entry := range g.VideoModelPricing.Models {
+			if strings.ToLower(strings.TrimSpace(entry.Model)) != target {
+				continue
+			}
+			if hd && entry.PricePerSecondHD != nil {
+				return entry.PricePerSecondHD
+			}
+			if entry.PricePerSecond != nil {
+				return entry.PricePerSecond
+			}
+			// 命中模型但该档未配置，继续回退到分组默认。
+			break
+		}
+	}
+	return g.GetVideoPricePerSecond(hd)
 }
 
 // IsGroupContextValid reports whether a group from context has the fields required for routing decisions.

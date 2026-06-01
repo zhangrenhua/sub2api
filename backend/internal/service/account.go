@@ -1212,6 +1212,9 @@ func (a *Account) SupportsOpenAIImageCapability(capability OpenAIImagesCapabilit
 	switch capability {
 	case OpenAIImagesCapabilityBasic, OpenAIImagesCapabilityNative:
 		return a.Type == AccountTypeOAuth || a.Type == AccountTypeAPIKey
+	case OpenAIVideosCapabilityNative:
+		// 视频生成（Sora）仅支持 API Key 账号。
+		return a.Type == AccountTypeAPIKey
 	default:
 		return true
 	}

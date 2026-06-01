@@ -204,6 +204,12 @@ type CreateGroupInput struct {
 	ImagePrice1K         *float64
 	ImagePrice2K         *float64
 	ImagePrice4K         *float64
+	// 视频生成计费配置（OpenAI Sora）
+	AllowVideoGeneration  bool
+	VideoRateIndependent  bool
+	VideoRateMultiplier   *float64
+	VideoPricePerSecond   *float64
+	VideoPricePerSecondHD *float64
 	ClaudeCodeOnly       bool   // 仅允许 Claude Code 客户端
 	FallbackGroupID      *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
@@ -221,6 +227,7 @@ type CreateGroupInput struct {
 	RequirePrivacySet           bool
 	MessagesDispatchModelConfig OpenAIMessagesDispatchModelConfig
 	ModelsListConfig            GroupModelsListConfig
+	VideoModelPricing           GroupVideoPricingConfig
 	// RPMLimit 分组 RPM 上限（0 = 不限制）
 	RPMLimit int
 	// 从指定分组复制账号（创建分组后在同一事务内绑定）
@@ -245,6 +252,12 @@ type UpdateGroupInput struct {
 	ImagePrice1K         *float64
 	ImagePrice2K         *float64
 	ImagePrice4K         *float64
+	// 视频生成计费配置（OpenAI Sora）
+	AllowVideoGeneration  *bool
+	VideoRateIndependent  *bool
+	VideoRateMultiplier   *float64
+	VideoPricePerSecond   *float64
+	VideoPricePerSecondHD *float64
 	ClaudeCodeOnly       *bool  // 仅允许 Claude Code 客户端
 	FallbackGroupID      *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
@@ -262,6 +275,7 @@ type UpdateGroupInput struct {
 	RequirePrivacySet           *bool
 	MessagesDispatchModelConfig *OpenAIMessagesDispatchModelConfig
 	ModelsListConfig            *GroupModelsListConfig
+	VideoModelPricing           *GroupVideoPricingConfig
 	// RPMLimit 分组 RPM 上限（0 = 不限制），nil 表示未提供不改动。
 	RPMLimit *int
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
@@ -1694,6 +1708,15 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		}
 		imageRateMultiplier = *input.ImageRateMultiplier
 	}
+	videoPricePerSecond := normalizePrice(input.VideoPricePerSecond)
+	videoPricePerSecondHD := normalizePrice(input.VideoPricePerSecondHD)
+	videoRateMultiplier := 1.0
+	if input.VideoRateMultiplier != nil {
+		if *input.VideoRateMultiplier < 0 {
+			return nil, errors.New("video_rate_multiplier must be >= 0")
+		}
+		videoRateMultiplier = *input.VideoRateMultiplier
+	}
 
 	// 校验降级分组
 	if input.FallbackGroupID != nil {
@@ -1767,6 +1790,11 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ImagePrice1K:                    imagePrice1K,
 		ImagePrice2K:                    imagePrice2K,
 		ImagePrice4K:                    imagePrice4K,
+		AllowVideoGeneration:            input.AllowVideoGeneration,
+		VideoRateIndependent:            input.VideoRateIndependent,
+		VideoRateMultiplier:             videoRateMultiplier,
+		VideoPricePerSecond:             videoPricePerSecond,
+		VideoPricePerSecondHD:           videoPricePerSecondHD,
 		ClaudeCodeOnly:                  input.ClaudeCodeOnly,
 		FallbackGroupID:                 input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: fallbackOnInvalidRequest,
@@ -1779,6 +1807,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		DefaultMappedModel:              input.DefaultMappedModel,
 		MessagesDispatchModelConfig:     normalizeOpenAIMessagesDispatchModelConfig(input.MessagesDispatchModelConfig),
 		ModelsListConfig:                normalizeGroupModelsListConfig(input.ModelsListConfig),
+		VideoModelPricing:               input.VideoModelPricing,
 		RPMLimit:                        input.RPMLimit,
 	}
 	sanitizeGroupMessagesDispatchFields(group)
@@ -1962,6 +1991,25 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	if input.ImagePrice4K != nil {
 		group.ImagePrice4K = normalizePrice(input.ImagePrice4K)
 	}
+	// 视频生成计费配置：负数表示清除（使用默认/不计费）
+	if input.AllowVideoGeneration != nil {
+		group.AllowVideoGeneration = *input.AllowVideoGeneration
+	}
+	if input.VideoRateIndependent != nil {
+		group.VideoRateIndependent = *input.VideoRateIndependent
+	}
+	if input.VideoRateMultiplier != nil {
+		if *input.VideoRateMultiplier < 0 {
+			return nil, errors.New("video_rate_multiplier must be >= 0")
+		}
+		group.VideoRateMultiplier = *input.VideoRateMultiplier
+	}
+	if input.VideoPricePerSecond != nil {
+		group.VideoPricePerSecond = normalizePrice(input.VideoPricePerSecond)
+	}
+	if input.VideoPricePerSecondHD != nil {
+		group.VideoPricePerSecondHD = normalizePrice(input.VideoPricePerSecondHD)
+	}
 
 	// Claude Code 客户端限制
 	if input.ClaudeCodeOnly != nil {
@@ -2028,6 +2076,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.ModelsListConfig != nil {
 		group.ModelsListConfig = normalizeGroupModelsListConfig(*input.ModelsListConfig)
+	}
+	if input.VideoModelPricing != nil {
+		group.VideoModelPricing = *input.VideoModelPricing
 	}
 	if input.RPMLimit != nil {
 		group.RPMLimit = *input.RPMLimit

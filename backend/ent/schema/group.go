@@ -97,6 +97,32 @@ func (Group) Fields() []ent.Field {
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
 
+		// 视频生成计费配置（OpenAI Sora，fork 功能；DB 列由 deploy/manual-sql 手动执行）
+		field.Bool("allow_video_generation").
+			Default(false).
+			Comment("是否允许该分组使用视频生成能力"),
+		field.Bool("video_rate_independent").
+			Default(false).
+			Comment("视频生成是否使用独立倍率；false 表示共享分组有效倍率"),
+		field.Float("video_rate_multiplier").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
+			Default(1.0).
+			Comment("视频生成独立倍率，仅 video_rate_independent=true 时生效"),
+		field.Float("video_price_per_second").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Comment("标准分辨率每秒视频价格（USD）"),
+		field.Float("video_price_per_second_hd").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Comment("高分辨率每秒视频价格（USD）"),
+		field.JSON("video_model_pricing", domain.GroupVideoPricingConfig{}).
+			Default(domain.GroupVideoPricingConfig{}).
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("按模型的视频每秒价格（覆盖分组默认；模型名可自定义）"),
+
 		// Claude Code 客户端限制 (added by migration 029)
 		field.Bool("claude_code_only").
 			Default(false).

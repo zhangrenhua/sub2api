@@ -56,6 +56,18 @@ const (
 	FieldImagePrice2k = "image_price_2k"
 	// FieldImagePrice4k holds the string denoting the image_price_4k field in the database.
 	FieldImagePrice4k = "image_price_4k"
+	// FieldAllowVideoGeneration holds the string denoting the allow_video_generation field in the database.
+	FieldAllowVideoGeneration = "allow_video_generation"
+	// FieldVideoRateIndependent holds the string denoting the video_rate_independent field in the database.
+	FieldVideoRateIndependent = "video_rate_independent"
+	// FieldVideoRateMultiplier holds the string denoting the video_rate_multiplier field in the database.
+	FieldVideoRateMultiplier = "video_rate_multiplier"
+	// FieldVideoPricePerSecond holds the string denoting the video_price_per_second field in the database.
+	FieldVideoPricePerSecond = "video_price_per_second"
+	// FieldVideoPricePerSecondHd holds the string denoting the video_price_per_second_hd field in the database.
+	FieldVideoPricePerSecondHd = "video_price_per_second_hd"
+	// FieldVideoModelPricing holds the string denoting the video_model_pricing field in the database.
+	FieldVideoModelPricing = "video_model_pricing"
 	// FieldClaudeCodeOnly holds the string denoting the claude_code_only field in the database.
 	FieldClaudeCodeOnly = "claude_code_only"
 	// FieldFallbackGroupID holds the string denoting the fallback_group_id field in the database.
@@ -181,6 +193,12 @@ var Columns = []string{
 	FieldImagePrice1k,
 	FieldImagePrice2k,
 	FieldImagePrice4k,
+	FieldAllowVideoGeneration,
+	FieldVideoRateIndependent,
+	FieldVideoRateMultiplier,
+	FieldVideoPricePerSecond,
+	FieldVideoPricePerSecondHd,
+	FieldVideoModelPricing,
 	FieldClaudeCodeOnly,
 	FieldFallbackGroupID,
 	FieldFallbackGroupIDOnInvalidRequest,
@@ -257,6 +275,14 @@ var (
 	DefaultImageRateIndependent bool
 	// DefaultImageRateMultiplier holds the default value on creation for the "image_rate_multiplier" field.
 	DefaultImageRateMultiplier float64
+	// DefaultAllowVideoGeneration holds the default value on creation for the "allow_video_generation" field.
+	DefaultAllowVideoGeneration bool
+	// DefaultVideoRateIndependent holds the default value on creation for the "video_rate_independent" field.
+	DefaultVideoRateIndependent bool
+	// DefaultVideoRateMultiplier holds the default value on creation for the "video_rate_multiplier" field.
+	DefaultVideoRateMultiplier float64
+	// DefaultVideoModelPricing holds the default value on creation for the "video_model_pricing" field.
+	DefaultVideoModelPricing domain.GroupVideoPricingConfig
 	// DefaultClaudeCodeOnly holds the default value on creation for the "claude_code_only" field.
 	DefaultClaudeCodeOnly bool
 	// DefaultModelRoutingEnabled holds the default value on creation for the "model_routing_enabled" field.
@@ -391,6 +417,31 @@ func ByImagePrice2k(opts ...sql.OrderTermOption) OrderOption {
 // ByImagePrice4k orders the results by the image_price_4k field.
 func ByImagePrice4k(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldImagePrice4k, opts...).ToFunc()
+}
+
+// ByAllowVideoGeneration orders the results by the allow_video_generation field.
+func ByAllowVideoGeneration(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAllowVideoGeneration, opts...).ToFunc()
+}
+
+// ByVideoRateIndependent orders the results by the video_rate_independent field.
+func ByVideoRateIndependent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVideoRateIndependent, opts...).ToFunc()
+}
+
+// ByVideoRateMultiplier orders the results by the video_rate_multiplier field.
+func ByVideoRateMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVideoRateMultiplier, opts...).ToFunc()
+}
+
+// ByVideoPricePerSecond orders the results by the video_price_per_second field.
+func ByVideoPricePerSecond(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVideoPricePerSecond, opts...).ToFunc()
+}
+
+// ByVideoPricePerSecondHd orders the results by the video_price_per_second_hd field.
+func ByVideoPricePerSecondHd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVideoPricePerSecondHd, opts...).ToFunc()
 }
 
 // ByClaudeCodeOnly orders the results by the claude_code_only field.

@@ -2308,6 +2308,23 @@ export default {
         finalPricePreview: '最终单张价格预览',
         notConfigured: '未配置'
       },
+      videoPricing: {
+        title: '视频生成计费',
+        description: '配置视频生成能力和视频基础单价，留空则使用默认价格',
+        allowVideoGeneration: '允许当前分组生成视频',
+        independentMultiplier: '视频倍率独立',
+        videoMultiplier: '视频独立倍率',
+        pricePerSecond: '标准每秒价',
+        pricePerSecondHd: '高清每秒价',
+        modeHint: '默认关闭独立倍率时，视频费用 = 视频价格 × 当前分组有效倍率；开启独立倍率后，视频费用 = 视频价格 × 视频独立倍率。',
+        finalPricePreview: '最终每秒价格预览',
+        notConfigured: '未配置',
+        perModelTitle: '按模型定价',
+        perModelHint: '为指定模型设置独立每秒价格，将覆盖该模型的默认每秒价；留空则沿用默认价格。',
+        modelName: '模型名',
+        addModel: '+ 添加模型',
+        removeModel: '删除该模型'
+      },
       modelsList: {
         title: '自定义 /v1/models 模型列表',
         hint: '仅影响 /v1/models 展示结果，不影响白名单模型调用和账号调度。',
