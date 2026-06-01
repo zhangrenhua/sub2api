@@ -159,7 +159,7 @@ export const PROVIDER_CONFIG_FIELDS: Record<string, ConfigFieldDef[]> = {
     { key: 'clientSecret', label: 'Client Secret', sensitive: true },
     { key: 'webhookId', label: 'Webhook ID', sensitive: false },
     { key: 'apiBase', label: '', sensitive: false, defaultValue: 'https://api-m.paypal.com' },
-    { key: 'currency', label: '', sensitive: false, defaultValue: 'USD', hintKey: 'admin.settings.payment.field_paymentCurrencyHint', options: PAYMENT_CURRENCY_OPTIONS },
+    // PayPal is USD-only (backend pins currency to USD); the CNY→USD rate below controls conversion.
     { key: 'cnyPerUsd', label: 'CNY per USD (rate)', sensitive: false, defaultValue: '7.3' },
     { key: 'brandName', label: 'Brand Name', sensitive: false, optional: true, clearable: true },
   ],

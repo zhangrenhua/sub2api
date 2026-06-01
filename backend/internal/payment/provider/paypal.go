@@ -83,15 +83,12 @@ func NewPayPal(instanceID string, config map[string]string) (*PayPal, error) {
 		return nil, err
 	}
 	cfg["apiBase"] = apiBase
-	currency := strings.TrimSpace(cfg["currency"])
-	if currency == "" {
-		currency = "USD"
-	}
-	normalized, err := payment.NormalizePaymentCurrency(currency)
-	if err != nil {
-		return nil, fmt.Errorf("paypal config currency: %w", err)
-	}
-	cfg["currency"] = normalized
+	// This integration is USD-only: paypalPayAmountCNYtoUSD always produces a
+	// USD-magnitude amount and the order snapshot hardcodes USD for tolerance
+	// checks. Pin the PayPal currency to USD regardless of config so a
+	// misconfigured non-USD value cannot cause a wrong-currency charge (e.g. EUR)
+	// or a stuck order from a mismatched capture (e.g. JPY's 0 minor units).
+	cfg["currency"] = "USD"
 	return &PayPal{
 		instanceID: instanceID,
 		config:     cfg,
