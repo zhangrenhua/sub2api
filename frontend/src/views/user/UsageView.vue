@@ -666,7 +666,8 @@ const sortState = reactive({
   sort_order: 'desc' as 'asc' | 'desc'
 })
 
-const formatDuration = (ms: number): string => {
+const formatDuration = (ms: number | null | undefined): string => {
+  if (ms == null || !Number.isFinite(ms)) return '-'
   if (ms < 1000) return `${ms.toFixed(0)}ms`
   return `${(ms / 1000).toFixed(2)}s`
 }
