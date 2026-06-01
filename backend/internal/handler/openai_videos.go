@@ -78,12 +78,19 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 	sessionHash := h.gatewayService.GenerateExplicitSessionHash(c, body)
 	failedAccountIDs := make(map[int64]struct{})
 	switchCount := 0
+	var lastFailoverErr *service.UpstreamFailoverError
 
 	for {
 		selection, _, err := h.gatewayService.SelectAccountWithSchedulerForVideos(
 			c.Request.Context(), apiKey.GroupID, sessionHash, parsed.Model, failedAccountIDs,
 		)
 		if err != nil || selection == nil || selection.Account == nil {
+			// 若此前是因上游可故障转移错误（如上游 5xx）而把账号排除，应把真实的上游错误
+			// 透出，而不是误报「无可用账号」（否则上游 503/502 会被掩盖成账号问题）。
+			if lastFailoverErr != nil {
+				h.handleFailoverExhausted(c, lastFailoverErr, streamStarted)
+				return
+			}
 			markOpsRoutingCapacityLimitedIfNoAvailable(c, err)
 			h.errorResponse(c, http.StatusServiceUnavailable, "api_error", "No available compatible accounts")
 			return
@@ -105,6 +112,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 				h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
 				h.gatewayService.RecordOpenAIAccountSwitch()
 				failedAccountIDs[account.ID] = struct{}{}
+				lastFailoverErr = failoverErr
 				if switchCount >= h.maxAccountSwitches {
 					h.handleFailoverExhausted(c, failoverErr, streamStarted)
 					return
