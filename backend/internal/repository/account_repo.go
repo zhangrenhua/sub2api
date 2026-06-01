@@ -1179,6 +1179,9 @@ func (r *accountRepository) ClearTempUnschedulable(ctx context.Context, id int64
 	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountChanged, &id, nil, nil); err != nil {
 		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue clear temp unschedulable failed: account=%d err=%v", id, err)
 	}
+	// 立即同步调度器快照，否则清除后调度器仍读到旧快照里的 temp_unschedulable_until，
+	// 账号无法立刻恢复调度（与 SetTempUnschedulable / ClearRateLimit 对称）。
+	r.syncSchedulerAccountSnapshot(ctx, id)
 	return nil
 }
 
@@ -1281,9 +1284,9 @@ func (r *accountRepository) SetSchedulable(ctx context.Context, id int64, schedu
 	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountChanged, &id, nil, nil); err != nil {
 		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue schedulable change failed: account=%d err=%v", id, err)
 	}
-	if !schedulable {
-		r.syncSchedulerAccountSnapshot(ctx, id)
-	}
+	// 启用/禁用都立即同步快照：禁用需尽快移出调度池，启用需尽快重新加入；
+	// 否则要等异步 outbox 传播，手动「恢复调度」不会立刻生效。
+	r.syncSchedulerAccountSnapshot(ctx, id)
 	return nil
 }
 
