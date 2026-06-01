@@ -340,7 +340,16 @@ func (p *PayPal) QueryOrder(ctx context.Context, tradeNo string) (*payment.Query
 		// Other capture errors: fall through with the APPROVED order (stays
 		// Pending); the next poll or the APPROVED webhook retries the capture.
 	}
-	status := paypalOrderProviderStatus(resp.Status)
+	// Funds are settled only when a CAPTURE is COMPLETED. A COMPLETED *order*
+	// whose capture is still PENDING (eCheck / risk review) must NOT be reported
+	// as paid — that matches the webhook, which only credits on
+	// PAYMENT.CAPTURE.COMPLETED. Only an explicitly voided order is a failure;
+	// everything else (CREATED/APPROVED/COMPLETED-without-completed-capture)
+	// stays pending until a completed capture appears.
+	status := payment.ProviderStatusPending
+	if strings.EqualFold(strings.TrimSpace(resp.Status), paypalOrderStatusVoided) {
+		status = payment.ProviderStatusFailed
+	}
 	amount := 0.0
 	paidAt := ""
 	if len(resp.PurchaseUnits) > 0 {
@@ -349,6 +358,7 @@ func (p *PayPal) QueryOrder(ctx context.Context, tradeNo string) (*payment.Query
 		if unit.Payments != nil {
 			for _, capture := range unit.Payments.Captures {
 				if strings.EqualFold(capture.Status, paypalOrderStatusCompleted) {
+					status = payment.ProviderStatusPaid
 					paidAt = capture.CreateTime
 					// Capture responses may omit the purchase-unit amount; the
 					// authoritative captured amount lives on the capture itself.
@@ -356,9 +366,6 @@ func (p *PayPal) QueryOrder(ctx context.Context, tradeNo string) (*payment.Query
 						if capAmt, err := strconv.ParseFloat(capture.Amount.Value, 64); err == nil && capAmt > 0 {
 							amount = capAmt
 						}
-					}
-					if status == payment.ProviderStatusPending {
-						status = payment.ProviderStatusPaid
 					}
 					break
 				}
@@ -372,17 +379,6 @@ func (p *PayPal) QueryOrder(ctx context.Context, tradeNo string) (*payment.Query
 		PaidAt:   paidAt,
 		Metadata: p.MerchantIdentityMetadata(),
 	}, nil
-}
-
-func paypalOrderProviderStatus(status string) string {
-	switch strings.ToUpper(strings.TrimSpace(status)) {
-	case paypalOrderStatusCompleted:
-		return payment.ProviderStatusPaid
-	case paypalOrderStatusVoided:
-		return payment.ProviderStatusFailed
-	default:
-		return payment.ProviderStatusPending
-	}
 }
 
 // --- Capture ---
