@@ -392,8 +392,45 @@ export const zh: HelpFactory = (base) => ({
       ]
     },
     {
+      id: 'video-gen',
+      title: '11. 视频生成（Sora）',
+      blocks: [
+        { t: 'p', html: 'Sora 视频生成是<strong>异步任务接口</strong>：创建任务 → 轮询状态 → 下载视频。需使用在<strong>视频分组</strong>下创建的 API Key。' },
+        { t: 'h3', text: '支持的模型' },
+        { t: 'table', head: ['模型', '分辨率'], rows: [
+          ['<code>sora-v3-fast</code>', '480p'],
+          ['<code>sora-v3-pro</code>', '720p']
+        ]},
+        { t: 'h3', text: '接口流程' },
+        { t: 'ul', items: [
+          '① <code>POST /v1/videos</code> 创建任务，返回 <code>id</code>（task_id）',
+          '② <code>GET /v1/videos/{task_id}</code> 轮询状态，直到 <code>status=completed</code>（建议每 5 秒一次）',
+          '③ <code>GET /v1/videos/{task_id}/content</code> 下载视频（mp4）'
+        ]},
+        { t: 'h4', text: '1) 创建任务' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/videos \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "sora-v3-fast",\n    "prompt": "雨夜霓虹街道，镜头缓慢推进，电影感光影",\n    "aspect_ratio": "16:9",\n    "resolution": "480p",\n    "seconds": "5"\n  }'` },
+        { t: 'p', html: '返回示例：<code>{ "id": "task_xxx", "status": "queued", ... }</code>' },
+        { t: 'h4', text: '2) 轮询状态' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}"` },
+        { t: 'p', html: '状态：<code>queued</code> / <code>in_progress</code> / <code>completed</code> / <code>failed</code>。' },
+        { t: 'h4', text: '3) 下载视频' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx/content \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -o out.mp4` },
+        { t: 'h3', text: '参数说明' },
+        { t: 'table', head: ['参数', '必填', '说明'], rows: [
+          ['<code>model</code>', '是', 'sora-v3-fast / sora-v3-pro'],
+          ['<code>prompt</code>', '是', '提示词'],
+          ['<code>resolution</code>', '是', '480p / 720p / 1080p（≥1080 走高清计费档）'],
+          ['<code>aspect_ratio</code>', '是', '16:9 / 9:16 / 4:3 / 3:4 / 1:1 / 21:9'],
+          ['<code>seconds</code>', '是', '时长：5 / 10 / 15'],
+          ['<code>image_url</code>', '否', '参考图，传了即图生视频']
+        ]},
+        { t: 'callout', variant: 'tip', html: '💡 计费在<strong>创建成功</strong>时按「时长 × 模型每秒价（按分辨率档）」扣费；失败的创建（鉴权/余额/上游错误）不计费；轮询与下载不计费。' },
+        { t: 'callout', variant: 'warning', html: '生成通常需要几分钟。请通过 <code>GET /v1/videos/{task_id}/content</code> 下载（自动路由到创建任务的同一账号），不要直接使用返回里的上游 video_url。' }
+      ]
+    },
+    {
       id: 'faq',
-      title: '11. 常见问题',
+      title: '12. 常见问题',
       blocks: [
         { t: 'h3', text: '安装相关' },
         { t: 'faq', items: [
@@ -952,8 +989,45 @@ export const en: HelpFactory = (base) => ({
       ]
     },
     {
+      id: 'video-gen',
+      title: '11. Video generation (Sora)',
+      blocks: [
+        { t: 'p', html: 'Sora video generation is an <strong>async job API</strong>: create a job → poll status → download the video. Use an API key created under a <strong>video-enabled group</strong>.' },
+        { t: 'h3', text: 'Supported models' },
+        { t: 'table', head: ['Model', 'Resolution'], rows: [
+          ['<code>sora-v3-fast</code>', '480p'],
+          ['<code>sora-v3-pro</code>', '720p']
+        ]},
+        { t: 'h3', text: 'Flow' },
+        { t: 'ul', items: [
+          '① <code>POST /v1/videos</code> — create a job, returns <code>id</code> (task_id)',
+          '② <code>GET /v1/videos/{task_id}</code> — poll until <code>status=completed</code> (every ~5s)',
+          '③ <code>GET /v1/videos/{task_id}/content</code> — download the video (mp4)'
+        ]},
+        { t: 'h4', text: '1) Create a job' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/videos \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "sora-v3-fast",\n    "prompt": "A neon-lit rainy street, slow dolly-in, cinematic",\n    "aspect_ratio": "16:9",\n    "resolution": "480p",\n    "seconds": "5"\n  }'` },
+        { t: 'p', html: 'Response: <code>{ "id": "task_xxx", "status": "queued", ... }</code>' },
+        { t: 'h4', text: '2) Poll status' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}"` },
+        { t: 'p', html: 'Status: <code>queued</code> / <code>in_progress</code> / <code>completed</code> / <code>failed</code>.' },
+        { t: 'h4', text: '3) Download' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx/content \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -o out.mp4` },
+        { t: 'h3', text: 'Parameters' },
+        { t: 'table', head: ['Param', 'Required', 'Notes'], rows: [
+          ['<code>model</code>', 'yes', 'sora-v3-fast / sora-v3-pro'],
+          ['<code>prompt</code>', 'yes', 'text prompt'],
+          ['<code>resolution</code>', 'yes', '480p / 720p / 1080p (≥1080 = HD billing tier)'],
+          ['<code>aspect_ratio</code>', 'yes', '16:9 / 9:16 / 4:3 / 3:4 / 1:1 / 21:9'],
+          ['<code>seconds</code>', 'yes', 'duration: 5 / 10 / 15'],
+          ['<code>image_url</code>', 'no', 'reference image (image-to-video)']
+        ]},
+        { t: 'callout', variant: 'tip', html: '💡 Billing happens on <strong>successful create</strong> = duration × per-second price (by resolution tier). Failed creates (auth/balance/upstream errors) are not billed; polling and download are free.' },
+        { t: 'callout', variant: 'warning', html: 'Generation usually takes a few minutes. Download via <code>GET /v1/videos/{task_id}/content</code> (auto-routes to the creating account); do not use the upstream video_url from the response directly.' }
+      ]
+    },
+    {
       id: 'faq',
-      title: '11. FAQ',
+      title: '12. FAQ',
       blocks: [
         { t: 'h3', text: 'Install issues' },
         { t: 'faq', items: [
