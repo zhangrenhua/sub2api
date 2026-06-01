@@ -393,7 +393,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'video-gen',
-      title: '11. 视频生成（Sora）',
+      title: '11. 视频生成（Sora/Seedance 2.0）',
       blocks: [
         { t: 'p', html: 'Sora 视频生成是<strong>异步任务接口</strong>：创建任务 → 轮询状态 → 下载视频。需使用在<strong>视频分组</strong>下创建的 API Key。' },
         { t: 'h3', text: '支持的模型' },
@@ -990,7 +990,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'video-gen',
-      title: '11. Video generation (Sora)',
+      title: '11. Video generation (Sora / Seedance 2.0)',
       blocks: [
         { t: 'p', html: 'Sora video generation is an <strong>async job API</strong>: create a job → poll status → download the video. Use an API key created under a <strong>video-enabled group</strong>.' },
         { t: 'h3', text: 'Supported models' },
