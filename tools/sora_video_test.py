@@ -10,7 +10,7 @@ Sora 视频生成 - 异步任务调用脚本（无第三方依赖，仅用标准
 用法：
   export SORA_API_KEY="sk-你的key"          # 必填：本系统某个「视频分组」下的 API Key
   export SORA_BASE_URL="https://www.cc-vibe.com"   # 可选，默认公网网关；本地 dev 用 http://127.0.0.1:8080
-  export SORA_MODEL="sora-vip3-pro-720p"    # 可选，默认 720p 模型
+  export SORA_MODEL="sora-v3-fast"    # 可选，默认 720p 模型
   python3 scripts/sora_video_test.py "雨夜霓虹街道，镜头缓慢推进，电影感光影"
 
   # 图生视频：再加一个图片 URL 环境变量
@@ -19,14 +19,28 @@ Sora 视频生成 - 异步任务调用脚本（无第三方依赖，仅用标准
 参数（环境变量，均可选，除 SORA_API_KEY）：
   SORA_API_KEY    必填，Bearer 鉴权用
   SORA_BASE_URL   默认 https://www.cc-vibe.com
-  SORA_MODEL      默认 sora-vip3-pro-720p
-  SORA_RESOLUTION 默认 720p（480p/720p/1080p；>=1080 走高清计费档）
+  SORA_MODEL      默认 sora-v3-fast
+  SORA_RESOLUTION 默认 480p（480p/720p/1080p；>=1080 走高清计费档）
   SORA_ASPECT     默认 16:9（16:9 / 9:16 / 4:3 / 3:4 / 1:1 / 21:9）
   SORA_SECONDS    默认 5；脚本硬性上限 5 秒（设更大会被钳回 5，省钱）
-  SORA_IMAGE_URL  可选，传了即图生视频
+  SORA_IMAGE_URL  可选，主参考图（HTTPS URL 或图片 data URL）；传了即图生视频
   SORA_POLL_SEC   轮询间隔秒，默认 5
   SORA_TIMEOUT    最长等待秒，默认 600
   SORA_OUT        输出文件名，默认 sora_<task_id>.mp4
+
+可选多模态 / 参考 / 首尾帧 / v2v 字段（透传给上游，能否生效取决于上游是否支持）：
+  SORA_REFERENCE_IMAGE_URLS  JSON 数组，多张参考图（最多 9 张）
+  SORA_REFERENCE_VIDEO_URLS  JSON 数组，多个参考视频（最多 3 个）
+  SORA_REFERENCE_AUDIO_URLS  JSON 数组，多个参考音频（最多 3 个）
+  SORA_REFERENCE_TEXT        文本参考（角色设定/分镜/品牌规范等）
+  SORA_FIRST_FRAME_URL       首帧图片 URL 或图片 data URL
+  SORA_LAST_FRAME_URL        尾帧图片 URL 或图片 data URL
+  SORA_SOURCE_VIDEO_URL      v2v 源视频 URL
+  SORA_SOURCE_VIDEO_ID       v2v 源视频任务 ID
+  SORA_EXTRA_JSON            额外 JSON 对象，合并进请求体（方便临时测试新字段）
+
+注：本网关仅暴露 /v1/videos、/v1/videos/{id}、/v1/videos/{id}/content，
+不提供 /v1/videos/edits；v2v 通过请求体的 source_video_url / source_video_id 走 /v1/videos。
 """
 
 import json
@@ -44,10 +58,9 @@ except Exception:
 
 API_KEY = os.environ.get("SORA_API_KEY", "").strip()
 BASE_URL = os.environ.get("SORA_BASE_URL", "https://www.cc-vibe.com").rstrip("/")
-MODEL = os.environ.get("SORA_MODEL", "sora-vip3-pro-720p").strip()
-RESOLUTION = os.environ.get("SORA_RESOLUTION", "720p").strip()
+MODEL = os.environ.get("SORA_MODEL", "sora-v3-fast").strip()
+RESOLUTION = os.environ.get("SORA_RESOLUTION", "480p").strip()
 ASPECT = os.environ.get("SORA_ASPECT", "16:9").strip()
-IMAGE_URL = os.environ.get("SORA_IMAGE_URL", "").strip()
 
 # 硬性限制为 5 秒（最短/最便宜档）。测试用脚本不允许生成更长视频以免浪费费用：
 # 即使 SORA_SECONDS 设成 10/15，也会被钳到 5。
@@ -93,6 +106,58 @@ def _req(method, path, body=None, raw=False):
             return e.code, {"_raw": payload.decode("utf-8", "replace")}
 
 
+def _json_array_env(name):
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return None
+    try:
+        val = json.loads(raw)
+    except Exception:
+        sys.exit(f"✗ {name} 不是合法 JSON 数组")
+    if not isinstance(val, list):
+        sys.exit(f"✗ {name} 必须是 JSON 数组，例如 '[\"https://a.jpg\",\"https://b.jpg\"]'")
+    return val
+
+
+def optional_create_fields():
+    """把可选的多模态/参考/首尾帧/v2v 字段从环境变量合入请求体。
+
+    网关对 /v1/videos 是透传：这些字段会原样转发给上游，能否生效取决于上游是否支持。
+    """
+    fields = {}
+    str_map = {
+        "SORA_IMAGE_URL": "image_url",
+        "SORA_REFERENCE_TEXT": "reference_text",
+        "SORA_FIRST_FRAME_URL": "first_frame_url",
+        "SORA_LAST_FRAME_URL": "last_frame_url",
+        "SORA_SOURCE_VIDEO_URL": "source_video_url",
+        "SORA_SOURCE_VIDEO_ID": "source_video_id",
+    }
+    for env, key in str_map.items():
+        v = os.environ.get(env, "").strip()
+        if v:
+            fields[key] = v
+    arr_map = {
+        "SORA_REFERENCE_IMAGE_URLS": "reference_image_urls",
+        "SORA_REFERENCE_VIDEO_URLS": "reference_video_urls",
+        "SORA_REFERENCE_AUDIO_URLS": "reference_audio_urls",
+    }
+    for env, key in arr_map.items():
+        arr = _json_array_env(env)
+        if arr:
+            fields[key] = arr
+    extra = os.environ.get("SORA_EXTRA_JSON", "").strip()
+    if extra:
+        try:
+            obj = json.loads(extra)
+        except Exception:
+            sys.exit("✗ SORA_EXTRA_JSON 不是合法 JSON")
+        if not isinstance(obj, dict):
+            sys.exit("✗ SORA_EXTRA_JSON 必须是 JSON 对象")
+        fields.update(obj)  # 最后合并，可覆盖上面的字段
+    return fields
+
+
 def main():
     if not API_KEY:
         sys.exit("✗ 请先设置 SORA_API_KEY 环境变量")
@@ -105,10 +170,11 @@ def main():
         "resolution": RESOLUTION,
         "seconds": SECONDS,
     }
-    if IMAGE_URL:
-        create_body["image_url"] = IMAGE_URL
+    extra_fields = optional_create_fields()
+    create_body.update(extra_fields)
 
-    print(f"→ 创建视频任务 model={MODEL} resolution={RESOLUTION} seconds={SECONDS}")
+    extras_note = f" +{list(extra_fields)}" if extra_fields else ""
+    print(f"→ 创建视频任务 model={MODEL} resolution={RESOLUTION} seconds={SECONDS}{extras_note}")
     status, resp = _req("POST", "/v1/videos", create_body)
     if status >= 400:
         sys.exit(f"✗ 创建失败 HTTP {status}: {json.dumps(resp, ensure_ascii=False)}")
