@@ -9,7 +9,7 @@ Sora 视频生成 - 异步任务调用脚本（无第三方依赖，仅用标准
 
 用法：
   export SORA_API_KEY="sk-你的key"          # 必填：本系统某个「视频分组」下的 API Key
-  export SORA_BASE_URL="http://127.0.0.1:8080"   # 可选，默认本地 dev
+  export SORA_BASE_URL="https://www.cc-vibe.com"   # 可选，默认公网网关；本地 dev 用 http://127.0.0.1:8080
   export SORA_MODEL="sora-vip3-pro-720p"    # 可选，默认 720p 模型
   python3 scripts/sora_video_test.py "雨夜霓虹街道，镜头缓慢推进，电影感光影"
 
@@ -18,7 +18,7 @@ Sora 视频生成 - 异步任务调用脚本（无第三方依赖，仅用标准
 
 参数（环境变量，均可选，除 SORA_API_KEY）：
   SORA_API_KEY    必填，Bearer 鉴权用
-  SORA_BASE_URL   默认 http://127.0.0.1:8080
+  SORA_BASE_URL   默认 https://www.cc-vibe.com
   SORA_MODEL      默认 sora-vip3-pro-720p
   SORA_RESOLUTION 默认 720p（480p/720p/1080p；>=1080 走高清计费档）
   SORA_ASPECT     默认 16:9（16:9 / 9:16 / 4:3 / 3:4 / 1:1 / 21:9）
@@ -43,7 +43,7 @@ except Exception:
     pass
 
 API_KEY = os.environ.get("SORA_API_KEY", "").strip()
-BASE_URL = os.environ.get("SORA_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
+BASE_URL = os.environ.get("SORA_BASE_URL", "https://www.cc-vibe.com").rstrip("/")
 MODEL = os.environ.get("SORA_MODEL", "sora-vip3-pro-720p").strip()
 RESOLUTION = os.environ.get("SORA_RESOLUTION", "720p").strip()
 ASPECT = os.environ.get("SORA_ASPECT", "16:9").strip()

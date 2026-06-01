@@ -58,7 +58,7 @@ SORA_MODEL="sora-v3-pro" SORA_RESOLUTION="720p" \
 | 变量 | 必填 | 默认 | 说明 |
 |---|---|---|---|
 | `SORA_API_KEY` | ✅ | — | 视频分组下的 API Key（Bearer 鉴权） |
-| `SORA_BASE_URL` | | `http://127.0.0.1:8080` | **本网关**地址（不是上游中转） |
+| `SORA_BASE_URL` | | `https://www.cc-vibe.com` | **本网关**地址（不是上游中转） |
 | `SORA_MODEL` | | `sora-vip3-pro-720p` | 视频模型名（如 `sora-v3-fast`/`sora-v3-pro`） |
 | `SORA_RESOLUTION` | | `720p` | `480p`/`720p`/`1080p`；≥1080 走高清计费档 |
 | `SORA_ASPECT` | | `16:9` | `16:9`/`9:16`/`4:3`/`3:4`/`1:1`/`21:9` |
