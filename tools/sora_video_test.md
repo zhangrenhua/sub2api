@@ -8,7 +8,7 @@
 
 脚本默认硬性限制 **5 秒**，单次成本最低（即使把 `SORA_SECONDS` 设大也会被钳回 5）。
 
-> **架构说明（重要）**：脚本请求的是**本网关**（`SORA_BASE_URL`，默认 `https://www.cc-vibe.com`），用的是**本系统的 API Key**（`sk-...`）。网关再把请求**透传**给你在**账号 `base_url`** 里配置的上游中转（如 `https://www.zitxitongxue.com`）。所以**不要**把 `SORA_BASE_URL` 设成上游中转地址——那样会绕过本网关的鉴权/计费。
+> **架构说明（重要）**：脚本请求的是**本网关**（`SORA_BASE_URL`，默认 `https://www.cc-vibe.com`），用的是**本系统的 API Key**（`sk-...`）。网关再把请求**透传**给你在**账号 `base_url`** 里配置的上游中转（如 `https://www.cc-vibe.com`）。所以**不要**把 `SORA_BASE_URL` 设成上游中转地址——那样会绕过本网关的鉴权/计费。
 
 ---
 
@@ -16,7 +16,7 @@
 
 | 步骤 | 配置 |
 |---|---|
-| **上游账号** | 账号管理 → 新建：平台 **OpenAI**、类型 **API Key**；`base_url` 填**上游中转主机基址**（如 `https://www.zitxitongxue.com`，**不要带 `/v1/videos`**）；API Key 填中转给的密钥 |
+| **上游账号** | 账号管理 → 新建：平台 **OpenAI**、类型 **API Key**；`base_url` 填**上游中转主机基址**（如 `https://www.cc-vibe.com`，**不要带 `/v1/videos`**）；API Key 填中转给的密钥 |
 | **分组** | 分组管理 → 新建/编辑：平台 **OpenAI**；开启 **「允许视频生成」**；在「按模型定价」里给每个模型配每秒价；把上面的账号绑定到该分组；**不要开「仅 OAuth」**（视频只调度 API Key 账号） |
 | **API Key** | 在该视频分组下新建 `sk-...`，给脚本用（即 `SORA_API_KEY`） |
 | **余额** | 该 key 所属用户需有余额，否则报 `INSUFFICIENT_BALANCE` |
