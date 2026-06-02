@@ -393,6 +393,7 @@ export default {
     groups: '分组管理',
     channels: '渠道管理',
     availableChannels: '可用渠道',
+    modelMarketplace: '模型广场',
     subscriptions: '订阅管理',
     accounts: '账号管理',
     proxies: 'IP管理',
@@ -1084,6 +1085,30 @@ export default {
       intervals: '阶梯定价',
       unitPerMillion: '/ 1M token',
       unitPerRequest: '/ 次'
+    }
+  },
+
+  modelMarketplace: {
+    title: '模型广场',
+    description: '按平台浏览全部可用模型 —— 查看官方计费,以及你可用的各分组实际价格',
+    searchPlaceholder: '搜索模型或平台...',
+    empty: '暂无可用模型',
+    emptyHint: '当你获得某个分组的权限后,其支持的模型会在这里展示。',
+    officialPricing: '官方计费',
+    modelCount: '{count} 个模型',
+    groupCount: '{count} 个分组',
+    lowestRate: '低至 ×{rate}',
+    viewGroupPrices: '各分组价格',
+    drawer: {
+      title: '各分组实际价格',
+      subtitle: '实际价格 = 官方价 × 分组倍率',
+      official: '官方',
+      best: '最优',
+      rate: '倍率',
+      yourRate: '专属倍率',
+      subscription: '订阅',
+      noGroups: '该模型暂无可用分组',
+      close: '关闭'
     }
   },
 

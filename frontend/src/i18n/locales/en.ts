@@ -394,6 +394,7 @@ export default {
     groups: 'Groups',
     channels: 'Channels',
     availableChannels: 'Available Channels',
+    modelMarketplace: 'Model Marketplace',
     subscriptions: 'Subscriptions',
     accounts: 'Accounts',
     proxies: 'Proxies',
@@ -1081,6 +1082,30 @@ export default {
       intervals: 'Tiered Pricing',
       unitPerMillion: '/ 1M tokens',
       unitPerRequest: '/ request'
+    }
+  },
+
+  modelMarketplace: {
+    title: 'Model Marketplace',
+    description: 'Browse all available models by platform — official pricing, plus the effective price for each group you can use',
+    searchPlaceholder: 'Search models or platforms...',
+    empty: 'No available models',
+    emptyHint: 'Once you have access to a group, its models will appear here.',
+    officialPricing: 'Official Pricing',
+    modelCount: '{count} models',
+    groupCount: '{count} groups',
+    lowestRate: 'from ×{rate}',
+    viewGroupPrices: 'Per-group prices',
+    drawer: {
+      title: 'Per-Group Pricing',
+      subtitle: 'Effective price = official price × group multiplier',
+      official: 'Official',
+      best: 'Best',
+      rate: 'Rate',
+      yourRate: 'Your rate',
+      subscription: 'Subscription',
+      noGroups: 'No groups available for this model',
+      close: 'Close'
     }
   },
 
