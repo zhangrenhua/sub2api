@@ -6,7 +6,7 @@
 2. `GET /v1/videos/{task_id}` 轮询状态，直到 `completed` / `failed`（建议每 5 秒一次）
 3. `GET /v1/videos/{task_id}/content` 下载 mp4（**走本网关**，自动落到创建任务的同一账号）
 
-脚本默认硬性限制 **5 秒**，单次成本最低（即使把 `SORA_SECONDS` 设大也会被钳回 5）。
+脚本默认把时长钳到 **5 秒**（成本最低，防按秒计费烧钱），上限可用 `SORA_MAX_SECONDS` 调整。**按次计费的 Seedance 2.0 时长不影响费用**,可放开到 10/15 测全长。脚本同时兼容 Sora（按秒）与 Seedance 2.0（按次）两类模型。
 
 > **架构说明（重要）**：脚本请求的是**本网关**（`SORA_BASE_URL`，默认 `https://www.cc-vibe.com`），用的是**本系统的 API Key**（`sk-...`）。网关再把请求**透传**给你在**账号 `base_url`** 里配置的上游中转（如 `https://www.cc-vibe.com`）。所以**不要**把 `SORA_BASE_URL` 设成上游中转地址——那样会绕过本网关的鉴权/计费。
 
@@ -17,24 +17,28 @@
 | 步骤 | 配置 |
 |---|---|
 | **上游账号** | 账号管理 → 新建：平台 **OpenAI**、类型 **API Key**；`base_url` 填**上游中转主机基址**（如 `https://www.cc-vibe.com`，**不要带 `/v1/videos`**）；API Key 填中转给的密钥 |
-| **分组** | 分组管理 → 新建/编辑：平台 **OpenAI**；开启 **「允许视频生成」**；在「按模型定价」里给每个模型配每秒价；把上面的账号绑定到该分组；**不要开「仅 OAuth」**（视频只调度 API Key 账号） |
+| **分组** | 分组管理 → 新建/编辑：平台 **OpenAI**；开启 **「允许视频生成」**；在「按模型定价」里给每个模型配价格,并选**计费方式**：Sora 选「按秒」填每秒价(标清/高清),Seedance 2.0 选「按次」填单次价；把上面的账号绑定到该分组；**不要开「仅 OAuth」**（视频只调度 API Key 账号） |
 | **API Key** | 在该视频分组下新建 `sk-...`，给脚本用（即 `SORA_API_KEY`） |
 | **余额** | 该 key 所属用户需有余额，否则报 `INSUFFICIENT_BALANCE` |
 
 ---
 
-## 2. 模型 ↔ 分辨率对照
+## 2. 模型 ↔ 分辨率 ↔ 计费方式
 
-| 模型 | 分辨率 | 计费档 |
-|---|---|---|
-| `sora-v3-fast` | `480p` | 标清（<1080） |
-| `sora-v3-pro` | `720p` | 标清（<1080） |
-| `sora-vip3-pro-720p` | `480p` / `720p` | 标清（<1080） |
-| `sora-vip3-pro-1080p` | `480p` / `720p` / `1080p` | `1080p` 高清，其余标清 |
+| 模型 | 分辨率 | 计费方式 | 时长 |
+|---|---|---|---|
+| `sora-v3-fast` | `480p` | **按秒**，标清（<1080） | 5/10/15 |
+| `sora-v3-pro` | `720p` | **按秒**，标清（<1080） | 5/10/15 |
+| `sora-vip3-pro-720p` | `480p` / `720p` | **按秒**，标清（<1080） | 5/10/15 |
+| `sora-vip3-pro-1080p` | `480p` / `720p` / `1080p` | **按秒**，`1080p` 高清其余标清 | 5/10/15 |
+| `seedance-2.0-fast-pass` | `720p` | **按次**（固定单价，时长不影响费用） | 4/5/10/15 |
+| `seedance-2.0-pass` | `720p` | **按次**（固定单价，时长不影响费用） | 4/5/10/15 |
 
-> 计费档由请求里的 `resolution` 决定：**≥1080 走高清每秒价，否则标清每秒价**。模型名需与上游一致，且在分组「按模型定价」里配过价。
+> **按秒**：计费档由请求里的 `resolution` 决定（≥1080 高清每秒价，否则标清每秒价），费用 = 时长 × 每秒价 × 倍率。
+> **按次**：与时长/分辨率无关，按固定单价计费（Seedance 2.0）。两种都需在分组「按模型定价」里配置该模型的价格与计费方式。
 
-时长上游支持 `5` / `10` / `15`；**本测试脚本默认钳到 5 秒省钱**。要测更长时长，改脚本里的 `_MAX_SECONDS`。
+时长：脚本默认 `SORA_SECONDS=5` 且 `SORA_MAX_SECONDS=5`（防止按秒计费烧钱）。
+**按次计费模型（Seedance）时长不加钱**，可 `SORA_MAX_SECONDS=10 SORA_SECONDS=10`（或 15）测全长。脚本会同时发送 `seconds` 与 `duration`、`aspect_ratio` 与 `ratio`（各为等价字段），同时兼容两类上游。
 
 ---
 
@@ -55,9 +59,28 @@ SORA_MODEL="sora-v3-pro" SORA_RESOLUTION="720p" \
   python3 tools/sora_video_test.py "a calm ocean wave at sunset, cinematic"
 ```
 
-输出保存为 `sora_<task_id>.mp4`（可用 `SORA_OUT` 指定文件名）。第一个命令行参数是 **prompt**。
+输出保存为 `video_<task_id>.mp4`（可用 `SORA_OUT` 指定文件名）。第一个命令行参数是 **prompt**。
 
-**图生视频**：
+**Seedance 2.0（按次计费，时长不加钱）**：
+```bash
+# 文生视频
+SORA_MODEL="seedance-2.0-fast-pass" SORA_RESOLUTION="720p" SORA_ASPECT="16:9" \
+SORA_MAX_SECONDS=10 SORA_SECONDS=10 \
+  python3 tools/sora_video_test.py "一只橘猫在阳光草地上奔跑，低角度跟拍，电影感"
+
+# 参考图生成（Seedance 最多 4 张；字段 reference_image_urls，等价 referenceImages）
+export SORA_REFERENCE_IMAGE_URLS='["https://example.com/character-a.jpg","https://example.com/character-b.jpg"]'
+SORA_MODEL="seedance-2.0-pass" SORA_RESOLUTION="720p" \
+  python3 tools/sora_video_test.py "保持参考图人物外貌和服装一致，自然走动"
+
+# 首尾帧（Seedance 用 first_image/last_image，必须成对，且不能与参考图/参考视频同用）
+SORA_MODEL="seedance-2.0-pass" SORA_RESOLUTION="720p" \
+SORA_FIRST_IMAGE="https://example.com/sea-morning.jpg" \
+SORA_LAST_IMAGE="https://example.com/sea-evening.jpg" \
+  python3 tools/sora_video_test.py "从清晨过渡到黄昏的海边延时镜头，画面稳定"
+```
+
+**Sora 图生视频**：
 ```bash
 export SORA_IMAGE_URL="https://example.com/input.jpg"
 python3 tools/sora_video_test.py "保持图片主体一致，生成自然运动镜头"
@@ -209,24 +232,27 @@ curl -L "https://www.cc-vibe.com/v1/videos/task_xxx/content" \
 | `SORA_API_KEY` | ✅ | — | 视频分组下的本系统 API Key（Bearer 鉴权） |
 | `SORA_BASE_URL` | | `https://www.cc-vibe.com` | **本网关**地址（不是上游中转） |
 | `SORA_MODEL` | | `sora-v3-fast` | 视频模型名 |
-| `SORA_RESOLUTION` | | `480p` | `480p`/`720p`/`1080p`；≥1080 走高清计费档 |
-| `SORA_ASPECT` | | `16:9` | `16:9`/`9:16`/`4:3`/`3:4`/`1:1`/`21:9` |
-| `SORA_SECONDS` | | `5` | 时长；脚本硬性上限 5（设更大会被钳回 5，省钱） |
+| `SORA_RESOLUTION` | | `480p` | 按秒计费时 ≥1080 走高清档；Seedance 常用 `720p` |
+| `SORA_ASPECT` | | `16:9` | 同时作为 `aspect_ratio` 与 `ratio` 发送（等价）。`16:9`/`9:16`/`4:3`/`3:4`/`1:1`/`21:9` |
+| `SORA_SECONDS` | | `5` | 时长；同时作为 `seconds`(字符串) 与 `duration`(整数) 发送。受 `SORA_MAX_SECONDS` 钳制 |
+| `SORA_MAX_SECONDS` | | `5` | 时长上限。按秒计费防烧钱；**按次计费(Seedance)时长不加钱**，可设 10/15 测全长 |
 | `SORA_IMAGE_URL` | | — | 主参考图（HTTPS URL 或图片 data URL）；传了即图生视频 |
 | `SORA_POLL_SEC` | | `5` | 轮询间隔秒 |
 | `SORA_TIMEOUT` | | `600` | 最长等待秒 |
-| `SORA_OUT` | | `sora_<id>.mp4` | 输出文件名 |
+| `SORA_OUT` | | `video_<id>.mp4` | 输出文件名 |
 
 **可选多模态 / 参考 / 首尾帧 / v2v 字段**（脚本会原样合入请求体并透传给上游，**能否生效取决于上游是否支持**）：
 
 | 变量 | 对应字段 | 数量/格式 | 说明 |
 |---|---|---|---|
-| `SORA_REFERENCE_IMAGE_URLS` | `reference_image_urls` | JSON 数组，最多 9 | 多张参考图（角色/场景/服装/风格/道具） |
-| `SORA_REFERENCE_VIDEO_URLS` | `reference_video_urls` | JSON 数组，最多 3 | 多个参考视频（运镜/动作/节奏/风格） |
-| `SORA_REFERENCE_AUDIO_URLS` | `reference_audio_urls` | JSON 数组，最多 3 | 多个参考音频（音乐/环境声/旁白节奏） |
+| `SORA_REFERENCE_IMAGE_URLS` | `reference_image_urls` | JSON 数组（Sora≤9 / **Seedance≤4**） | 多张参考图；Seedance 等价 `referenceImages` |
+| `SORA_REFERENCE_VIDEO_URLS` | `reference_video_urls` | JSON 数组，最多 3 | 多个参考视频；Seedance 等价 `referenceVideos` |
+| `SORA_REFERENCE_AUDIO_URLS` | `reference_audio_urls` | JSON 数组，最多 3 | 多个参考音频；**Seedance 暂不支持音频** |
 | `SORA_REFERENCE_TEXT` | `reference_text` | 文本 | 角色设定/分镜/品牌规范/台词 |
-| `SORA_FIRST_FRAME_URL` | `first_frame_url` | URL 或 data URL | 首帧（优先级高于 `image_url`） |
-| `SORA_LAST_FRAME_URL` | `last_frame_url` | URL 或 data URL | 尾帧 |
+| `SORA_FIRST_IMAGE` | `first_image` | URL 或 data URL | **Seedance 首帧**，须与 `last_image` 成对，且不能与参考图/视频同用 |
+| `SORA_LAST_IMAGE` | `last_image` | URL 或 data URL | **Seedance 尾帧**，须与 `first_image` 成对 |
+| `SORA_FIRST_FRAME_URL` | `first_frame_url` | URL 或 data URL | **Sora 首帧**（优先级高于 `image_url`） |
+| `SORA_LAST_FRAME_URL` | `last_frame_url` | URL 或 data URL | **Sora 尾帧** |
 | `SORA_SOURCE_VIDEO_URL` | `source_video_url` | URL | v2v 源视频 |
 | `SORA_SOURCE_VIDEO_ID` | `source_video_id` | 任务 ID | v2v 基于已生成视频继续编辑/重混 |
 | `SORA_EXTRA_JSON` | （合并）| JSON 对象 | 任意额外字段，合并进请求体；可覆盖上面字段，方便临时测试新字段 |
@@ -295,9 +321,16 @@ python3 tools/sora_video_test.py "按参考文本生成视频"
 ---
 
 ## 8. 字段与端点说明
-- **必填**：`model`、`prompt`、`aspect_ratio`、`resolution`、`seconds`。
-- `reference_*` / `first_frame_url` / `last_frame_url` / `source_video_*` 是**网关增强字段**：网关对 `/v1/videos` **透传**，原样转发上游。**上游若只接受官方 Sora 字段**（`prompt` + 单个 `input_reference.image_url` + `size` 等），这些增强字段可能被忽略或报错——需上游/网关侧做字段映射。
+- **必填**：`model`、`prompt`。其余按上游可选。脚本默认还会带 `aspect_ratio`+`ratio`、`resolution`、`seconds`+`duration`。
+- **字段命名差异（Sora vs Seedance 2.0）**：脚本对核心维度发送两种等价写法以兼容两类上游：
+  - 时长：`seconds`(字符串) + `duration`(整数) —— 两者等价。
+  - 比例：`aspect_ratio` + `ratio` —— 两者等价。
+  - 首尾帧：Sora 用 `first_frame_url`/`last_frame_url`，**Seedance 用 `first_image`/`last_image`**（分别有独立环境变量）。
+  - 参考图/视频：`reference_image_urls`/`reference_video_urls`（Seedance 等价 `referenceImages`/`referenceVideos`，Seedance 上限分别为 4/3，且不支持参考音频）。
+- `reference_*` / 首尾帧 / `source_video_*` 是**透传字段**：网关对 `/v1/videos` 原样转发上游，能否生效取决于上游。**上游若只接受其官方字段**，多余字段可能被忽略或报错。
 - 本网关**只提供** `/v1/videos`、`/v1/videos/{id}`、`/v1/videos/{id}/content`，**不提供** `/v1/videos/edits`。v2v 通过请求体的 `source_video_url` / `source_video_id` 走 `/v1/videos`。
+- 响应里任务 ID：Sora 返回 `id`，Seedance 同时返回 `id` 与 `task_id`（同值）；脚本两者都兼容。
+- **下载差异（实测）**：部分中转的 `/v1/videos/{id}/content` 不支持 API Key 下载（返回 `401 login required`），而是在完成响应的 `video_url` 里给**直链**（如阿里云 OSS）。脚本已做回退：**先试网关 `/content`，失败则直连 `video_url`**。Seedance 2.0 中转实测走的是直链。
 
 ---
 
@@ -326,7 +359,10 @@ ORDER BY created_at DESC LIMIT 5;
 ## 10. 计费说明（重要）
 
 - **只在 create 成功时计费一次**，按 `request_id` 幂等；轮询/下载不计费；失败的 create（4xx/5xx/EOF/余额/权限）**不计费**。
-- 计费公式：`时长(秒) × 该模型每秒价(按 resolution 区分标清/高清) × 分组视频倍率`，`billing_mode=video`。
+- 计费方式由分组「按模型定价」里该模型的 `billing_mode` 决定（`usage_logs.billing_mode=video`）：
+  - **按秒（per_second，默认，如 Sora）**：`时长(秒) × 每秒价(按 resolution 区分标清/高清) × 分组视频倍率`。
+  - **按次（per_request，如 Seedance 2.0）**：`固定单价 × 分组视频倍率`，与时长/分辨率无关。
+- ⚠️ 按次计费下时长不影响费用，但**按模型定价里必须把该模型设为「按次」并配单价**，否则按 0 计费（不收费）。
 - ⚠️ **在「创建成功」时扣费，不是「生成完成」时**：若 create 成功但后续生成 `failed`，用户**已扣费且不自动退**。是否合适取决于上游对"提交后失败"是否退款。
 - ⚠️ 记账为**异步尽力**：记账时 DB 瞬时报错会漏记一笔（平台少收，不多扣用户），与图片/对话计费一致。
 
