@@ -46,6 +46,7 @@ import stripeIcon from '@/assets/icons/stripe.svg'
 import airwallexIcon from '@/assets/icons/airwallex.svg'
 import paypalIcon from '@/assets/icons/paypal.svg'
 import usdtIcon from '@/assets/icons/usdt.svg'
+import creditcardIcon from '@/assets/icons/creditcard.svg'
 
 export interface PaymentMethodOption {
   type: string
@@ -72,6 +73,7 @@ const METHOD_ICONS: Record<string, string> = {
   paypal: paypalIcon,
   usdt_trc20: usdtIcon,
   usdt_erc20: usdtIcon,
+  creditcard: creditcardIcon,
 }
 
 const sortedMethods = computed(() => {

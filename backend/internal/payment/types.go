@@ -17,6 +17,8 @@ const (
 	TypeCard         PaymentType = "card"
 	TypeLink         PaymentType = "link"
 	TypeEasyPay      PaymentType = "easypay"
+	TypeKyren        PaymentType = "kyren"
+	TypeCreditCard   PaymentType = "creditcard"
 	TypeAirwallex    PaymentType = "airwallex"
 	TypePayPal       PaymentType = "paypal"
 	TypeTRC20        PaymentType = "usdt_trc20"

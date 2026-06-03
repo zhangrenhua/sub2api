@@ -60,6 +60,9 @@ func RegisterPaymentRoutes(
 		// EasyPay sends GET callbacks with query params
 		webhook.GET("/easypay", webhookHandler.EasyPayNotify)
 		webhook.POST("/easypay", webhookHandler.EasyPayNotify)
+		// Kyren is 易支付-compatible and likewise may send GET callbacks
+		webhook.GET("/kyren", webhookHandler.KyrenNotify)
+		webhook.POST("/kyren", webhookHandler.KyrenNotify)
 		webhook.POST("/alipay", webhookHandler.AlipayNotify)
 		webhook.POST("/wxpay", webhookHandler.WxpayNotify)
 		webhook.POST("/stripe", webhookHandler.StripeWebhook)

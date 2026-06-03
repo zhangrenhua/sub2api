@@ -45,7 +45,9 @@ func enabledVisibleMethodsForProvider(providerKey, supportedTypes string) []stri
 				break
 			}
 		}
-	case payment.TypeEasyPay:
+	case payment.TypeEasyPay, payment.TypeKyren:
+		// Kyren is 易支付-compatible; its alipay/wxpay surface exactly like EasyPay.
+		// (Its creditcard type is surfaced as its own visible method, not here.)
 		for _, supportedType := range splitTypes(supportedTypes) {
 			addMethod(supportedType)
 		}
