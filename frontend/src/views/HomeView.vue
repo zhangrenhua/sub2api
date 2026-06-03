@@ -41,10 +41,7 @@
           <div class="h-10 w-10 overflow-hidden rounded-xl shadow-md">
             <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
           </div>
-          <span class="hidden flex-col leading-tight sm:flex">
-            <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ siteName }}</span>
-            <span class="text-xs text-gray-500 dark:text-dark-400">炭圭合体</span>
-          </span>
+          <span class="hidden text-lg font-semibold text-gray-900 dark:text-white sm:inline">{{ siteName }}</span>
         </div>
 
         <!-- Nav Actions -->
