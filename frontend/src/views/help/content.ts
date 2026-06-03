@@ -395,11 +395,13 @@ export const zh: HelpFactory = (base) => ({
       id: 'video-gen',
       title: '11. 视频生成（Sora/Seedance 2.0）',
       blocks: [
-        { t: 'p', html: 'Sora 视频生成是<strong>异步任务接口</strong>：创建任务 → 轮询状态 → 下载视频。需使用在<strong>视频分组</strong>下创建的 API Key。' },
+        { t: 'p', html: '视频生成是<strong>异步任务接口</strong>：创建任务 → 轮询状态 → 下载视频。需使用在<strong>视频分组</strong>下创建的 API Key。支持 Sora（<strong>按秒计费</strong>）与 Seedance 2.0（<strong>按次计费</strong>）两类模型。' },
         { t: 'h3', text: '支持的模型' },
-        { t: 'table', head: ['模型', '分辨率'], rows: [
-          ['<code>sora-v3-fast</code>', '480p'],
-          ['<code>sora-v3-pro</code>', '720p']
+        { t: 'table', head: ['模型', '分辨率', '计费方式'], rows: [
+          ['<code>sora-v3-fast</code>', '480p', '按秒'],
+          ['<code>sora-v3-pro</code>', '720p', '按秒'],
+          ['<code>seedance-2.0-fast-pass</code>', '720p', '按次（固定单价，时长不影响费用）'],
+          ['<code>seedance-2.0-pass</code>', '720p', '按次（固定单价，时长不影响费用）']
         ]},
         { t: 'h3', text: '接口流程' },
         { t: 'ul', items: [
@@ -411,6 +413,8 @@ export const zh: HelpFactory = (base) => ({
         { t: 'code', lang: 'bash', code: `curl ${base}/videos \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "sora-v3-fast",\n    "prompt": "雨夜霓虹街道，镜头缓慢推进，电影感光影",\n    "aspect_ratio": "16:9",\n    "resolution": "480p",\n    "seconds": "5"\n  }'` },
         { t: 'p', html: '返回（任务已入队）：' },
         { t: 'code', lang: 'json', code: '{\n  "id": "task_xxx",\n  "object": "video",\n  "model": "sora-v3-fast",\n  "status": "queued",\n  "progress": 0,\n  "created_at": 1779560000\n}' },
+        { t: 'p', html: 'Seedance 2.0（按次计费，<code>duration</code> 支持 4/5/10/15）：' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/videos \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "seedance-2.0-pass",\n    "prompt": "黄昏海边，海浪缓慢拍打礁石，镜头缓慢拉升，电影感",\n    "ratio": "16:9",\n    "resolution": "720p",\n    "duration": 15\n  }'` },
         { t: 'h4', text: '2) 轮询状态' },
         { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}"` },
         { t: 'p', html: '完成（<code>status=completed</code>）返回：' },
@@ -420,17 +424,20 @@ export const zh: HelpFactory = (base) => ({
         { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx/content \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -o out.mp4` },
         { t: 'h3', text: '参数说明' },
         { t: 'table', head: ['参数', '必填', '说明'], rows: [
-          ['<code>model</code>', '是', 'sora-v3-fast / sora-v3-pro'],
+          ['<code>model</code>', '是', 'sora-v3-fast / sora-v3-pro / seedance-2.0-fast-pass / seedance-2.0-pass'],
           ['<code>prompt</code>', '是', '提示词'],
-          ['<code>resolution</code>', '是', '480p / 720p / 1080p（≥1080 走高清计费档）'],
-          ['<code>aspect_ratio</code>', '是', '16:9 / 9:16 / 4:3 / 3:4 / 1:1 / 21:9'],
-          ['<code>seconds</code>', '是', '时长：5 / 10 / 15'],
-          ['<code>image_url</code>', '否', '参考图，传了即图生视频']
+          ['<code>resolution</code>', '否', '480p / 720p / 1080p（Sora 按秒时 ≥1080 走高清档；Seedance 用 720p）'],
+          ['<code>aspect_ratio</code> / <code>ratio</code>', '否', '画面比例，二者等价（16:9 / 9:16 / 1:1 等）'],
+          ['<code>seconds</code> / <code>duration</code>', '否', '时长，二者等价（Sora 5/10/15；Seedance 4/5/10/15）。按次计费时时长不影响费用'],
+          ['<code>image_url</code>', '否', 'Sora 参考图（图生视频）'],
+          ['<code>first_image</code> / <code>last_image</code>', '否', 'Seedance 首尾帧，须成对，且不能与参考图/视频同用'],
+          ['<code>referenceImages</code>', '否', 'Seedance 参考图数组（最多 4）'],
+          ['<code>referenceVideos</code>', '否', 'Seedance 参考视频数组（最多 3）']
         ]},
         { t: 'h4', text: '失败返回示例' },
         { t: 'code', lang: 'json', code: '// 403 余额不足\n{ "code": "INSUFFICIENT_BALANCE", "message": "Insufficient account balance" }\n\n// 403 分组未开视频\n{ "error": { "type": "permission_error", "message": "Video generation is not enabled for this group" } }\n\n// 503 无可用账号\n{ "error": { "type": "api_error", "message": "No available compatible accounts" } }' },
-        { t: 'callout', variant: 'tip', html: '💡 计费在<strong>创建成功</strong>时按「时长 × 模型每秒价（按分辨率档）」扣费；失败的创建（鉴权/余额/上游错误）不计费；轮询与下载不计费。' },
-        { t: 'callout', variant: 'warning', html: '生成通常需要几分钟。请通过 <code>GET /v1/videos/{task_id}/content</code> 下载（自动路由到创建任务的同一账号），不要直接使用返回里的上游 video_url。' }
+        { t: 'callout', variant: 'tip', html: '💡 计费在<strong>创建成功</strong>时扣一次（按 request_id 幂等），失败的创建（鉴权/余额/上游错误）不计费，轮询与下载不计费。<strong>按秒</strong>（Sora）= 时长 × 每秒价（按分辨率档）× 倍率；<strong>按次</strong>（Seedance 2.0）= 固定单价 × 倍率，与时长/分辨率无关。' },
+        { t: 'callout', variant: 'warning', html: '生成通常需要几分钟。优先用 <code>GET /v1/videos/{task_id}/content</code> 下载（自动路由到创建任务的同一账号）；部分中转该端点不支持 API Key 下载（返回 401），此时改用完成响应里的 <code>video_url</code> 直链下载。' }
       ]
     },
     {
@@ -997,11 +1004,13 @@ export const en: HelpFactory = (base) => ({
       id: 'video-gen',
       title: '11. Video generation (Sora / Seedance 2.0)',
       blocks: [
-        { t: 'p', html: 'Sora video generation is an <strong>async job API</strong>: create a job → poll status → download the video. Use an API key created under a <strong>video-enabled group</strong>.' },
+        { t: 'p', html: 'Video generation is an <strong>async job API</strong>: create a job → poll status → download the video. Use an API key created under a <strong>video-enabled group</strong>. Supports Sora (<strong>per-second billing</strong>) and Seedance 2.0 (<strong>per-request billing</strong>).' },
         { t: 'h3', text: 'Supported models' },
-        { t: 'table', head: ['Model', 'Resolution'], rows: [
-          ['<code>sora-v3-fast</code>', '480p'],
-          ['<code>sora-v3-pro</code>', '720p']
+        { t: 'table', head: ['Model', 'Resolution', 'Billing'], rows: [
+          ['<code>sora-v3-fast</code>', '480p', 'per second'],
+          ['<code>sora-v3-pro</code>', '720p', 'per second'],
+          ['<code>seedance-2.0-fast-pass</code>', '720p', 'per request (flat; duration does not affect cost)'],
+          ['<code>seedance-2.0-pass</code>', '720p', 'per request (flat; duration does not affect cost)']
         ]},
         { t: 'h3', text: 'Flow' },
         { t: 'ul', items: [
@@ -1013,6 +1022,8 @@ export const en: HelpFactory = (base) => ({
         { t: 'code', lang: 'bash', code: `curl ${base}/videos \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "sora-v3-fast",\n    "prompt": "A neon-lit rainy street, slow dolly-in, cinematic",\n    "aspect_ratio": "16:9",\n    "resolution": "480p",\n    "seconds": "5"\n  }'` },
         { t: 'p', html: 'Response (job queued):' },
         { t: 'code', lang: 'json', code: '{\n  "id": "task_xxx",\n  "object": "video",\n  "model": "sora-v3-fast",\n  "status": "queued",\n  "progress": 0,\n  "created_at": 1779560000\n}' },
+        { t: 'p', html: 'Seedance 2.0 (per-request, <code>duration</code> in 4/5/10/15):' },
+        { t: 'code', lang: 'bash', code: `curl ${base}/videos \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "seedance-2.0-pass",\n    "prompt": "Seaside at dusk, slow crane-up, cinematic",\n    "ratio": "16:9",\n    "resolution": "720p",\n    "duration": 15\n  }'` },
         { t: 'h4', text: '2) Poll status' },
         { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}"` },
         { t: 'p', html: 'Completed (<code>status=completed</code>) response:' },
@@ -1022,17 +1033,20 @@ export const en: HelpFactory = (base) => ({
         { t: 'code', lang: 'bash', code: `curl ${base}/videos/task_xxx/content \\\n  -H "Authorization: Bearer \${YOUR_API_KEY}" \\\n  -o out.mp4` },
         { t: 'h3', text: 'Parameters' },
         { t: 'table', head: ['Param', 'Required', 'Notes'], rows: [
-          ['<code>model</code>', 'yes', 'sora-v3-fast / sora-v3-pro'],
+          ['<code>model</code>', 'yes', 'sora-v3-fast / sora-v3-pro / seedance-2.0-fast-pass / seedance-2.0-pass'],
           ['<code>prompt</code>', 'yes', 'text prompt'],
-          ['<code>resolution</code>', 'yes', '480p / 720p / 1080p (≥1080 = HD billing tier)'],
-          ['<code>aspect_ratio</code>', 'yes', '16:9 / 9:16 / 4:3 / 3:4 / 1:1 / 21:9'],
-          ['<code>seconds</code>', 'yes', 'duration: 5 / 10 / 15'],
-          ['<code>image_url</code>', 'no', 'reference image (image-to-video)']
+          ['<code>resolution</code>', 'no', '480p / 720p / 1080p (Sora per-second: ≥1080 = HD tier; Seedance uses 720p)'],
+          ['<code>aspect_ratio</code> / <code>ratio</code>', 'no', 'equivalent (16:9 / 9:16 / 1:1, etc.)'],
+          ['<code>seconds</code> / <code>duration</code>', 'no', 'equivalent (Sora 5/10/15; Seedance 4/5/10/15). Per-request billing: duration does not affect cost'],
+          ['<code>image_url</code>', 'no', 'Sora reference image (image-to-video)'],
+          ['<code>first_image</code> / <code>last_image</code>', 'no', 'Seedance first/last frame — must be paired, not combined with reference images/videos'],
+          ['<code>referenceImages</code>', 'no', 'Seedance reference images array (max 4)'],
+          ['<code>referenceVideos</code>', 'no', 'Seedance reference videos array (max 3)']
         ]},
         { t: 'h4', text: 'Failure responses' },
         { t: 'code', lang: 'json', code: '// 403 insufficient balance\n{ "code": "INSUFFICIENT_BALANCE", "message": "Insufficient account balance" }\n\n// 403 video not enabled for the group\n{ "error": { "type": "permission_error", "message": "Video generation is not enabled for this group" } }\n\n// 503 no available accounts\n{ "error": { "type": "api_error", "message": "No available compatible accounts" } }' },
-        { t: 'callout', variant: 'tip', html: '💡 Billing happens on <strong>successful create</strong> = duration × per-second price (by resolution tier). Failed creates (auth/balance/upstream errors) are not billed; polling and download are free.' },
-        { t: 'callout', variant: 'warning', html: 'Generation usually takes a few minutes. Download via <code>GET /v1/videos/{task_id}/content</code> (auto-routes to the creating account); do not use the upstream video_url from the response directly.' }
+        { t: 'callout', variant: 'tip', html: '💡 Billing happens once on <strong>successful create</strong> (idempotent by request_id); failed creates (auth/balance/upstream errors) and polling/download are free. <strong>Per-second</strong> (Sora) = duration × per-second price (by resolution tier) × multiplier; <strong>per-request</strong> (Seedance 2.0) = flat price × multiplier, regardless of duration/resolution.' },
+        { t: 'callout', variant: 'warning', html: 'Generation usually takes a few minutes. Prefer <code>GET /v1/videos/{task_id}/content</code> (auto-routes to the creating account); some relays do not allow API-key download there (return 401) — in that case download the <code>video_url</code> direct link from the completed response.' }
       ]
     },
     {
