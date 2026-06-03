@@ -961,22 +961,37 @@
                   class="input flex-1"
                   :placeholder="t('admin.groups.videoPricing.modelName')"
                 />
+                <select v-model="row.billing_mode" class="input w-24">
+                  <option value="per_second">{{ t('admin.groups.videoPricing.modePerSecond') }}</option>
+                  <option value="per_request">{{ t('admin.groups.videoPricing.modePerRequest') }}</option>
+                </select>
                 <input
-                  v-model.number="row.price_per_second"
+                  v-if="row.billing_mode === 'per_request'"
+                  v-model.number="row.price_per_request"
                   type="number"
                   step="0.001"
                   min="0"
                   class="input w-28"
-                  placeholder="0.1"
+                  :placeholder="t('admin.groups.videoPricing.perRequestPlaceholder')"
                 />
-                <input
-                  v-model.number="row.price_per_second_hd"
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  class="input w-28"
-                  placeholder="0.2"
-                />
+                <template v-else>
+                  <input
+                    v-model.number="row.price_per_second"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    class="input w-28"
+                    placeholder="0.1"
+                  />
+                  <input
+                    v-model.number="row.price_per_second_hd"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    class="input w-28"
+                    placeholder="0.2"
+                  />
+                </template>
                 <button
                   type="button"
                   @click="removeCreateVideoModelPrice(index)"
@@ -2402,22 +2417,37 @@
                   class="input flex-1"
                   :placeholder="t('admin.groups.videoPricing.modelName')"
                 />
+                <select v-model="row.billing_mode" class="input w-24">
+                  <option value="per_second">{{ t('admin.groups.videoPricing.modePerSecond') }}</option>
+                  <option value="per_request">{{ t('admin.groups.videoPricing.modePerRequest') }}</option>
+                </select>
                 <input
-                  v-model.number="row.price_per_second"
+                  v-if="row.billing_mode === 'per_request'"
+                  v-model.number="row.price_per_request"
                   type="number"
                   step="0.001"
                   min="0"
                   class="input w-28"
-                  placeholder="0.1"
+                  :placeholder="t('admin.groups.videoPricing.perRequestPlaceholder')"
                 />
-                <input
-                  v-model.number="row.price_per_second_hd"
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  class="input w-28"
-                  placeholder="0.2"
-                />
+                <template v-else>
+                  <input
+                    v-model.number="row.price_per_second"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    class="input w-28"
+                    placeholder="0.1"
+                  />
+                  <input
+                    v-model.number="row.price_per_second_hd"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    class="input w-28"
+                    placeholder="0.2"
+                  />
+                </template>
                 <button
                   type="button"
                   @click="removeEditVideoModelPrice(index)"
@@ -3655,8 +3685,10 @@ const createForm = reactive({
   video_model_pricing: {
     models: [] as Array<{
       model: string;
+      billing_mode: string;
       price_per_second: number | null;
       price_per_second_hd: number | null;
+      price_per_request: number | null;
     }>,
   },
   // Claude Code 客户端限制（仅 anthropic 平台使用）
@@ -3999,8 +4031,10 @@ const editForm = reactive({
   video_model_pricing: {
     models: [] as Array<{
       model: string;
+      billing_mode: string;
       price_per_second: number | null;
       price_per_second_hd: number | null;
+      price_per_request: number | null;
     }>,
   },
   // Claude Code 客户端限制（仅 anthropic 平台使用）
@@ -4435,8 +4469,10 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.video_model_pricing = {
     models: (group.video_model_pricing?.models ?? []).map((row) => ({
       model: row.model,
+      billing_mode: row.billing_mode === "per_request" ? "per_request" : "per_second",
       price_per_second: row.price_per_second,
       price_per_second_hd: row.price_per_second_hd,
+      price_per_request: row.price_per_request ?? null,
     })),
   };
   editForm.claude_code_only = group.claude_code_only || false;
@@ -4588,8 +4624,10 @@ const removeEditMessagesDispatchMapping = (row: MessagesDispatchMappingRow) => {
 const addCreateVideoModelPrice = () => {
   createForm.video_model_pricing.models.push({
     model: "",
+    billing_mode: "per_second",
     price_per_second: null,
     price_per_second_hd: null,
+    price_per_request: null,
   });
 };
 
@@ -4600,8 +4638,10 @@ const removeCreateVideoModelPrice = (index: number) => {
 const addEditVideoModelPrice = () => {
   editForm.video_model_pricing.models.push({
     model: "",
+    billing_mode: "per_second",
     price_per_second: null,
     price_per_second_hd: null,
+    price_per_request: null,
   });
 };
 
@@ -4612,19 +4652,27 @@ const removeEditVideoModelPrice = (index: number) => {
 // 过滤空模型行并将空价格归一化为 null
 const buildVideoModelPricing = (models: {
   model: string;
+  billing_mode?: string;
   price_per_second: number | string | null;
   price_per_second_hd: number | string | null;
+  price_per_request?: number | string | null;
 }[]) => {
-  const normalizePrice = (v: number | string | null) =>
+  const normalizePrice = (v: number | string | null | undefined) =>
     v === "" || v === null || v === undefined ? null : Number(v);
   return {
     models: models
       .filter((row) => row.model.trim() !== "")
-      .map((row) => ({
-        model: row.model.trim(),
-        price_per_second: normalizePrice(row.price_per_second),
-        price_per_second_hd: normalizePrice(row.price_per_second_hd),
-      })),
+      .map((row) => {
+        const mode = row.billing_mode === "per_request" ? "per_request" : "per_second";
+        return {
+          model: row.model.trim(),
+          billing_mode: mode,
+          // 按次：只保留单次价；按秒：只保留每秒价（避免残留无关字段）。
+          price_per_second: mode === "per_request" ? null : normalizePrice(row.price_per_second),
+          price_per_second_hd: mode === "per_request" ? null : normalizePrice(row.price_per_second_hd),
+          price_per_request: mode === "per_request" ? normalizePrice(row.price_per_request) : null,
+        };
+      }),
   };
 };
 

@@ -420,18 +420,29 @@ func (s *OpenAIGatewayService) RecordVideoUsage(ctx context.Context, input *Reco
 	}
 	videoMultiplier := resolveVideoRateMultiplier(apiKey, multiplier)
 
-	// 每秒价格（按模型优先，回退分组默认；分辨率档区分）。
-	pricePerSecond := 0.0
-	if apiKey.Group != nil {
-		if p := apiKey.Group.GetVideoModelPricePerSecond(input.Model, input.Result.HD); p != nil {
-			pricePerSecond = *p
+	// 计费金额：按模型配置区分「按次」与「按秒」两种方式。
+	//   - 按次（per_request，如 Seedance 2.0）：固定单价 × 倍率，与时长/分辨率无关。
+	//   - 按秒（默认）：时长(秒) × 每秒价(按分辨率档) × 倍率。
+	var totalCost float64
+	if apiKey.Group != nil && apiKey.Group.IsVideoModelPerRequest(input.Model) {
+		pricePerRequest := 0.0
+		if p := apiKey.Group.GetVideoModelPerRequestPrice(input.Model); p != nil {
+			pricePerRequest = *p
 		}
+		totalCost = pricePerRequest * videoMultiplier
+	} else {
+		pricePerSecond := 0.0
+		if apiKey.Group != nil {
+			if p := apiKey.Group.GetVideoModelPricePerSecond(input.Model, input.Result.HD); p != nil {
+				pricePerSecond = *p
+			}
+		}
+		seconds := input.Result.Seconds
+		if seconds < 0 {
+			seconds = 0
+		}
+		totalCost = seconds * pricePerSecond * videoMultiplier
 	}
-	seconds := input.Result.Seconds
-	if seconds < 0 {
-		seconds = 0
-	}
-	totalCost := seconds * pricePerSecond * videoMultiplier
 	if totalCost < 0 {
 		totalCost = 0
 	}

@@ -158,6 +158,38 @@ func (g *Group) GetVideoModelPricePerSecond(model string, hd bool) *float64 {
 	return g.GetVideoPricePerSecond(hd)
 }
 
+// videoModelEntry 返回匹配的按模型视频定价条目（大小写不敏感），未命中返回 nil。
+func (g *Group) videoModelEntry(model string) *domain.GroupVideoModelPrice {
+	target := strings.ToLower(strings.TrimSpace(model))
+	if target == "" {
+		return nil
+	}
+	for i := range g.VideoModelPricing.Models {
+		if strings.ToLower(strings.TrimSpace(g.VideoModelPricing.Models[i].Model)) == target {
+			return &g.VideoModelPricing.Models[i]
+		}
+	}
+	return nil
+}
+
+// IsVideoModelPerRequest 判断该模型是否按次计费（billing_mode=per_request）。
+// 未命中按模型配置或未指定计费方式时返回 false（默认按秒计费）。
+func (g *Group) IsVideoModelPerRequest(model string) bool {
+	if entry := g.videoModelEntry(model); entry != nil {
+		return strings.EqualFold(strings.TrimSpace(entry.BillingMode), string(BillingModePerRequest))
+	}
+	return false
+}
+
+// GetVideoModelPerRequestPrice 返回该模型的按次价格（USD）。
+// 未命中或未配置返回 nil（调用方按 0 处理）。
+func (g *Group) GetVideoModelPerRequestPrice(model string) *float64 {
+	if entry := g.videoModelEntry(model); entry != nil {
+		return entry.PricePerRequest
+	}
+	return nil
+}
+
 // IsGroupContextValid reports whether a group from context has the fields required for routing decisions.
 func IsGroupContextValid(group *Group) bool {
 	if group == nil {

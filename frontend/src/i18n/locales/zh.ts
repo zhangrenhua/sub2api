@@ -2320,10 +2320,13 @@ export default {
         finalPricePreview: '最终每秒价格预览',
         notConfigured: '未配置',
         perModelTitle: '按模型定价',
-        perModelHint: '为指定模型设置独立每秒价格，将覆盖该模型的默认每秒价；留空则沿用默认价格。',
+        perModelHint: '为指定模型设置独立价格。计费方式可选「按秒」（覆盖该模型默认每秒价，留空沿用默认）或「按次」（固定单价，与时长/分辨率无关，如 Seedance 2.0）。',
         modelName: '模型名',
         addModel: '+ 添加模型',
-        removeModel: '删除该模型'
+        removeModel: '删除该模型',
+        modePerSecond: '按秒',
+        modePerRequest: '按次',
+        perRequestPlaceholder: '单次价'
       },
       modelsList: {
         title: '自定义 /v1/models 模型列表',

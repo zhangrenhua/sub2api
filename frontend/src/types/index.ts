@@ -499,8 +499,11 @@ export interface OpenAIMessagesDispatchModelConfig {
 
 export interface VideoModelPrice {
   model: string
+  /** '' | 'per_second' (默认按秒) | 'per_request' (按次) */
+  billing_mode?: string
   price_per_second: number | null
   price_per_second_hd: number | null
+  price_per_request?: number | null
 }
 
 export interface VideoModelPricingConfig {

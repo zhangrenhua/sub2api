@@ -2238,10 +2238,13 @@ export default {
         finalPricePreview: 'Final per-second price preview',
         notConfigured: 'Not configured',
         perModelTitle: 'Per-model pricing',
-        perModelHint: 'Set independent per-second prices for specific models, overriding the default per-second price for those models. Leave empty to use the default prices.',
+        perModelHint: 'Set independent pricing per model. Billing mode can be "Per second" (overrides the model default per-second price; leave empty to use defaults) or "Per request" (flat price regardless of duration/resolution, e.g. Seedance 2.0).',
         modelName: 'Model name',
         addModel: '+ Add model',
-        removeModel: 'Remove model'
+        removeModel: 'Remove model',
+        modePerSecond: 'Per second',
+        modePerRequest: 'Per request',
+        perRequestPlaceholder: 'Per request'
       },
       modelsList: {
         title: 'Custom /v1/models Model List',
