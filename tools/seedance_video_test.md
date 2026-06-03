@@ -14,12 +14,19 @@
 
 ## 1. 模型
 
-| 模型 | 分辨率 | 计费方式 | 时长 |
-|---|---|---|---|
-| `seedance-2.0-fast-pass` | `720p` | **按次**（固定单价，时长不影响费用） | 4/5/10/15 |
-| `seedance-2.0-pass` | `720p` | **按次**（固定单价，时长不影响费用） | 4/5/10/15 |
+四个模型**均按次计费**（不按秒），分辨率建议 `720p`，时长支持 `4~15` 秒。
 
-**按次**：费用 = 该模型固定单价 × 分组视频倍率，与时长/分辨率无关。
+| 模型 | 类型 | 参考能力 | 计费(0.7 倍率分组示例) |
+|---|---|---|---|
+| `seedance-2.0-fast` | 普通快速 | 参考图≤4；**无音频** | 按次（以后台报价为准） |
+| `seedance-2.0` | 普通标准 | 参考图≤4；**无音频** | 按次（以后台报价为准） |
+| `seedance-2.0-fast-pass` | Pass 快速（POR） | 参考图≤9、参考音频≤3、参考视频≤1 | 按次，约 **3 元/次** |
+| `seedance-2.0-pass` | Pass 标准（POR） | 参考图≤9、参考音频≤3、参考视频≤1 | 按次，约 **4 元/次** |
+
+- **按次**：费用 = 该模型固定单价 × 分组视频倍率，与时长/分辨率无关。`duration`/`seconds` 只是生成时长,不代表按秒扣费。
+- **Pass 模型 POR**：`referenceAudio + referenceVideos` 合计 ≤ 4，且总时长 ≤ 15s。
+- 多参考图/音频时,建议在 prompt 里用 `@[image1]…@[image9]` / `@音频1…@音频3` 标注,并与数组顺序对应。
+- 价格随客户/套餐/分组不同,实际以后台配置为准。
 
 ---
 
@@ -53,14 +60,23 @@ SEEDANCE_MODEL="seedance-2.0-pass" SEEDANCE_SECONDS=10 \
 
 输出保存为 `video_<task_id>.mp4`（可用 `SEEDANCE_OUT` 指定）。第一个命令行参数是 **prompt**。
 
-**参考图（最多 4 张，字段 `referenceImages`）**：
+**参考图（字段 `referenceImages`；普通模型≤4，Pass 模型≤9）**：
 ```bash
 export SEEDANCE_REFERENCE_IMAGE_URLS='["https://example.com/character-a.jpg","https://example.com/character-b.jpg"]'
-SEEDANCE_MODEL="seedance-2.0-pass" python3 tools/seedance_video_test.py "保持参考图人物外貌和服装一致，自然走动"
+SEEDANCE_MODEL="seedance-2.0" python3 tools/seedance_video_test.py "保持参考图人物外貌和服装一致，自然走动"
 ```
 
-**首尾帧（`first_image`/`last_image`，须成对，且不能与参考图/视频同用）**：
+**Pass 多图 + 参考音频（仅 `*-pass` 模型，图≤9/音频≤3）**：
 ```bash
+export SEEDANCE_REFERENCE_IMAGE_URLS='["https://example.com/image1.jpg","https://example.com/image2.jpg"]'
+export SEEDANCE_REFERENCE_AUDIO_URLS='["https://example.com/audio1.mp3"]'
+SEEDANCE_MODEL="seedance-2.0-pass" \
+  python3 tools/seedance_video_test.py "参考 @[image1] @[image2] 的人物服装，参考 @音频1 的音色，自然走动的电影感镜头"
+```
+
+**首尾帧（`first_image`/`last_image`，须成对，且不与参考图/视频同用）**：
+```bash
+SEEDANCE_MODEL="seedance-2.0" \
 SEEDANCE_FIRST_IMAGE="https://example.com/sea-morning.jpg" \
 SEEDANCE_LAST_IMAGE="https://example.com/sea-evening.jpg" \
   python3 tools/seedance_video_test.py "从清晨过渡到黄昏的海边延时镜头，画面稳定"
@@ -123,21 +139,23 @@ curl -L "https://opcbucket.oss-cn-beijing.aliyuncs.com/.../xxx.mp4" -o video.mp4
 |---|---|---|---|
 | `SEEDANCE_API_KEY` | ✅ | — | 视频分组下的本系统 API Key |
 | `SEEDANCE_BASE_URL` | | `https://www.cc-vibe.com` | **本网关**地址（不是上游中转） |
-| `SEEDANCE_MODEL` | | `seedance-2.0-fast-pass` | `seedance-2.0-fast-pass` / `seedance-2.0-pass` |
-| `SEEDANCE_RESOLUTION` | | `720p` | 输出清晰度 |
-| `SEEDANCE_RATIO` | | `16:9` | 同时作为 `ratio` 与 `aspect_ratio` 发送（等价）。`16:9`/`9:16`/`1:1` 等 |
-| `SEEDANCE_SECONDS` | | `5` | 时长；同时作为 `duration`(整数) 与 `seconds`(字符串) 发送。支持 4/5/10/15 |
+| `SEEDANCE_MODEL` | | `seedance-2.0-fast-pass` | `seedance-2.0-fast` / `seedance-2.0` / `seedance-2.0-fast-pass` / `seedance-2.0-pass` |
+| `SEEDANCE_RESOLUTION` | | `720p` | 输出清晰度（建议 720p） |
+| `SEEDANCE_RATIO` | | `16:9` | 同时作为 `ratio` 与 `aspect_ratio` 发送（等价）。`16:9`/`9:16`/`1:1` |
+| `SEEDANCE_SECONDS` | | `5` | 时长；同时作为 `duration`(整数) 与 `seconds`(字符串) 发送。支持 **4~15**（<4 自动抬到 4） |
 | `SEEDANCE_MAX_SECONDS` | | `15` | 时长上限（按次计费时长不加钱，默认放开到 15） |
+| `SEEDANCE_IMAGE_URL` | | — | 单张首帧/参考图 URL（`image_url`） |
 | `SEEDANCE_FIRST_IMAGE` | | — | 首帧 URL（`first_image`，须与 `last_image` 成对） |
 | `SEEDANCE_LAST_IMAGE` | | — | 尾帧 URL（`last_image`） |
-| `SEEDANCE_REFERENCE_IMAGE_URLS` | | — | JSON 数组，参考图（`referenceImages`，**最多 4**） |
-| `SEEDANCE_REFERENCE_VIDEO_URLS` | | — | JSON 数组，参考视频（`referenceVideos`，**最多 3**） |
-| `SEEDANCE_POLL_SEC` | | `10` | 轮询间隔秒（官方建议 30-60s） |
+| `SEEDANCE_REFERENCE_IMAGE_URLS` | | — | JSON 数组，参考图（`referenceImages`；普通**≤4**，Pass**≤9**） |
+| `SEEDANCE_REFERENCE_VIDEO_URLS` | | — | JSON 数组，参考视频（`referenceVideos`；普通**≤3**，Pass**≤1**） |
+| `SEEDANCE_REFERENCE_AUDIO_URLS` | | — | JSON 数组，参考音频（`referenceAudio`；**仅 Pass 模型，≤3**） |
+| `SEEDANCE_POLL_SEC` | | `10` | 轮询间隔秒（官方建议 15-30s，慢时 30-60s） |
 | `SEEDANCE_TIMEOUT` | | `600` | 最长等待秒 |
 | `SEEDANCE_OUT` | | `video_<id>.mp4` | 输出文件名 |
 | `SEEDANCE_EXTRA_JSON` | | — | 额外 JSON 对象，合并进请求体（可覆盖上面字段） |
 
-**字段规则**：纯文生视频只需 `model`+`prompt`；首尾帧须 `first_image`+`last_image` 成对且不与参考图/视频同用；素材须是服务端可访问的 URL（不支持 base64/`data:`）；当前不支持参考音频。
+**字段规则**：纯文生视频只需 `model`+`prompt`；首尾帧须 `first_image`+`last_image` 成对且不与参考图/视频同用；素材须是服务端可公网访问的 URL（不支持 base64/`data:`/本地路径）；参考音频仅 Pass 模型支持；Pass 下 `referenceAudio + referenceVideos` 合计 ≤4 且总时长 ≤15s。脚本会按模型自动校验数量上限并提示。
 
 ---
 
@@ -161,9 +179,11 @@ ORDER BY created_at DESC LIMIT 5;
 
 | HTTP | 含义 | 排查 |
 |---|---|---|
-| `401` | key 无效 | 检查 `SEEDANCE_API_KEY` |
-| `403 INSUFFICIENT_BALANCE` | 余额不足 | 给该用户充值 |
-| `403 Video generation is not enabled` | 分组没开视频 | 分组里打开「允许视频生成」 |
+| `401` / Unauthorized | key 无效或未带 `Authorization` | 检查 `SEEDANCE_API_KEY` |
+| `402` / `403 INSUFFICIENT_BALANCE` | 余额/额度不足 | 检查余额、额度、套餐权限 |
+| `403 Video generation is not enabled` | 分组没开视频 / 未开通该模型 | 分组里打开「允许视频生成」并开通模型 |
+| `400` | 模型名/参数/素材 URL 不合法 | 检查 model、字段格式、URL |
+| 素材读取失败 | 图片/视频 URL 不可公网访问 | 确认 URL 公网可达、无需登录/防盗链 |
 | `503 No available compatible accounts` | 没有可用账号 | 分组要绑定 **API Key** 类型 OpenAI 账号且 schedulable；模型名与上游一致 |
 | `502 Upstream request failed` | 连不上上游 | 账号 `base_url` 是否正确/可达；必要时给账号配代理 |
 | 下载 `401 login required` | 中转 `/content` 不支持 API Key 下载 | 脚本已自动回退直连 `video_url`（无需处理） |

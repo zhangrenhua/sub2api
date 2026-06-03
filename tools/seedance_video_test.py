@@ -2,9 +2,11 @@
 """
 Seedance 2.0 视频生成 - 异步任务调用脚本（**按次计费**，无第三方依赖，仅标准库）
 
-适用模型（按次计费，时长不影响费用）：
-  - seedance-2.0-fast-pass（720p，快速版）
-  - seedance-2.0-pass（720p，标准版）
+适用模型（均按次计费，时长不影响费用；720p）：
+  - seedance-2.0-fast        普通快速版：参考图≤4，无参考音频
+  - seedance-2.0             普通标准版：参考图≤4，无参考音频
+  - seedance-2.0-fast-pass   Pass 快速版：POR，参考图≤9、参考音频≤3、参考视频≤1
+  - seedance-2.0-pass        Pass 标准版：POR，参考图≤9、参考音频≤3、参考视频≤1
 
 流程（异步任务）：
   1. POST /v1/videos              创建任务，拿到 task id
@@ -26,22 +28,26 @@ Seedance 2.0 视频生成 - 异步任务调用脚本（**按次计费**，无第
 参数（环境变量；每个都可用 SEEDANCE_ 前缀，缺省时回退同名 SORA_ 前缀，方便沿用旧习惯）：
   SEEDANCE_API_KEY     必填，Bearer 鉴权用
   SEEDANCE_BASE_URL    默认 https://www.cc-vibe.com（本网关，不是上游中转）
-  SEEDANCE_MODEL       默认 seedance-2.0-fast-pass
+  SEEDANCE_MODEL       默认 seedance-2.0-fast-pass（四个模型见上）
   SEEDANCE_RESOLUTION  默认 720p
-  SEEDANCE_RATIO       默认 16:9（同时作为 ratio 与 aspect_ratio 发送，二者等价）
-  SEEDANCE_SECONDS     默认 5；同时作为 duration(整数) 与 seconds(字符串) 发送。Seedance 支持 4/5/10/15
+  SEEDANCE_RATIO       默认 16:9（同时作为 ratio 与 aspect_ratio 发送，二者等价）。支持 16:9/9:16/1:1
+  SEEDANCE_SECONDS     默认 5；同时作为 duration(整数) 与 seconds(字符串) 发送。Seedance 支持 4~15
   SEEDANCE_MAX_SECONDS 时长上限，默认 15（按次计费时长不影响费用，可放开测全长）
+  SEEDANCE_IMAGE_URL   单张首帧/参考图 URL（字段 image_url）
   SEEDANCE_FIRST_IMAGE 首帧 URL（字段 first_image，须与 last_image 成对）
   SEEDANCE_LAST_IMAGE  尾帧 URL（字段 last_image，须与 first_image 成对）
-  SEEDANCE_REFERENCE_IMAGE_URLS  JSON 数组，参考图（字段 referenceImages，最多 4 张）
-  SEEDANCE_REFERENCE_VIDEO_URLS  JSON 数组，参考视频（字段 referenceVideos，最多 3 个）
-  SEEDANCE_POLL_SEC    轮询间隔秒，默认 10（官方建议 30-60s，避免高频查询）
+  SEEDANCE_REFERENCE_IMAGE_URLS  JSON 数组，参考图（字段 referenceImages；普通≤4，Pass≤9）
+  SEEDANCE_REFERENCE_VIDEO_URLS  JSON 数组，参考视频（字段 referenceVideos；普通≤3，Pass≤1）
+  SEEDANCE_REFERENCE_AUDIO_URLS  JSON 数组，参考音频（字段 referenceAudio；仅 Pass 模型，≤3）
+  SEEDANCE_POLL_SEC    轮询间隔秒，默认 10（官方建议 15-30s，慢时 30-60s）
   SEEDANCE_TIMEOUT     最长等待秒，默认 600
   SEEDANCE_OUT         输出文件名，默认 video_<task_id>.mp4
   SEEDANCE_EXTRA_JSON  额外 JSON 对象，合并进请求体（覆盖上面字段，方便临时测试新字段）
 
 注：
-  - Seedance 当前不支持参考音频；首尾帧模式不能与参考图/参考视频同时使用。
+  - 仅 Pass 模型（*-pass）支持参考音频；普通模型不支持。
+  - 首尾帧模式建议不与参考图/参考视频/参考音频同时使用。
+  - 多参考图/音频时，建议在 prompt 里用 @[image1]…@[image9] / @音频1…@音频3 标注并与数组顺序对应。
   - 网关对 /v1/videos 透传：以上字段会原样转发上游。
 """
 
@@ -72,6 +78,12 @@ MODEL = env("MODEL", "seedance-2.0-fast-pass")
 RESOLUTION = env("RESOLUTION", "720p")
 RATIO = env("RATIO", "16:9")
 
+# Pass 模型（seedance-2.0-fast-pass / seedance-2.0-pass）支持 POR：参考图最多 9 张、
+# 参考音频最多 3 个、参考视频最多 1 个；普通模型参考图最多 4 张、参考视频最多 3 个、不支持音频。
+IS_PASS = "-pass" in MODEL.lower()
+_MAX_REF_IMAGES = 9 if IS_PASS else 4
+_MAX_REF_VIDEOS = 1 if IS_PASS else 3
+
 # 按次计费，时长不影响费用；上限默认放开到 15（Seedance 支持 4/5/10/15）。
 try:
     _MAX_SECONDS = int(float(env("MAX_SECONDS", "15")))
@@ -83,8 +95,8 @@ try:
     _req_seconds = int(float(env("SECONDS", "5")))
 except ValueError:
     _req_seconds = 5
-if _req_seconds < 1:
-    _req_seconds = 1
+if _req_seconds < 4:  # Seedance 2.0 支持 4~15 秒
+    _req_seconds = 4
 if _req_seconds > _MAX_SECONDS:
     print(f"⚠ 时长上限 {_MAX_SECONDS}s，已将 {_req_seconds} 钳到 {_MAX_SECONDS}（可调 SEEDANCE_MAX_SECONDS）")
     _req_seconds = _MAX_SECONDS
@@ -134,8 +146,13 @@ def _json_array_env(name):
 
 
 def optional_create_fields():
-    """参考图/参考视频/首尾帧字段（Seedance 命名），透传上游。"""
+    """图片/参考图/参考视频/参考音频/首尾帧字段（Seedance 命名），透传上游。
+    参考数量上限按模型区分：Pass 模型图≤9/视频≤1/音频≤3，普通模型图≤4/视频≤3/无音频。
+    """
     fields = {}
+    image_url = env("IMAGE_URL")
+    if image_url:
+        fields["image_url"] = image_url
     first_image = env("FIRST_IMAGE")
     last_image = env("LAST_IMAGE")
     if first_image:
@@ -144,16 +161,26 @@ def optional_create_fields():
         fields["last_image"] = last_image
     ref_images = _json_array_env("REFERENCE_IMAGE_URLS")
     if ref_images:
-        if len(ref_images) > 4:
-            print(f"⚠ Seedance 参考图最多 4 张，已传 {len(ref_images)} 张（上游可能截断/报错）")
+        if len(ref_images) > _MAX_REF_IMAGES:
+            print(f"⚠ {MODEL} 参考图最多 {_MAX_REF_IMAGES} 张，已传 {len(ref_images)} 张（上游可能截断/报错）")
         fields["referenceImages"] = ref_images
     ref_videos = _json_array_env("REFERENCE_VIDEO_URLS")
     if ref_videos:
-        if len(ref_videos) > 3:
-            print(f"⚠ Seedance 参考视频最多 3 个，已传 {len(ref_videos)} 个")
+        if len(ref_videos) > _MAX_REF_VIDEOS:
+            print(f"⚠ {MODEL} 参考视频最多 {_MAX_REF_VIDEOS} 个，已传 {len(ref_videos)} 个")
         fields["referenceVideos"] = ref_videos
-    if (first_image or last_image) and (ref_images or ref_videos):
-        print("⚠ 首尾帧模式不能与参考图/参考视频同用，上游可能报错")
+    ref_audio = _json_array_env("REFERENCE_AUDIO_URLS")
+    if ref_audio:
+        if not IS_PASS:
+            print(f"⚠ {MODEL} 是普通模型，不支持参考音频（仅 Pass 模型支持）")
+        elif len(ref_audio) > 3:
+            print(f"⚠ Pass 模型参考音频最多 3 个，已传 {len(ref_audio)} 个")
+        fields["referenceAudio"] = ref_audio
+    # Pass 模型：参考音频 + 参考视频合计 ≤ 4。
+    if IS_PASS and ref_audio and ref_videos and (len(ref_audio) + len(ref_videos)) > 4:
+        print("⚠ Pass 模型 参考音频 + 参考视频 合计最多 4 个，已超出")
+    if (first_image or last_image) and (ref_images or ref_videos or ref_audio):
+        print("⚠ 首尾帧模式不建议与参考图/参考视频/参考音频同用，上游可能报错")
     extra = env("EXTRA_JSON")
     if extra:
         try:
