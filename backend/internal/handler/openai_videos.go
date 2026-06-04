@@ -220,9 +220,10 @@ func (h *OpenAIGatewayHandler) proxyVideoRetrieve(c *gin.Context, suffix string)
 			var st struct {
 				Status string `json:"status"`
 			}
-			if json.Unmarshal(body, &st) == nil && service.IsVideoTerminalFailureStatus(st.Status) {
-				// 任务失败：退还该任务在创建时扣的费(幂等)。
-				h.gatewayService.RefundFailedVideo(c.Request.Context(), apiKey.GroupID, videoID)
+			_ = json.Unmarshal(body, &st)
+			// 任务「真实失败」或「无法取回(上游对状态查询返回无法识别/被拒的响应)」都退款(幂等)。
+			if service.IsVideoTerminalFailureStatus(st.Status) || service.IsVideoStatusUnretrievable(body) {
+				h.gatewayService.RefundFailedVideo(c.Request.Context(), apiKey.GroupID, videoID, account.ID)
 			}
 		}
 		return

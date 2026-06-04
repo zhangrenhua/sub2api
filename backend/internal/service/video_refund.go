@@ -65,6 +65,25 @@ func (s *OpenAIGatewayService) rememberVideoBillingMeta(
 	}
 }
 
+// IsVideoStatusUnretrievable 判断状态查询响应是否为"任务无法取回"的上游报错。
+// 某些上游中转对 GET /v1/videos/{id} 直接拒绝(如返回
+// {"error":"Forbidden: only ... /v1/result/{id} ... allowed","video_url":"upstream returned unrecognized message"}),
+// 此时网关读不到任务状态、用户也无法下载视频 → 视为应退款(由调用方据业务决定)。
+// 仅在响应里没有正常 status 字段时才匹配，避免误伤规范上游。
+func IsVideoStatusUnretrievable(body []byte) bool {
+	if len(body) == 0 {
+		return false
+	}
+	var r struct {
+		Status string `json:"status"`
+	}
+	if err := json.Unmarshal(body, &r); err == nil && strings.TrimSpace(r.Status) != "" {
+		return false // 有正常 status 字段 → 不属于此情形
+	}
+	hay := strings.ToLower(string(body))
+	return strings.Contains(hay, "unrecognized message") || strings.Contains(hay, "forbidden: only")
+}
+
 // IsVideoTerminalFailureStatus 判断视频任务状态是否为"终态失败"(应退款)。
 // 成功(completed/succeeded)不退；进行中(queued/processing/in_progress)不退。
 func IsVideoTerminalFailureStatus(status string) bool {
@@ -78,7 +97,9 @@ func IsVideoTerminalFailureStatus(status string) bool {
 
 // RefundFailedVideo 在检测到视频任务终态失败时，按创建时记录的元数据退还该任务的扣费。
 // 幂等(底层 usage_billing_dedup 用 videorefund:<id> 保证每个任务最多退一次)；尽力执行。
-func (s *OpenAIGatewayService) RefundFailedVideo(ctx context.Context, groupID *int64, videoID string) {
+// fallbackAccountID 用于元数据缺失 account_id(历史数据)时的回退,通常传调用处已加载的账号 ID,
+// 保证退款用量记录的 account_id 是有效外键。
+func (s *OpenAIGatewayService) RefundFailedVideo(ctx context.Context, groupID *int64, videoID string, fallbackAccountID int64) {
 	if s.cache == nil || s.usageBillingRepo == nil || groupID == nil || strings.TrimSpace(videoID) == "" {
 		return
 	}
@@ -111,6 +132,9 @@ func (s *OpenAIGatewayService) RefundFailedVideo(ctx context.Context, groupID *i
 				zap.Int64("user_id", meta.UserID),
 				zap.Float64("amount", meta.Amount))
 		// 在用量记录里补一条负金额(-amount)的退款记录，方便用户在「使用记录」里看到退款。
+		if meta.AccountID <= 0 {
+			meta.AccountID = fallbackAccountID // 历史元数据无 account_id 时回退到当前账号(满足外键)
+		}
 		s.writeVideoRefundUsageLog(ctx, videoID, &meta)
 	}
 }
