@@ -444,6 +444,10 @@ type GatewayCache interface {
 	// DeleteSessionAccountID 删除粘性会话绑定，用于账号不可用时主动清理
 	// Delete sticky session binding, used to proactively clean up when account becomes unavailable
 	DeleteSessionAccountID(ctx context.Context, groupID int64, sessionHash string) error
+	// SetVideoBillingMeta 存储视频任务的计费元数据(JSON)，供任务失败时退款查找。
+	SetVideoBillingMeta(ctx context.Context, groupID int64, videoID string, metaJSON string, ttl time.Duration) error
+	// GetVideoBillingMeta 读取视频任务的计费元数据(JSON)；不存在返回空串。
+	GetVideoBillingMeta(ctx context.Context, groupID int64, videoID string) (string, error)
 }
 
 // derefGroupID safely dereferences *int64 to int64, returning 0 if nil

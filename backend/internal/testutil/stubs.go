@@ -133,3 +133,10 @@ func (c StubSessionLimitCache) SetWindowCost(_ context.Context, _ int64, _ float
 func (c StubSessionLimitCache) GetWindowCostBatch(_ context.Context, _ []int64) (map[int64]float64, error) {
 	return nil, nil
 }
+
+func (c StubGatewayCache) SetVideoBillingMeta(_ context.Context, _ int64, _ string, _ string, _ time.Duration) error {
+	return nil
+}
+func (c StubGatewayCache) GetVideoBillingMeta(_ context.Context, _ int64, _ string) (string, error) {
+	return "", nil
+}

@@ -233,3 +233,10 @@ func TestWithOpenAIWSStateStoreRedisTimeout_WithParentContext(t *testing.T) {
 	_, ok := ctx.Deadline()
 	require.True(t, ok, "应附加短超时")
 }
+
+func (c *openAIWSStateStoreTimeoutProbeCache) SetVideoBillingMeta(_ context.Context, _ int64, _ string, _ string, _ time.Duration) error {
+	return nil
+}
+func (c *openAIWSStateStoreTimeoutProbeCache) GetVideoBillingMeta(_ context.Context, _ int64, _ string) (string, error) {
+	return "", nil
+}

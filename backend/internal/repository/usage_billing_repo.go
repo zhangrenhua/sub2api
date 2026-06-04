@@ -62,6 +62,112 @@ func (r *usageBillingRepository) Apply(ctx context.Context, cmd *service.UsageBi
 	return result, nil
 }
 
+// Refund 反向退还一笔已扣费用。复用 usage_billing_dedup 做幂等:用退款专属 RequestID
+// (如 videorefund:<video_id>)claim,首次成功才执行退还,后续重复调用直接跳过。
+func (r *usageBillingRepository) Refund(ctx context.Context, cmd *service.UsageRefundCommand) (_ *service.UsageRefundResult, err error) {
+	if cmd == nil || cmd.Amount <= 0 {
+		return &service.UsageRefundResult{Refunded: false}, nil
+	}
+	if r == nil || r.db == nil {
+		return nil, errors.New("usage billing repository db is nil")
+	}
+	if strings.TrimSpace(cmd.RequestID) == "" {
+		return nil, service.ErrUsageBillingRequestIDRequired
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// 用退款专属 RequestID 复用 dedup claim 做幂等:已退过则 applied=false,直接返回。
+	claimCmd := &service.UsageBillingCommand{
+		RequestID:          strings.TrimSpace(cmd.RequestID),
+		APIKeyID:           cmd.APIKeyID,
+		RequestFingerprint: "videorefund",
+	}
+	applied, err := r.claimUsageBillingKey(ctx, tx, claimCmd)
+	if err != nil {
+		return nil, err
+	}
+	if !applied {
+		return &service.UsageRefundResult{Refunded: false}, nil
+	}
+
+	result := &service.UsageRefundResult{Refunded: true}
+	if cmd.BillingType == service.BillingTypeSubscription && cmd.SubscriptionID != nil {
+		if err := restoreUsageBillingSubscription(ctx, tx, *cmd.SubscriptionID, cmd.Amount); err != nil {
+			return nil, err
+		}
+	} else {
+		newBalance, err := creditUsageBillingBalance(ctx, tx, cmd.UserID, cmd.Amount)
+		if err != nil {
+			return nil, err
+		}
+		result.NewBalance = &newBalance
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	tx = nil
+	return result, nil
+}
+
+// creditUsageBillingBalance 把金额退回用户余额(deductUsageBillingBalance 的反向)。
+func creditUsageBillingBalance(ctx context.Context, tx *sql.Tx, userID int64, amount float64) (float64, error) {
+	var newBalance float64
+	err := tx.QueryRowContext(ctx, `
+		UPDATE users
+		SET balance = balance + $1,
+			updated_at = NOW()
+		WHERE id = $2 AND deleted_at IS NULL
+		RETURNING balance
+	`, amount, userID).Scan(&newBalance)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, service.ErrUserNotFound
+	}
+	if err != nil {
+		return 0, err
+	}
+	return newBalance, nil
+}
+
+// restoreUsageBillingSubscription 把订阅用量退回(incrementUsageBillingSubscription 的反向),
+// 用 GREATEST(0, used - amount) 防止用量被退成负数。
+func restoreUsageBillingSubscription(ctx context.Context, tx *sql.Tx, subscriptionID int64, amount float64) error {
+	const updateSQL = `
+		UPDATE user_subscriptions us
+		SET
+			daily_usage_usd = GREATEST(0, us.daily_usage_usd - $1),
+			weekly_usage_usd = GREATEST(0, us.weekly_usage_usd - $1),
+			monthly_usage_usd = GREATEST(0, us.monthly_usage_usd - $1),
+			updated_at = NOW()
+		FROM groups g
+		WHERE us.id = $2
+			AND us.deleted_at IS NULL
+			AND us.group_id = g.id
+			AND g.deleted_at IS NULL
+	`
+	res, err := tx.ExecContext(ctx, updateSQL, amount, subscriptionID)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected > 0 {
+		return nil
+	}
+	return service.ErrSubscriptionNotFound
+}
+
 func (r *usageBillingRepository) claimUsageBillingKey(ctx context.Context, tx *sql.Tx, cmd *service.UsageBillingCommand) (bool, error) {
 	var id int64
 	err := tx.QueryRowContext(ctx, `

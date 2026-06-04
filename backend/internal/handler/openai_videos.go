@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -204,6 +205,29 @@ func (h *OpenAIGatewayHandler) proxyVideoRetrieve(c *gin.Context, suffix string)
 		return
 	}
 	setOpsSelectedAccount(c, account.ID, account.Platform)
+
+	// 状态查询(suffix=="")：缓冲响应以便检测任务是否「终态失败」，失败则自动退还创建时的扣费。
+	// 内容下载(suffix=="/content")：可能是大文件，直接流式透传，不缓冲、不退款。
+	if suffix == "" {
+		statusCode, body, err := h.gatewayService.ForwardVideoStatusCaptured(c.Request.Context(), c, account, "/"+videoID)
+		if err != nil {
+			if !c.Writer.Written() {
+				h.errorResponse(c, http.StatusBadGateway, "upstream_error", "Upstream video request failed")
+			}
+			return
+		}
+		if statusCode < 400 && len(body) > 0 {
+			var st struct {
+				Status string `json:"status"`
+			}
+			_ = json.Unmarshal(body, &st)
+			// 任务「真实失败」或「无法取回(上游对状态查询返回无法识别/被拒的响应)」都退款(幂等)。
+			if service.IsVideoTerminalFailureStatus(st.Status) || service.IsVideoStatusUnretrievable(body) {
+				h.gatewayService.RefundFailedVideo(c.Request.Context(), apiKey.GroupID, videoID, account.ID)
+			}
+		}
+		return
+	}
 
 	if err := h.gatewayService.ForwardVideoRetrieve(c.Request.Context(), c, account, "/"+videoID+suffix); err != nil {
 		if !c.Writer.Written() {

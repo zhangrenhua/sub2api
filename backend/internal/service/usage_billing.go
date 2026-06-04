@@ -118,6 +118,26 @@ type UsageBillingApplyResult struct {
 	QuotaState           *AccountQuotaState // post-increment quota state (nil = no quota increment)
 }
 
+// UsageRefundCommand 描述一次「反向退还」:把之前按 RequestID/APIKeyID 扣掉的费用退回。
+// 退还走独立的 RequestID(如 "videorefund:<video_id>"),复用 usage_billing_dedup 保证每个
+// 任务最多退一次。BillingType=订阅时退还订阅用量(GREATEST(0,...) 防止负数),否则退回余额。
+type UsageRefundCommand struct {
+	RequestID      string // 退款幂等键(与原扣费 RequestID 不同),如 videorefund:<video_id>
+	APIKeyID       int64
+	UserID         int64
+	BillingType    int8
+	SubscriptionID *int64
+	Amount         float64 // 退还金额(USD,正数)
+}
+
+// UsageRefundResult 退款结果。Refunded=false 表示本次未实际退(已退过/金额<=0)。
+type UsageRefundResult struct {
+	Refunded   bool
+	NewBalance *float64
+}
+
 type UsageBillingRepository interface {
 	Apply(ctx context.Context, cmd *UsageBillingCommand) (*UsageBillingApplyResult, error)
+	// Refund 反向退还一笔已扣费用,幂等(按 RequestID+APIKeyID)。
+	Refund(ctx context.Context, cmd *UsageRefundCommand) (*UsageRefundResult, error)
 }

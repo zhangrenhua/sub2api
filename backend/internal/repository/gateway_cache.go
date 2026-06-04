@@ -10,6 +10,7 @@ import (
 )
 
 const stickySessionPrefix = "sticky_session:"
+const videoBillingMetaPrefix = "video_bill:"
 
 type gatewayCache struct {
 	rdb *redis.Client
@@ -50,4 +51,21 @@ func (c *gatewayCache) RefreshSessionTTL(ctx context.Context, groupID int64, ses
 func (c *gatewayCache) DeleteSessionAccountID(ctx context.Context, groupID int64, sessionHash string) error {
 	key := buildSessionKey(groupID, sessionHash)
 	return c.rdb.Del(ctx, key).Err()
+}
+
+// buildVideoBillingMetaKey 构建视频计费元数据 key，按 groupID 隔离。
+func buildVideoBillingMetaKey(groupID int64, videoID string) string {
+	return fmt.Sprintf("%s%d:%s", videoBillingMetaPrefix, groupID, videoID)
+}
+
+func (c *gatewayCache) SetVideoBillingMeta(ctx context.Context, groupID int64, videoID string, metaJSON string, ttl time.Duration) error {
+	return c.rdb.Set(ctx, buildVideoBillingMetaKey(groupID, videoID), metaJSON, ttl).Err()
+}
+
+func (c *gatewayCache) GetVideoBillingMeta(ctx context.Context, groupID int64, videoID string) (string, error) {
+	v, err := c.rdb.Get(ctx, buildVideoBillingMetaKey(groupID, videoID)).Result()
+	if err == redis.Nil {
+		return "", nil
+	}
+	return v, err
 }
