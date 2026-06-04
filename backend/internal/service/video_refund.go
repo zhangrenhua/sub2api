@@ -22,6 +22,9 @@ const openAIVideoBillingMetaTTL = 7 * 24 * time.Hour
 type videoBillingMeta struct {
 	UserID         int64   `json:"user_id"`
 	APIKeyID       int64   `json:"api_key_id"`
+	AccountID      int64   `json:"account_id"`
+	GroupID        int64   `json:"group_id"`
+	Model          string  `json:"model"`
 	Amount         float64 `json:"amount"`
 	BillingType    int8    `json:"billing_type"`
 	SubscriptionID *int64  `json:"subscription_id,omitempty"`
@@ -31,8 +34,8 @@ type videoBillingMeta struct {
 func (s *OpenAIGatewayService) rememberVideoBillingMeta(
 	ctx context.Context,
 	groupID *int64,
-	userID, apiKeyID int64,
-	videoID string,
+	userID, apiKeyID, accountID int64,
+	model, videoID string,
 	amount float64,
 	billingType int8,
 	sub *UserSubscription,
@@ -40,7 +43,15 @@ func (s *OpenAIGatewayService) rememberVideoBillingMeta(
 	if s.cache == nil || groupID == nil || strings.TrimSpace(videoID) == "" || amount <= 0 {
 		return
 	}
-	meta := videoBillingMeta{UserID: userID, APIKeyID: apiKeyID, Amount: amount, BillingType: billingType}
+	meta := videoBillingMeta{
+		UserID:      userID,
+		APIKeyID:    apiKeyID,
+		AccountID:   accountID,
+		GroupID:     *groupID,
+		Model:       model,
+		Amount:      amount,
+		BillingType: billingType,
+	}
 	if sub != nil {
 		id := sub.ID
 		meta.SubscriptionID = &id
@@ -99,7 +110,41 @@ func (s *OpenAIGatewayService) RefundFailedVideo(ctx context.Context, groupID *i
 				zap.String("video_id", videoID),
 				zap.Int64("user_id", meta.UserID),
 				zap.Float64("amount", meta.Amount))
+		// 在用量记录里补一条负金额(-amount)的退款记录，方便用户在「使用记录」里看到退款。
+		s.writeVideoRefundUsageLog(ctx, videoID, &meta)
 	}
+}
+
+// writeVideoRefundUsageLog 写一条负金额的视频退款用量记录(尽力)，仅用于用户/管理端展示。
+// 真实退款已由 usageBillingRepo.Refund 完成，这条记录不参与扣费。
+func (s *OpenAIGatewayService) writeVideoRefundUsageLog(ctx context.Context, videoID string, meta *videoBillingMeta) {
+	if s.usageLogRepo == nil || meta == nil {
+		return
+	}
+	billingMode := string(BillingModeVideo)
+	neg := -meta.Amount
+	refundLog := &UsageLog{
+		UserID:         meta.UserID,
+		APIKeyID:       meta.APIKeyID,
+		AccountID:      meta.AccountID,
+		RequestID:      "videorefund:" + strings.TrimSpace(videoID),
+		Model:          meta.Model,
+		RequestedModel: meta.Model,
+		BillingType:    meta.BillingType,
+	}
+	refundLog.OutputCost = neg
+	refundLog.TotalCost = neg
+	refundLog.ActualCost = neg
+	refundLog.BillingMode = &billingMode
+	refundLog.CreatedAt = time.Now()
+	if meta.GroupID != 0 {
+		gid := meta.GroupID
+		refundLog.GroupID = &gid
+	}
+	if meta.SubscriptionID != nil {
+		refundLog.SubscriptionID = meta.SubscriptionID
+	}
+	writeUsageLogBestEffort(ctx, s.usageLogRepo, refundLog, "service.openai_gateway")
 }
 
 // ForwardVideoStatusCaptured 透传 GET /v1/videos/{id}(状态查询)，把响应写回客户端的同时
