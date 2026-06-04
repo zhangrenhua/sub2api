@@ -193,6 +193,21 @@ def optional_create_fields():
     return fields
 
 
+def is_unretrievable_status(resp):
+    """判断状态查询响应是否为「任务无法取回」(上游对 GET /v1/videos/{id} 返回无法识别/被拒)。
+    仅在没有正常 status 字段时匹配,避免误判进行中/成功的任务。与网关侧退款判断一致。
+    """
+    if not isinstance(resp, dict):
+        return False
+    if (resp.get("status") or "").strip():
+        return False  # 有正常 status → 不属于此情形
+    blob = json.dumps(resp, ensure_ascii=False).lower()
+    if "unrecognized message" in blob or "forbidden: only" in blob:
+        return True
+    # 有 error(非空)且无 status,也视为无法取回
+    return bool(resp.get("error"))
+
+
 def main():
     if not API_KEY:
         sys.exit("✗ 请先设置 SEEDANCE_API_KEY 环境变量")
@@ -236,7 +251,12 @@ def main():
             final = resp
             break
         if st in ("failed", "error", "canceled", "cancelled"):
-            sys.exit(f"✗ 任务失败: {json.dumps(resp, ensure_ascii=False)}")
+            sys.exit(f"✗ 任务失败（已扣费,网关在失败时会自动退款）: {json.dumps(resp, ensure_ascii=False)}")
+        # 上游对状态查询返回无法识别/被拒的响应(有 error、无正常 status，或含
+        # "unrecognized message"/"Forbidden: only")：任务无法取回，视为失败并停止轮询。
+        # 网关侧对这种响应同样会自动退款。
+        if is_unretrievable_status(resp):
+            sys.exit(f"✗ 任务无法取回/上游拒绝（已扣费,网关会自动退款）: {json.dumps(resp, ensure_ascii=False)}")
     if final is None:
         sys.exit(f"✗ 超时（{TIMEOUT}s）未完成，task_id={task_id}")
 
