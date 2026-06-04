@@ -1958,3 +1958,10 @@ func TestDefaultOpenAIAccountScheduler_IsAccountTransportCompatible_Branches(t *
 func int64PtrForTest(v int64) *int64 {
 	return &v
 }
+
+func (c *schedulerTestGatewayCache) SetVideoBillingMeta(_ context.Context, _ int64, _ string, _ string, _ time.Duration) error {
+	return nil
+}
+func (c *schedulerTestGatewayCache) GetVideoBillingMeta(_ context.Context, _ int64, _ string) (string, error) {
+	return "", nil
+}

@@ -1799,3 +1799,7 @@ func TestGatewayServiceCalculateRecordUsageCost_ChannelImageBillingNormalizesMis
 	require.InDelta(t, 0.44, cost.TotalCost, 1e-12)
 	require.InDelta(t, 0.44, cost.ActualCost, 1e-12)
 }
+
+func (s *openAIRecordUsageBillingRepoStub) Refund(ctx context.Context, cmd *UsageRefundCommand) (*UsageRefundResult, error) {
+	return &UsageRefundResult{}, nil
+}

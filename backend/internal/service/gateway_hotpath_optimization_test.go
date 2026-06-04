@@ -784,3 +784,10 @@ func TestSelectAccountWithLoadAwareness_StickyReadReuse(t *testing.T) {
 		require.Equal(t, int64(1), cache.getCalls.Load())
 	})
 }
+
+func (s *stickyGatewayCacheHotpathStub) SetVideoBillingMeta(_ context.Context, _ int64, _ string, _ string, _ time.Duration) error {
+	return nil
+}
+func (s *stickyGatewayCacheHotpathStub) GetVideoBillingMeta(_ context.Context, _ int64, _ string) (string, error) {
+	return "", nil
+}

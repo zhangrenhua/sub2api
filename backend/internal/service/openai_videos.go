@@ -515,5 +515,7 @@ func (s *OpenAIGatewayService) RecordVideoUsage(ctx context.Context, input *Reco
 		return err
 	}
 	writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.openai_gateway")
+	// 记录退款元数据(尽力)：任务后续失败时据此把这笔费用退回。
+	s.rememberVideoBillingMeta(ctx, apiKey.GroupID, user.ID, apiKey.ID, input.Result.VideoID, cost.ActualCost, int8(billingType), input.Subscription)
 	return nil
 }

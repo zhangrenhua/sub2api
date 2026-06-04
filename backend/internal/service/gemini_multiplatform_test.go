@@ -969,3 +969,10 @@ func TestGeminiMessagesCompatService_isModelSupportedByAccount(t *testing.T) {
 		})
 	}
 }
+
+func (m *mockGatewayCacheForGemini) SetVideoBillingMeta(_ context.Context, _ int64, _ string, _ string, _ time.Duration) error {
+	return nil
+}
+func (m *mockGatewayCacheForGemini) GetVideoBillingMeta(_ context.Context, _ int64, _ string) (string, error) {
+	return "", nil
+}
