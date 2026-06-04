@@ -151,7 +151,7 @@ curl -L "https://opcbucket.oss-cn-beijing.aliyuncs.com/.../xxx.mp4" -o video.mp4
 | `SEEDANCE_REFERENCE_VIDEO_URLS` | | — | JSON 数组，参考视频（`referenceVideos`；普通**≤3**，Pass**≤1**） |
 | `SEEDANCE_REFERENCE_AUDIO_URLS` | | — | JSON 数组，参考音频（`referenceAudio`；**仅 Pass 模型，≤3**） |
 | `SEEDANCE_POLL_SEC` | | `10` | 轮询间隔秒（官方建议 15-30s，慢时 30-60s） |
-| `SEEDANCE_TIMEOUT` | | `600` | 最长等待秒 |
+| `SEEDANCE_TIMEOUT` | | `1500` | 最长等待秒(默认 25 分钟) |
 | `SEEDANCE_OUT` | | `video_<id>.mp4` | 输出文件名 |
 | `SEEDANCE_EXTRA_JSON` | | — | 额外 JSON 对象，合并进请求体（可覆盖上面字段） |
 

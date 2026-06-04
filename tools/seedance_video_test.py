@@ -40,7 +40,7 @@ Seedance 2.0 视频生成 - 异步任务调用脚本（**按次计费**，无第
   SEEDANCE_REFERENCE_VIDEO_URLS  JSON 数组，参考视频（字段 referenceVideos；普通≤3，Pass≤1）
   SEEDANCE_REFERENCE_AUDIO_URLS  JSON 数组，参考音频（字段 referenceAudio；仅 Pass 模型，≤3）
   SEEDANCE_POLL_SEC    轮询间隔秒，默认 10（官方建议 15-30s，慢时 30-60s）
-  SEEDANCE_TIMEOUT     最长等待秒，默认 600
+  SEEDANCE_TIMEOUT     最长等待秒，默认 1500(25 分钟)
   SEEDANCE_OUT         输出文件名，默认 video_<task_id>.mp4
   SEEDANCE_EXTRA_JSON  额外 JSON 对象，合并进请求体（覆盖上面字段，方便临时测试新字段）
 
@@ -103,7 +103,7 @@ if _req_seconds > _MAX_SECONDS:
 SECONDS = str(_req_seconds)
 DURATION = _req_seconds
 POLL_SEC = float(env("POLL_SEC", "10"))
-TIMEOUT = float(env("TIMEOUT", "600"))
+TIMEOUT = float(env("TIMEOUT", "1500"))
 OUT = env("OUT")
 
 PROMPT = sys.argv[1] if len(sys.argv) > 1 else "一只橘猫在阳光草地上奔跑，低角度跟拍，电影感"
