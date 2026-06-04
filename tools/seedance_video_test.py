@@ -130,6 +130,12 @@ def _req(method, path, body=None, raw=False):
             return e.code, json.loads(payload)
         except Exception:
             return e.code, {"_raw": payload.decode("utf-8", "replace")}
+    except Exception as e:
+        # 网络异常/读超时等:返回状态 0(非 2xx)，让调用方据此处理。
+        # 下载时会因此回退到直链 video_url，而不是抛栈中断。
+        if raw:
+            return 0, b""
+        return 0, {"_error": str(e)}
 
 
 def _json_array_env(name):
@@ -263,6 +269,7 @@ def main():
     # 3) 下载内容：先试网关 /content，失败则回退直链 video_url。
     out = OUT or f"video_{task_id}.mp4"
     video_url = (final.get("video_url") or final.get("url") or "").strip()
+    print(f"  video_url: {video_url or '(无)'}")
     print(f"→ 下载视频到 {out}（先试网关 /content）")
     status, body = _req("GET", f"/v1/videos/{task_id}/content", raw=True)
     data = None
