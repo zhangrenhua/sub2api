@@ -74,9 +74,10 @@
       <div class="card p-6">
         <div class="flex flex-col items-center space-y-4">
           <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ scanTitle }}</p>
-          <div :class="['relative rounded-lg border-2 p-4', qrBorderClass]">
+          <!-- Crypto (USDT/USDC) shows the bare address only — no QR. -->
+          <div v-if="!isCrypto" :class="['relative rounded-lg border-2 p-4', qrBorderClass]">
             <canvas ref="qrCanvas" class="mx-auto"></canvas>
-            <!-- Brand logo overlay (alipay/wxpay only; TRC20 QR stays clean) -->
+            <!-- Brand logo overlay (alipay/wxpay only) -->
             <div v-if="showQrLogo" class="pointer-events-none absolute inset-0 flex items-center justify-center">
               <span :class="['rounded-full p-2 shadow ring-2 ring-white', qrLogoBgClass]">
                 <img :src="isAlipay ? alipayIcon : wxpayIcon" alt="" class="h-5 w-5 brightness-0 invert" />
@@ -92,7 +93,7 @@
               <span class="font-semibold tabular-nums text-gray-900 dark:text-white">{{ usdtAmountDisplay }}</span>
             </div>
             <p v-if="(rate ?? 0) > 0" class="text-center text-xs text-gray-400 dark:text-gray-500">
-              {{ t('payment.usdtRateNote', { rate }) }}
+              {{ t('payment.usdtRateNote', { rate, unit: cryptoTokenLabel }) }}
             </p>
             <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700">
               <p class="mb-1 text-sm text-gray-500 dark:text-gray-400">{{ t('payment.qr.address') }}</p>
@@ -101,7 +102,7 @@
                 <button class="btn btn-secondary btn-sm shrink-0" @click="copyAddress">{{ t('common.copy') }}</button>
               </div>
             </div>
-            <p class="text-center text-xs text-amber-600 dark:text-amber-400">{{ t('payment.qr.usdtNetworkWarning', { network: cryptoNetworkLabel }) }}</p>
+            <p class="text-center text-xs text-amber-600 dark:text-amber-400">{{ t('payment.qr.usdtNetworkWarning', { network: cryptoNetworkLabel, token: cryptoTokenLabel }) }}</p>
           </div>
           <button v-if="payUrl" class="btn btn-secondary text-sm" @click="reopenPopup">
             {{ t('payment.qr.openPayWindow') }}
@@ -231,7 +232,7 @@ const showQrLogo = computed(() => isAlipay.value || isWxpay.value)
 const scanTitle = computed(() => {
   if (isAlipay.value) return t('payment.qr.scanAlipay')
   if (isWxpay.value) return t('payment.qr.scanWxpay')
-  if (isCrypto.value) return t('payment.qr.scanUsdt', { network: cryptoNetworkLabel.value })
+  if (isCrypto.value) return t('payment.qr.scanUsdt', { network: cryptoNetworkLabel.value, token: cryptoTokenLabel.value })
   return t('payment.qr.scanToPay')
 })
 
