@@ -131,4 +131,13 @@ func (s *PaymentOrderExpiryService) runCryptoReconcileOnce() {
 	} else if ercRecovered > 0 {
 		slog.Info("[PaymentOrderExpiry] reconciled paid erc20 orders", "count", ercRecovered)
 	}
+
+	usdcCtx, cancelUsdc := context.WithTimeout(context.Background(), cryptoReconcileTimeout)
+	usdcRecovered, err := s.paymentSvc.ReconcilePendingUSDCOrders(usdcCtx)
+	cancelUsdc()
+	if err != nil {
+		slog.Warn("[PaymentOrderExpiry] failed to reconcile pending usdc orders", "error", err)
+	} else if usdcRecovered > 0 {
+		slog.Info("[PaymentOrderExpiry] reconciled paid usdc orders", "count", usdcRecovered)
+	}
 }

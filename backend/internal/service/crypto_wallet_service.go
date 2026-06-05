@@ -398,20 +398,22 @@ func atoiDefault(s string, def int) int {
 
 // WalletOverview summarizes wallet balances for the admin dashboard.
 type WalletOverview struct {
-	Initialized       bool      `json:"initialized"`
-	FeeAddress        string    `json:"fee_address"`
-	FeeTRXBalance     float64   `json:"fee_trx_balance"`
-	CollectionAddress string    `json:"collection_address"`
-	CollectionBalance float64   `json:"collection_balance"`
-	DepositAddresses  int       `json:"deposit_addresses"`
-	DepositTotalUSDT  float64   `json:"deposit_total_usdt"`
+	Initialized       bool    `json:"initialized"`
+	FeeAddress        string  `json:"fee_address"`
+	FeeTRXBalance     float64 `json:"fee_trx_balance"`
+	CollectionAddress string  `json:"collection_address"`
+	CollectionBalance float64 `json:"collection_balance"`
+	DepositAddresses  int     `json:"deposit_addresses"`
+	DepositTotalUSDT  float64 `json:"deposit_total_usdt"`
 	// ERC20 (Ethereum)
-	EthFeeAddress         string  `json:"eth_fee_address"`
-	EthFeeBalance         float64 `json:"eth_fee_balance"`
-	EthCollectionAddress  string  `json:"eth_collection_address"`
-	EthCollectionBalance  float64 `json:"eth_collection_balance"`
-	Erc20DepositAddresses int     `json:"erc20_deposit_addresses"`
-	Erc20DepositTotalUSDT float64 `json:"erc20_deposit_total_usdt"`
+	EthFeeAddress            string  `json:"eth_fee_address"`
+	EthFeeBalance            float64 `json:"eth_fee_balance"`
+	EthCollectionAddress     string  `json:"eth_collection_address"`
+	EthCollectionBalance     float64 `json:"eth_collection_balance"`
+	EthCollectionUsdcBalance float64 `json:"eth_collection_usdc_balance"`
+	Erc20DepositAddresses    int     `json:"erc20_deposit_addresses"`
+	Erc20DepositTotalUSDT    float64 `json:"erc20_deposit_total_usdt"`
+	Erc20DepositTotalUSDC    float64 `json:"erc20_deposit_total_usdc"`
 
 	BalancesAsOf time.Time `json:"balances_as_of"`
 }
@@ -451,6 +453,7 @@ func (s *CryptoWalletService) Overview(ctx context.Context) (*WalletOverview, er
 	ov.Erc20DepositAddresses = len(ercRows)
 	for _, r := range ercRows {
 		ov.Erc20DepositTotalUSDT += r.LastBalance
+		ov.Erc20DepositTotalUSDC += r.LastBalanceUsdc
 	}
 
 	// Live balances for the operational addresses (best-effort).
@@ -476,6 +479,12 @@ func (s *CryptoWalletService) Overview(ctx context.Context) (*WalletOverview, er
 			if bal, berr := es.client.ERC20Balance(ctx, cfg.EthCollectionAddress, es.contract); berr == nil {
 				ov.EthCollectionBalance = bal
 			}
+		}
+	}
+	// Live USDC balance at the (shared) ETH collection address.
+	if uc, uerr := s.resolveEthByKey(ctx, payment.TypeUSDC); uerr == nil && uc.instancePresent && cfg.EthCollectionAddress != "" {
+		if bal, berr := uc.client.ERC20Balance(ctx, cfg.EthCollectionAddress, uc.contract); berr == nil {
+			ov.EthCollectionUsdcBalance = bal
 		}
 	}
 	return ov, nil
@@ -520,26 +529,40 @@ func (s *CryptoWalletService) RefreshBalances(ctx context.Context) (int, error) 
 	if eerr != nil {
 		return 0, eerr
 	}
+	usdc, uerr := s.resolveEthByKey(ctx, payment.TypeUSDC)
+	if uerr != nil {
+		return 0, uerr
+	}
 	if !ts.instancePresent && !es.instancePresent {
 		return 0, infraerrors.BadRequest("NO_CRYPTO_INSTANCE", "no enabled TRC20/ERC20 provider instance configured")
 	}
 
 	now := time.Now()
 	refreshed := 0
-	balanceOf := func(network, address string) (float64, bool) {
+	// balanceOf returns the primary token balance (USDT for both chains) and, for
+	// ERC20 rows, the USDC balance on the same shared address.
+	balanceOf := func(network, address string) (usdt float64, usdcBal float64, ok bool) {
 		switch network {
 		case cryptoNetworkERC20:
 			if !es.instancePresent {
-				return 0, false
+				return 0, 0, false
 			}
 			bal, err := es.client.ERC20Balance(ctx, address, es.contract)
-			return bal, err == nil
+			if err != nil {
+				return 0, 0, false
+			}
+			if usdc.instancePresent {
+				if ub, uberr := usdc.client.ERC20Balance(ctx, address, usdc.contract); uberr == nil {
+					usdcBal = ub
+				}
+			}
+			return bal, usdcBal, true
 		default:
 			if !ts.instancePresent {
-				return 0, false
+				return 0, 0, false
 			}
 			bal, err := ts.client.TRC20Balance(ctx, address, ts.contract)
-			return bal, err == nil
+			return bal, 0, err == nil
 		}
 	}
 
@@ -548,14 +571,15 @@ func (s *CryptoWalletService) RefreshBalances(ctx context.Context) (int, error) 
 		return 0, err
 	}
 	for _, r := range rows {
-		bal, ok := balanceOf(r.Network, r.Address)
+		bal, usdcBal, ok := balanceOf(r.Network, r.Address)
 		if !ok {
 			continue
 		}
-		if _, uerr := s.entClient.UserCryptoAddress.UpdateOneID(r.ID).
+		if _, serr := s.entClient.UserCryptoAddress.UpdateOneID(r.ID).
 			SetLastBalance(bal).
+			SetLastBalanceUsdc(usdcBal).
 			SetLastBalanceAt(now).
-			Save(ctx); uerr == nil {
+			Save(ctx); serr == nil {
 			refreshed++
 		}
 	}

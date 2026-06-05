@@ -27,6 +27,8 @@ type UserCryptoAddress struct {
 	DerivationIndex int64 `json:"derivation_index,omitempty"`
 	// LastBalance holds the value of the "last_balance" field.
 	LastBalance float64 `json:"last_balance,omitempty"`
+	// LastBalanceUsdc holds the value of the "last_balance_usdc" field.
+	LastBalanceUsdc float64 `json:"last_balance_usdc,omitempty"`
 	// LastBalanceAt holds the value of the "last_balance_at" field.
 	LastBalanceAt *time.Time `json:"last_balance_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -41,7 +43,7 @@ func (*UserCryptoAddress) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case usercryptoaddress.FieldLastBalance:
+		case usercryptoaddress.FieldLastBalance, usercryptoaddress.FieldLastBalanceUsdc:
 			values[i] = new(sql.NullFloat64)
 		case usercryptoaddress.FieldID, usercryptoaddress.FieldUserID, usercryptoaddress.FieldDerivationIndex:
 			values[i] = new(sql.NullInt64)
@@ -99,6 +101,12 @@ func (_m *UserCryptoAddress) assignValues(columns []string, values []any) error 
 				return fmt.Errorf("unexpected type %T for field last_balance", values[i])
 			} else if value.Valid {
 				_m.LastBalance = value.Float64
+			}
+		case usercryptoaddress.FieldLastBalanceUsdc:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field last_balance_usdc", values[i])
+			} else if value.Valid {
+				_m.LastBalanceUsdc = value.Float64
 			}
 		case usercryptoaddress.FieldLastBalanceAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -169,6 +177,9 @@ func (_m *UserCryptoAddress) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_balance=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LastBalance))
+	builder.WriteString(", ")
+	builder.WriteString("last_balance_usdc=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LastBalanceUsdc))
 	builder.WriteString(", ")
 	if v := _m.LastBalanceAt; v != nil {
 		builder.WriteString("last_balance_at=")

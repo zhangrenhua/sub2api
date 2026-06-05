@@ -39,13 +39,14 @@ export const PROVIDER_SUPPORTED_TYPES: Record<string, string[]> = {
   paypal: ['paypal'],
   usdt_trc20: ['usdt_trc20'],
   usdt_erc20: ['usdt_erc20'],
+  usdc_erc20: ['usdc_erc20'],
 }
 
 /** Available payment modes for EasyPay providers. */
 export const EASYPAY_PAYMENT_MODES = ['qrcode', 'popup'] as const
 
 /** Fixed display order for user-facing payment methods */
-export const METHOD_ORDER = ['alipay', 'alipay_direct', 'wxpay', 'wxpay_direct', 'stripe', 'airwallex', 'paypal', 'usdt_trc20', 'usdt_erc20'] as const
+export const METHOD_ORDER = ['alipay', 'alipay_direct', 'wxpay', 'wxpay_direct', 'stripe', 'airwallex', 'paypal', 'usdt_trc20', 'usdt_erc20', 'usdc_erc20'] as const
 
 /** Payment mode constants */
 export const PAYMENT_MODE_QRCODE = 'qrcode'
@@ -192,6 +193,21 @@ export const PROVIDER_CONFIG_FIELDS: Record<string, ConfigFieldDef[]> = {
     { key: 'confirmSeconds', label: 'Confirmation Seconds', sensitive: false, optional: true, defaultValue: '180' },
     { key: 'gasTopUpWei', label: 'Gas Top-up (wei)', sensitive: false, optional: true, defaultValue: '3000000000000000' },
     { key: 'sweepMinUsdt', label: 'Sweep Min (USDT)', sensitive: false, optional: true, defaultValue: '50' },
+  ],
+  // Self-custodied USDC collection on Ethereum. Mirrors usdt_erc20 — same chain,
+  // signer and per-user deposit address; only the token contract and rate differ.
+  // Plans are priced in CNY; cnyPerUsdc converts to the USDC amount to collect.
+  usdc_erc20: [
+    { key: 'cnyPerUsdc', label: 'CNY per USDC (rate)', sensitive: false, defaultValue: '6.8' },
+    { key: 'minRechargeCny', label: 'Min Recharge (CNY)', sensitive: false, optional: true, defaultValue: '100' },
+    { key: 'usdcContract', label: 'USDC Contract', sensitive: false, defaultValue: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
+    { key: 'chainId', label: 'Chain ID', sensitive: false, optional: true, defaultValue: '1' },
+    { key: 'etherscanApiBase', label: 'Etherscan API Base', sensitive: false, optional: true, defaultValue: 'https://api.etherscan.io/v2/api' },
+    { key: 'etherscanApiKey', label: 'Etherscan API Key', sensitive: true, optional: true, clearable: true },
+    { key: 'ethRpcUrl', label: 'Ethereum RPC URL', sensitive: true, optional: true, clearable: true, hintKey: 'admin.settings.payment.field_ethRpcUrlHint' },
+    { key: 'confirmSeconds', label: 'Confirmation Seconds', sensitive: false, optional: true, defaultValue: '180' },
+    { key: 'gasTopUpWei', label: 'Gas Top-up (wei)', sensitive: false, optional: true, defaultValue: '3000000000000000' },
+    { key: 'sweepMinUsdt', label: 'Sweep Min (USDC)', sensitive: false, optional: true, defaultValue: '50' },
   ],
 }
 

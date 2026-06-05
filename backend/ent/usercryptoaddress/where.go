@@ -79,6 +79,11 @@ func LastBalance(v float64) predicate.UserCryptoAddress {
 	return predicate.UserCryptoAddress(sql.FieldEQ(FieldLastBalance, v))
 }
 
+// LastBalanceUsdc applies equality check predicate on the "last_balance_usdc" field. It's identical to LastBalanceUsdcEQ.
+func LastBalanceUsdc(v float64) predicate.UserCryptoAddress {
+	return predicate.UserCryptoAddress(sql.FieldEQ(FieldLastBalanceUsdc, v))
+}
+
 // LastBalanceAt applies equality check predicate on the "last_balance_at" field. It's identical to LastBalanceAtEQ.
 func LastBalanceAt(v time.Time) predicate.UserCryptoAddress {
 	return predicate.UserCryptoAddress(sql.FieldEQ(FieldLastBalanceAt, v))
@@ -342,6 +347,46 @@ func LastBalanceLT(v float64) predicate.UserCryptoAddress {
 // LastBalanceLTE applies the LTE predicate on the "last_balance" field.
 func LastBalanceLTE(v float64) predicate.UserCryptoAddress {
 	return predicate.UserCryptoAddress(sql.FieldLTE(FieldLastBalance, v))
+}
+
+// LastBalanceUsdcEQ applies the EQ predicate on the "last_balance_usdc" field.
+func LastBalanceUsdcEQ(v float64) predicate.UserCryptoAddress {
+	return predicate.UserCryptoAddress(sql.FieldEQ(FieldLastBalanceUsdc, v))
+}
+
+// LastBalanceUsdcNEQ applies the NEQ predicate on the "last_balance_usdc" field.
+func LastBalanceUsdcNEQ(v float64) predicate.UserCryptoAddress {
+	return predicate.UserCryptoAddress(sql.FieldNEQ(FieldLastBalanceUsdc, v))
+}
+
+// LastBalanceUsdcIn applies the In predicate on the "last_balance_usdc" field.
+func LastBalanceUsdcIn(vs ...float64) predicate.UserCryptoAddress {
+	return predicate.UserCryptoAddress(sql.FieldIn(FieldLastBalanceUsdc, vs...))
+}
+
+// LastBalanceUsdcNotIn applies the NotIn predicate on the "last_balance_usdc" field.
+func LastBalanceUsdcNotIn(vs ...float64) predicate.UserCryptoAddress {
+	return predicate.UserCryptoAddress(sql.FieldNotIn(FieldLastBalanceUsdc, vs...))
+}
+
+// LastBalanceUsdcGT applies the GT predicate on the "last_balance_usdc" field.
+func LastBalanceUsdcGT(v float64) predicate.UserCryptoAddress {
+	return predicate.UserCryptoAddress(sql.FieldGT(FieldLastBalanceUsdc, v))
+}
+
+// LastBalanceUsdcGTE applies the GTE predicate on the "last_balance_usdc" field.
+func LastBalanceUsdcGTE(v float64) predicate.UserCryptoAddress {
+	return predicate.UserCryptoAddress(sql.FieldGTE(FieldLastBalanceUsdc, v))
+}
+
+// LastBalanceUsdcLT applies the LT predicate on the "last_balance_usdc" field.
+func LastBalanceUsdcLT(v float64) predicate.UserCryptoAddress {
+	return predicate.UserCryptoAddress(sql.FieldLT(FieldLastBalanceUsdc, v))
+}
+
+// LastBalanceUsdcLTE applies the LTE predicate on the "last_balance_usdc" field.
+func LastBalanceUsdcLTE(v float64) predicate.UserCryptoAddress {
+	return predicate.UserCryptoAddress(sql.FieldLTE(FieldLastBalanceUsdc, v))
 }
 
 // LastBalanceAtEQ applies the EQ predicate on the "last_balance_at" field.

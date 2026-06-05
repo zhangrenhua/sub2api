@@ -82,11 +82,13 @@
             <div class="card p-4">
               <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.crypto.depositTotal') }}</p>
               <p class="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-white">{{ fmtUsdt(overview.erc20_deposit_total_usdt) }}</p>
+              <p class="text-base font-semibold tabular-nums text-[#2775CA]">{{ fmtUsdc(overview.erc20_deposit_total_usdc) }}</p>
               <p class="text-xs text-gray-400">{{ overview.erc20_deposit_addresses }} {{ t('payment.crypto.addresses') }}</p>
             </div>
             <div class="card p-4">
               <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.crypto.collectionBalance') }}</p>
               <p class="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-white">{{ fmtUsdt(overview.eth_collection_balance) }}</p>
+              <p class="text-base font-semibold tabular-nums text-[#2775CA]">{{ fmtUsdc(overview.eth_collection_usdc_balance) }}</p>
             </div>
             <div class="card p-4">
               <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.crypto.feeEth') }}</p>
@@ -116,7 +118,8 @@
               <tr>
                 <th class="py-2">{{ t('payment.crypto.userId') }}</th>
                 <th class="py-2">{{ t('payment.crypto.address') }}</th>
-                <th class="py-2 text-right">{{ t('payment.crypto.balance') }}</th>
+                <th class="py-2 text-right">{{ t('payment.crypto.balance') }} (USDT)</th>
+                <th class="py-2 text-right">USDC</th>
               </tr>
             </thead>
             <tbody>
@@ -124,6 +127,7 @@
                 <td class="py-2">{{ a.user_id }}</td>
                 <td class="py-2 font-mono text-xs">{{ a.address }}</td>
                 <td class="py-2 text-right tabular-nums">{{ fmtUsdt(a.last_balance) }}</td>
+                <td class="py-2 text-right tabular-nums text-[#2775CA]">{{ a.network === 'ERC20' ? fmtUsdc(a.last_balance_usdc) : '-' }}</td>
               </tr>
             </tbody>
           </table>
@@ -214,6 +218,9 @@ const showSweepEth = ref(false)
 
 function fmtUsdt(v: number): string {
   return `${(v ?? 0).toFixed(2)} USDT`
+}
+function fmtUsdc(v: number): string {
+  return `${(v ?? 0).toFixed(2)} USDC`
 }
 function formatTime(s: string): string {
   return s ? new Date(s).toLocaleString() : '-'

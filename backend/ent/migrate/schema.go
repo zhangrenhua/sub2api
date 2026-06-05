@@ -1742,6 +1742,7 @@ var (
 		{Name: "address", Type: field.TypeString, Size: 64},
 		{Name: "derivation_index", Type: field.TypeInt64},
 		{Name: "last_balance", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
+		{Name: "last_balance_usdc", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,6)"}},
 		{Name: "last_balance_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},

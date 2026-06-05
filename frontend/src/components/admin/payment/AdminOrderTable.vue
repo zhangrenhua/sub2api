@@ -215,6 +215,7 @@ const paymentTypeFilterOptions = computed(() => [
   { value: 'airwallex', label: t('payment.methods.airwallex') },
   { value: 'usdt_trc20', label: t('payment.methods.usdt_trc20') },
   { value: 'usdt_erc20', label: t('payment.methods.usdt_erc20') },
+  { value: 'usdc_erc20', label: t('payment.methods.usdc_erc20') },
 ])
 
 const orderTypeFilterOptions = computed(() => [
@@ -226,6 +227,9 @@ const orderTypeFilterOptions = computed(() => [
 function formatPayAmount(amount: number, paymentType: string, currency?: string): string {
   if (paymentType === 'usdt_trc20' || paymentType === 'usdt_erc20') {
     return `${amount.toFixed(2)} USDT`
+  }
+  if (paymentType === 'usdc_erc20') {
+    return `${amount.toFixed(2)} USDC`
   }
   if (paymentType === 'paypal' || currency === 'USD') {
     return `$${amount.toFixed(2)}`

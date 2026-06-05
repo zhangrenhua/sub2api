@@ -641,7 +641,7 @@ func cryptoNetworkForProvider(providerKey string) string {
 	switch providerKey {
 	case payment.TypeTRC20:
 		return cryptoNetworkTRC20
-	case payment.TypeERC20:
+	case payment.TypeERC20, payment.TypeUSDC:
 		return cryptoNetworkERC20
 	default:
 		return ""
@@ -671,9 +671,15 @@ func cryptoPayAmountCNYtoUSDT(req CreateOrderRequest, limitAmount, cnyPayAmount 
 			WithMetadata(map[string]string{"min_cny": strconv.FormatFloat(minCNY, 'f', -1, 64)})
 	}
 
-	rate, err := strconv.ParseFloat(strings.TrimSpace(cfg["cnyPerUsdt"]), 64)
+	// USDC instances configure the rate under "cnyPerUsdc"; fall back to it so
+	// both stablecoins share this network-agnostic conversion path.
+	rateStr := strings.TrimSpace(cfg["cnyPerUsdt"])
+	if rateStr == "" {
+		rateStr = strings.TrimSpace(cfg["cnyPerUsdc"])
+	}
+	rate, err := strconv.ParseFloat(rateStr, 64)
 	if err != nil || rate <= 0 {
-		return "", 0, infraerrors.BadRequest("USDT_RATE_NOT_CONFIGURED", "USDT exchange rate (cnyPerUsdt) is not configured")
+		return "", 0, infraerrors.BadRequest("USDT_RATE_NOT_CONFIGURED", "stablecoin exchange rate (cnyPerUsdt / cnyPerUsdc) is not configured")
 	}
 
 	usdt := decimal.NewFromFloat(cnyPayAmount).Div(decimal.NewFromFloat(rate)).Round(2)

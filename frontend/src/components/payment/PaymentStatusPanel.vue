@@ -205,9 +205,11 @@ const VERIFY_RETRY_MAX_ATTEMPTS = 6
 const isAlipay = computed(() => props.paymentType.includes('alipay'))
 const isWxpay = computed(() => props.paymentType.includes('wxpay'))
 const isTrc20 = computed(() => props.paymentType === 'usdt_trc20')
-const isErc20 = computed(() => props.paymentType === 'usdt_erc20')
+const isUsdc = computed(() => props.paymentType === 'usdc_erc20')
+const isErc20 = computed(() => props.paymentType === 'usdt_erc20' || isUsdc.value)
 const isCrypto = computed(() => isTrc20.value || isErc20.value)
 const cryptoNetworkLabel = computed(() => (isErc20.value ? 'ERC20' : 'TRC20'))
+const cryptoTokenLabel = computed(() => (isUsdc.value ? 'USDC' : 'USDT'))
 
 const qrBorderClass = computed(() => {
   if (isAlipay.value) return 'border-[#00AEEF] bg-blue-50 dark:border-[#00AEEF]/70 dark:bg-blue-950/20'
@@ -240,7 +242,7 @@ const scanHint = computed(() => {
   return ''
 })
 
-const usdtAmountDisplay = computed(() => `${(props.amount ?? 0).toFixed(2)} USDT`)
+const usdtAmountDisplay = computed(() => `${(props.amount ?? 0).toFixed(2)} ${cryptoTokenLabel.value}`)
 
 async function copyAddress() {
   try {

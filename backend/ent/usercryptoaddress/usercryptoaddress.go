@@ -23,6 +23,8 @@ const (
 	FieldDerivationIndex = "derivation_index"
 	// FieldLastBalance holds the string denoting the last_balance field in the database.
 	FieldLastBalance = "last_balance"
+	// FieldLastBalanceUsdc holds the string denoting the last_balance_usdc field in the database.
+	FieldLastBalanceUsdc = "last_balance_usdc"
 	// FieldLastBalanceAt holds the string denoting the last_balance_at field in the database.
 	FieldLastBalanceAt = "last_balance_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -41,6 +43,7 @@ var Columns = []string{
 	FieldAddress,
 	FieldDerivationIndex,
 	FieldLastBalance,
+	FieldLastBalanceUsdc,
 	FieldLastBalanceAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -65,6 +68,8 @@ var (
 	AddressValidator func(string) error
 	// DefaultLastBalance holds the default value on creation for the "last_balance" field.
 	DefaultLastBalance float64
+	// DefaultLastBalanceUsdc holds the default value on creation for the "last_balance_usdc" field.
+	DefaultLastBalanceUsdc float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -104,6 +109,11 @@ func ByDerivationIndex(opts ...sql.OrderTermOption) OrderOption {
 // ByLastBalance orders the results by the last_balance field.
 func ByLastBalance(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastBalance, opts...).ToFunc()
+}
+
+// ByLastBalanceUsdc orders the results by the last_balance_usdc field.
+func ByLastBalanceUsdc(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastBalanceUsdc, opts...).ToFunc()
 }
 
 // ByLastBalanceAt orders the results by the last_balance_at field.

@@ -22,7 +22,17 @@ import (
 // timeout). Raise per-instance via the confirmSeconds config for high-value use.
 const defaultEthConfirmSeconds = 180
 
-// ethSettings holds on-chain parameters resolved from the active ERC20 instance.
+// ethToken is one sweepable ERC20 token on the Ethereum network: its contract
+// and the per-token minimum balance worth sweeping (gas-cost aware).
+type ethToken struct {
+	contract string
+	sweepMin float64
+}
+
+// ethSettings holds on-chain parameters resolved from an Ethereum-network
+// provider instance. `contract`/`sweepMinUSDT` describe the primary token of the
+// resolved instance; `tokens` carries every sweepable ERC20 token across all
+// enabled Ethereum instances (USDT + USDC), since they share one deposit address.
 type ethSettings struct {
 	client          *eth.Client
 	contract        string
@@ -31,15 +41,31 @@ type ethSettings struct {
 	collectionAddr  string
 	rpcURL          string
 	gasTopUpWei     *big.Int
+	tokens          []ethToken
 	instancePresent bool
 }
 
-// resolveEth reads the enabled ERC20 provider instance config and builds an
-// Etherscan client plus operational parameters.
+// ethDefaultContractFor returns the mainnet contract for an Ethereum provider key.
+func ethDefaultContractFor(providerKey string) (contractKey, defaultContract string) {
+	if providerKey == payment.TypeUSDC {
+		return "usdcContract", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+	}
+	return "usdtContract", "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+}
+
+// resolveEth reads the enabled USDT-ERC20 instance (back-compat alias).
 func (s *CryptoWalletService) resolveEth(ctx context.Context) (*ethSettings, error) {
+	return s.resolveEthByKey(ctx, payment.TypeERC20)
+}
+
+// resolveEthByKey reads the enabled Ethereum provider instance for the given
+// provider key (usdt_erc20 / usdc_erc20) and builds an Etherscan client plus
+// operational parameters. `tokens` holds just this instance's token; the sweep
+// uses resolveEthSweep to aggregate across instances.
+func (s *CryptoWalletService) resolveEthByKey(ctx context.Context, providerKey string) (*ethSettings, error) {
 	inst, err := s.entClient.PaymentProviderInstance.Query().
 		Where(
-			paymentproviderinstance.ProviderKeyEQ(payment.TypeERC20),
+			paymentproviderinstance.ProviderKeyEQ(providerKey),
 			paymentproviderinstance.EnabledEQ(true),
 		).
 		Order(dbent.Asc(paymentproviderinstance.FieldSortOrder)).
@@ -48,19 +74,20 @@ func (s *CryptoWalletService) resolveEth(ctx context.Context) (*ethSettings, err
 		return &ethSettings{}, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("query erc20 instance: %w", err)
+		return nil, fmt.Errorf("query %s instance: %w", providerKey, err)
 	}
 
 	cfg := map[string]string{}
 	if strings.TrimSpace(inst.Config) != "" {
 		if jerr := json.Unmarshal([]byte(inst.Config), &cfg); jerr != nil {
-			return nil, fmt.Errorf("parse erc20 instance config: %w", jerr)
+			return nil, fmt.Errorf("parse %s instance config: %w", providerKey, jerr)
 		}
 	}
 
-	contract := strings.TrimSpace(cfg["usdtContract"])
+	contractKey, defaultContract := ethDefaultContractFor(providerKey)
+	contract := strings.TrimSpace(cfg[contractKey])
 	if contract == "" {
-		contract = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+		contract = defaultContract
 	}
 	confirmSeconds := atoiDefault(cfg["confirmSeconds"], defaultEthConfirmSeconds)
 	sweepMin, _ := strconv.ParseFloat(strings.TrimSpace(cfg["sweepMinUsdt"]), 64)
@@ -86,14 +113,61 @@ func (s *CryptoWalletService) resolveEth(ctx context.Context) (*ethSettings, err
 		collectionAddr:  strings.TrimSpace(walletCfg.EthCollectionAddress),
 		rpcURL:          strings.TrimSpace(cfg["ethRpcUrl"]),
 		gasTopUpWei:     gasTopUp,
+		tokens:          []ethToken{{contract: contract, sweepMin: sweepMin}},
 		instancePresent: true,
 	}, nil
 }
 
-// EthReadContext exposes the parameters the ERC20 reconcile loop needs. ok is
-// false when no enabled ERC20 instance exists.
+// resolveEthSweep builds the sweep context: a base instance (for rpc/gas/
+// collection/client — USDT-ERC20 preferred, USDC as fallback) plus the union of
+// all enabled Ethereum tokens to consolidate. USDT and USDC share one per-user
+// deposit address, so a single sweep pass moves both.
+func (s *CryptoWalletService) resolveEthSweep(ctx context.Context) (*ethSettings, error) {
+	usdt, err := s.resolveEthByKey(ctx, payment.TypeERC20)
+	if err != nil {
+		return nil, err
+	}
+	usdc, err := s.resolveEthByKey(ctx, payment.TypeUSDC)
+	if err != nil {
+		return nil, err
+	}
+
+	base := usdt
+	if !base.instancePresent {
+		base = usdc // USDC-only deployment
+	}
+	if !base.instancePresent {
+		return &ethSettings{}, nil
+	}
+
+	// Aggregate sweepable tokens (dedup by contract) across both instances.
+	tokens := make([]ethToken, 0, 2)
+	seen := map[string]bool{}
+	for _, es := range []*ethSettings{usdt, usdc} {
+		if !es.instancePresent {
+			continue
+		}
+		key := strings.ToLower(es.contract)
+		if es.contract == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		tokens = append(tokens, ethToken{contract: es.contract, sweepMin: es.sweepMinUSDT})
+	}
+	base.tokens = tokens
+	return base, nil
+}
+
+// EthReadContext exposes the parameters the USDT-ERC20 reconcile loop needs.
 func (s *CryptoWalletService) EthReadContext(ctx context.Context) (client *eth.Client, contract string, confirmSeconds int, ok bool, err error) {
-	es, err := s.resolveEth(ctx)
+	return s.EthReadContextFor(ctx, payment.TypeERC20)
+}
+
+// EthReadContextFor exposes the reconcile parameters for a specific Ethereum
+// provider key (usdt_erc20 / usdc_erc20). ok is false when no enabled instance
+// exists for that key.
+func (s *CryptoWalletService) EthReadContextFor(ctx context.Context, providerKey string) (client *eth.Client, contract string, confirmSeconds int, ok bool, err error) {
+	es, err := s.resolveEthByKey(ctx, providerKey)
 	if err != nil {
 		return nil, "", 0, false, err
 	}

@@ -72,6 +72,7 @@ const METHOD_ICONS: Record<string, string> = {
   paypal: paypalIcon,
   usdt_trc20: usdtIcon,
   usdt_erc20: usdtIcon,
+  usdc_erc20: usdtIcon,
 }
 
 const sortedMethods = computed(() => {
@@ -97,6 +98,7 @@ function methodSelectedClass(type: string): string {
   if (type === 'airwallex') return 'border-[#FF6B3D] bg-orange-50 text-gray-900 shadow-sm dark:border-[#FF8E3C] dark:bg-orange-950 dark:text-gray-100'
   if (type === 'paypal') return 'border-[#003087] bg-blue-50 text-gray-900 shadow-sm dark:border-[#009cde] dark:bg-blue-950 dark:text-gray-100'
   if (type === 'usdt_trc20' || type === 'usdt_erc20') return 'border-[#26A17B] bg-emerald-50 text-gray-900 shadow-sm dark:border-[#26A17B] dark:bg-emerald-950 dark:text-gray-100'
+  if (type === 'usdc_erc20') return 'border-[#2775CA] bg-blue-50 text-gray-900 shadow-sm dark:border-[#2775CA] dark:bg-blue-950 dark:text-gray-100'
   return 'border-primary-500 bg-primary-50 text-gray-900 shadow-sm dark:bg-primary-950 dark:text-gray-100'
 }
 </script>

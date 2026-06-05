@@ -62,13 +62,13 @@ func (s *PaymentService) GetDashboardStats(ctx context.Context, days int) (*Dash
 }
 
 // orderCNYAmount returns the CNY-equivalent amount for statistics aggregation.
-// For USDT/PayPal orders pay_amount is in a foreign currency (USDT/USD), so we
-// use Amount which stores the CNY-denominated order value. For balance orders,
-// Amount = req.Amount * BalanceRechargeMultiplier, so we divide back out to
-// recover the actual CNY paid.
+// For USDT/USDC/PayPal orders pay_amount is in a foreign currency (USDT/USDC/USD),
+// so we use Amount which stores the CNY-denominated order value. For balance
+// orders, Amount = req.Amount * BalanceRechargeMultiplier, so we divide back out
+// to recover the actual CNY paid.
 func orderCNYAmount(o *dbent.PaymentOrder, balanceMultiplier float64) float64 {
 	switch o.PaymentType {
-	case payment.TypeTRC20, payment.TypeERC20, payment.TypePayPal:
+	case payment.TypeTRC20, payment.TypeERC20, payment.TypeUSDC, payment.TypePayPal:
 		if o.OrderType == payment.OrderTypeBalance && balanceMultiplier > 1 {
 			return math.Round(o.Amount/balanceMultiplier*100) / 100
 		}

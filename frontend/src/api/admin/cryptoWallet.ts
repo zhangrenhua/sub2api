@@ -21,8 +21,10 @@ export interface CryptoWalletOverview {
   eth_fee_balance: number
   eth_collection_address: string
   eth_collection_balance: number
+  eth_collection_usdc_balance: number
   erc20_deposit_addresses: number
   erc20_deposit_total_usdt: number
+  erc20_deposit_total_usdc: number
   balances_as_of: string
 }
 
@@ -33,6 +35,7 @@ export interface CryptoDepositAddress {
   address: string
   derivation_index: number
   last_balance: number
+  last_balance_usdc: number
   last_balance_at: string | null
   created_at: string
 }

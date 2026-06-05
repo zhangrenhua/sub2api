@@ -41,6 +41,11 @@ func (UserCryptoAddress) Fields() []ent.Field {
 		field.Float("last_balance").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,6)"}).
 			Default(0),
+		// ERC20 地址上的 USDC 余额缓存（6 位小数）。TRC20 行恒为 0。
+		// USDT/USDC 共用同一 ERC20 地址，故同一行同时缓存两种代币余额。
+		field.Float("last_balance_usdc").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,6)"}).
+			Default(0),
 		field.Time("last_balance_at").
 			Optional().
 			Nillable().

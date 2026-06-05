@@ -47306,24 +47306,26 @@ func (m *UserAttributeValueMutation) ResetEdge(name string) error {
 // UserCryptoAddressMutation represents an operation that mutates the UserCryptoAddress nodes in the graph.
 type UserCryptoAddressMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *int64
-	user_id             *int64
-	adduser_id          *int64
-	network             *string
-	address             *string
-	derivation_index    *int64
-	addderivation_index *int64
-	last_balance        *float64
-	addlast_balance     *float64
-	last_balance_at     *time.Time
-	created_at          *time.Time
-	updated_at          *time.Time
-	clearedFields       map[string]struct{}
-	done                bool
-	oldValue            func(context.Context) (*UserCryptoAddress, error)
-	predicates          []predicate.UserCryptoAddress
+	op                   Op
+	typ                  string
+	id                   *int64
+	user_id              *int64
+	adduser_id           *int64
+	network              *string
+	address              *string
+	derivation_index     *int64
+	addderivation_index  *int64
+	last_balance         *float64
+	addlast_balance      *float64
+	last_balance_usdc    *float64
+	addlast_balance_usdc *float64
+	last_balance_at      *time.Time
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*UserCryptoAddress, error)
+	predicates           []predicate.UserCryptoAddress
 }
 
 var _ ent.Mutation = (*UserCryptoAddressMutation)(nil)
@@ -47664,6 +47666,62 @@ func (m *UserCryptoAddressMutation) ResetLastBalance() {
 	m.addlast_balance = nil
 }
 
+// SetLastBalanceUsdc sets the "last_balance_usdc" field.
+func (m *UserCryptoAddressMutation) SetLastBalanceUsdc(f float64) {
+	m.last_balance_usdc = &f
+	m.addlast_balance_usdc = nil
+}
+
+// LastBalanceUsdc returns the value of the "last_balance_usdc" field in the mutation.
+func (m *UserCryptoAddressMutation) LastBalanceUsdc() (r float64, exists bool) {
+	v := m.last_balance_usdc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastBalanceUsdc returns the old "last_balance_usdc" field's value of the UserCryptoAddress entity.
+// If the UserCryptoAddress object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserCryptoAddressMutation) OldLastBalanceUsdc(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastBalanceUsdc is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastBalanceUsdc requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastBalanceUsdc: %w", err)
+	}
+	return oldValue.LastBalanceUsdc, nil
+}
+
+// AddLastBalanceUsdc adds f to the "last_balance_usdc" field.
+func (m *UserCryptoAddressMutation) AddLastBalanceUsdc(f float64) {
+	if m.addlast_balance_usdc != nil {
+		*m.addlast_balance_usdc += f
+	} else {
+		m.addlast_balance_usdc = &f
+	}
+}
+
+// AddedLastBalanceUsdc returns the value that was added to the "last_balance_usdc" field in this mutation.
+func (m *UserCryptoAddressMutation) AddedLastBalanceUsdc() (r float64, exists bool) {
+	v := m.addlast_balance_usdc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLastBalanceUsdc resets all changes to the "last_balance_usdc" field.
+func (m *UserCryptoAddressMutation) ResetLastBalanceUsdc() {
+	m.last_balance_usdc = nil
+	m.addlast_balance_usdc = nil
+}
+
 // SetLastBalanceAt sets the "last_balance_at" field.
 func (m *UserCryptoAddressMutation) SetLastBalanceAt(t time.Time) {
 	m.last_balance_at = &t
@@ -47819,7 +47877,7 @@ func (m *UserCryptoAddressMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserCryptoAddressMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.user_id != nil {
 		fields = append(fields, usercryptoaddress.FieldUserID)
 	}
@@ -47834,6 +47892,9 @@ func (m *UserCryptoAddressMutation) Fields() []string {
 	}
 	if m.last_balance != nil {
 		fields = append(fields, usercryptoaddress.FieldLastBalance)
+	}
+	if m.last_balance_usdc != nil {
+		fields = append(fields, usercryptoaddress.FieldLastBalanceUsdc)
 	}
 	if m.last_balance_at != nil {
 		fields = append(fields, usercryptoaddress.FieldLastBalanceAt)
@@ -47862,6 +47923,8 @@ func (m *UserCryptoAddressMutation) Field(name string) (ent.Value, bool) {
 		return m.DerivationIndex()
 	case usercryptoaddress.FieldLastBalance:
 		return m.LastBalance()
+	case usercryptoaddress.FieldLastBalanceUsdc:
+		return m.LastBalanceUsdc()
 	case usercryptoaddress.FieldLastBalanceAt:
 		return m.LastBalanceAt()
 	case usercryptoaddress.FieldCreatedAt:
@@ -47887,6 +47950,8 @@ func (m *UserCryptoAddressMutation) OldField(ctx context.Context, name string) (
 		return m.OldDerivationIndex(ctx)
 	case usercryptoaddress.FieldLastBalance:
 		return m.OldLastBalance(ctx)
+	case usercryptoaddress.FieldLastBalanceUsdc:
+		return m.OldLastBalanceUsdc(ctx)
 	case usercryptoaddress.FieldLastBalanceAt:
 		return m.OldLastBalanceAt(ctx)
 	case usercryptoaddress.FieldCreatedAt:
@@ -47937,6 +48002,13 @@ func (m *UserCryptoAddressMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetLastBalance(v)
 		return nil
+	case usercryptoaddress.FieldLastBalanceUsdc:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastBalanceUsdc(v)
+		return nil
 	case usercryptoaddress.FieldLastBalanceAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -47975,6 +48047,9 @@ func (m *UserCryptoAddressMutation) AddedFields() []string {
 	if m.addlast_balance != nil {
 		fields = append(fields, usercryptoaddress.FieldLastBalance)
 	}
+	if m.addlast_balance_usdc != nil {
+		fields = append(fields, usercryptoaddress.FieldLastBalanceUsdc)
+	}
 	return fields
 }
 
@@ -47989,6 +48064,8 @@ func (m *UserCryptoAddressMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedDerivationIndex()
 	case usercryptoaddress.FieldLastBalance:
 		return m.AddedLastBalance()
+	case usercryptoaddress.FieldLastBalanceUsdc:
+		return m.AddedLastBalanceUsdc()
 	}
 	return nil, false
 }
@@ -48018,6 +48095,13 @@ func (m *UserCryptoAddressMutation) AddField(name string, value ent.Value) error
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddLastBalance(v)
+		return nil
+	case usercryptoaddress.FieldLastBalanceUsdc:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLastBalanceUsdc(v)
 		return nil
 	}
 	return fmt.Errorf("unknown UserCryptoAddress numeric field %s", name)
@@ -48069,6 +48153,9 @@ func (m *UserCryptoAddressMutation) ResetField(name string) error {
 		return nil
 	case usercryptoaddress.FieldLastBalance:
 		m.ResetLastBalance()
+		return nil
+	case usercryptoaddress.FieldLastBalanceUsdc:
+		m.ResetLastBalanceUsdc()
 		return nil
 	case usercryptoaddress.FieldLastBalanceAt:
 		m.ResetLastBalanceAt()

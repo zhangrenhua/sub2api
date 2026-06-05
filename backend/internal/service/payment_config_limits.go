@@ -34,7 +34,7 @@ func (s *PaymentConfigService) GetAvailableMethodLimits(ctx context.Context) (*M
 		}
 		ml := pcAggregateMethodLimits(pt, insts)
 		ml.Currency = currency
-		if pt == payment.TypeTRC20 || pt == payment.TypeERC20 {
+		if pt == payment.TypeTRC20 || pt == payment.TypeERC20 || pt == payment.TypeUSDC {
 			ml.Rate = cryptoCNYPerUSDT(insts)
 		}
 		if pt == payment.TypePayPal {
@@ -187,6 +187,10 @@ func cryptoCNYPerUSDT(instances []*dbent.PaymentProviderInstance) float64 {
 			continue
 		}
 		if rate, err := strconv.ParseFloat(strings.TrimSpace(cfg["cnyPerUsdt"]), 64); err == nil && rate > 0 {
+			return rate
+		}
+		// USDC instances configure the rate under cnyPerUsdc.
+		if rate, err := strconv.ParseFloat(strings.TrimSpace(cfg["cnyPerUsdc"]), 64); err == nil && rate > 0 {
 			return rate
 		}
 	}

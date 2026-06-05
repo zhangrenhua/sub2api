@@ -196,6 +196,7 @@ const paymentTypeFilterOptions = computed(() => [
   { value: 'paypal', label: t('payment.methods.paypal') },
   { value: 'usdt_trc20', label: t('payment.methods.usdt_trc20') },
   { value: 'usdt_erc20', label: t('payment.methods.usdt_erc20') },
+  { value: 'usdc_erc20', label: t('payment.methods.usdc_erc20') },
 ])
 
 const orderTypeFilterOptions = computed(() => [

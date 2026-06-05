@@ -60,6 +60,9 @@ function formatPayAmount(amount: number, paymentType: string, currency?: string)
   if (paymentType === 'usdt_trc20' || paymentType === 'usdt_erc20') {
     return `${amount.toFixed(2)} USDT`
   }
+  if (paymentType === 'usdc_erc20') {
+    return `${amount.toFixed(2)} USDC`
+  }
   if (paymentType === 'paypal' || currency === 'USD') {
     return `$${amount.toFixed(2)}`
   }

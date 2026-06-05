@@ -25,6 +25,8 @@ func CreateProvider(providerKey string, instanceID string, config map[string]str
 		return NewTRC20(instanceID, config)
 	case payment.TypeERC20:
 		return NewERC20(instanceID, config)
+	case payment.TypeUSDC:
+		return NewUSDCERC20(instanceID, config)
 	default:
 		return nil, fmt.Errorf("unknown provider key: %s", providerKey)
 	}

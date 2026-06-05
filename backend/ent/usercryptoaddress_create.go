@@ -68,6 +68,20 @@ func (_c *UserCryptoAddressCreate) SetNillableLastBalance(v *float64) *UserCrypt
 	return _c
 }
 
+// SetLastBalanceUsdc sets the "last_balance_usdc" field.
+func (_c *UserCryptoAddressCreate) SetLastBalanceUsdc(v float64) *UserCryptoAddressCreate {
+	_c.mutation.SetLastBalanceUsdc(v)
+	return _c
+}
+
+// SetNillableLastBalanceUsdc sets the "last_balance_usdc" field if the given value is not nil.
+func (_c *UserCryptoAddressCreate) SetNillableLastBalanceUsdc(v *float64) *UserCryptoAddressCreate {
+	if v != nil {
+		_c.SetLastBalanceUsdc(*v)
+	}
+	return _c
+}
+
 // SetLastBalanceAt sets the "last_balance_at" field.
 func (_c *UserCryptoAddressCreate) SetLastBalanceAt(v time.Time) *UserCryptoAddressCreate {
 	_c.mutation.SetLastBalanceAt(v)
@@ -153,6 +167,10 @@ func (_c *UserCryptoAddressCreate) defaults() {
 		v := usercryptoaddress.DefaultLastBalance
 		_c.mutation.SetLastBalance(v)
 	}
+	if _, ok := _c.mutation.LastBalanceUsdc(); !ok {
+		v := usercryptoaddress.DefaultLastBalanceUsdc
+		_c.mutation.SetLastBalanceUsdc(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := usercryptoaddress.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -189,6 +207,9 @@ func (_c *UserCryptoAddressCreate) check() error {
 	}
 	if _, ok := _c.mutation.LastBalance(); !ok {
 		return &ValidationError{Name: "last_balance", err: errors.New(`ent: missing required field "UserCryptoAddress.last_balance"`)}
+	}
+	if _, ok := _c.mutation.LastBalanceUsdc(); !ok {
+		return &ValidationError{Name: "last_balance_usdc", err: errors.New(`ent: missing required field "UserCryptoAddress.last_balance_usdc"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "UserCryptoAddress.created_at"`)}
@@ -242,6 +263,10 @@ func (_c *UserCryptoAddressCreate) createSpec() (*UserCryptoAddress, *sqlgraph.C
 	if value, ok := _c.mutation.LastBalance(); ok {
 		_spec.SetField(usercryptoaddress.FieldLastBalance, field.TypeFloat64, value)
 		_node.LastBalance = value
+	}
+	if value, ok := _c.mutation.LastBalanceUsdc(); ok {
+		_spec.SetField(usercryptoaddress.FieldLastBalanceUsdc, field.TypeFloat64, value)
+		_node.LastBalanceUsdc = value
 	}
 	if value, ok := _c.mutation.LastBalanceAt(); ok {
 		_spec.SetField(usercryptoaddress.FieldLastBalanceAt, field.TypeTime, value)
@@ -382,6 +407,24 @@ func (u *UserCryptoAddressUpsert) UpdateLastBalance() *UserCryptoAddressUpsert {
 // AddLastBalance adds v to the "last_balance" field.
 func (u *UserCryptoAddressUpsert) AddLastBalance(v float64) *UserCryptoAddressUpsert {
 	u.Add(usercryptoaddress.FieldLastBalance, v)
+	return u
+}
+
+// SetLastBalanceUsdc sets the "last_balance_usdc" field.
+func (u *UserCryptoAddressUpsert) SetLastBalanceUsdc(v float64) *UserCryptoAddressUpsert {
+	u.Set(usercryptoaddress.FieldLastBalanceUsdc, v)
+	return u
+}
+
+// UpdateLastBalanceUsdc sets the "last_balance_usdc" field to the value that was provided on create.
+func (u *UserCryptoAddressUpsert) UpdateLastBalanceUsdc() *UserCryptoAddressUpsert {
+	u.SetExcluded(usercryptoaddress.FieldLastBalanceUsdc)
+	return u
+}
+
+// AddLastBalanceUsdc adds v to the "last_balance_usdc" field.
+func (u *UserCryptoAddressUpsert) AddLastBalanceUsdc(v float64) *UserCryptoAddressUpsert {
+	u.Add(usercryptoaddress.FieldLastBalanceUsdc, v)
 	return u
 }
 
@@ -548,6 +591,27 @@ func (u *UserCryptoAddressUpsertOne) AddLastBalance(v float64) *UserCryptoAddres
 func (u *UserCryptoAddressUpsertOne) UpdateLastBalance() *UserCryptoAddressUpsertOne {
 	return u.Update(func(s *UserCryptoAddressUpsert) {
 		s.UpdateLastBalance()
+	})
+}
+
+// SetLastBalanceUsdc sets the "last_balance_usdc" field.
+func (u *UserCryptoAddressUpsertOne) SetLastBalanceUsdc(v float64) *UserCryptoAddressUpsertOne {
+	return u.Update(func(s *UserCryptoAddressUpsert) {
+		s.SetLastBalanceUsdc(v)
+	})
+}
+
+// AddLastBalanceUsdc adds v to the "last_balance_usdc" field.
+func (u *UserCryptoAddressUpsertOne) AddLastBalanceUsdc(v float64) *UserCryptoAddressUpsertOne {
+	return u.Update(func(s *UserCryptoAddressUpsert) {
+		s.AddLastBalanceUsdc(v)
+	})
+}
+
+// UpdateLastBalanceUsdc sets the "last_balance_usdc" field to the value that was provided on create.
+func (u *UserCryptoAddressUpsertOne) UpdateLastBalanceUsdc() *UserCryptoAddressUpsertOne {
+	return u.Update(func(s *UserCryptoAddressUpsert) {
+		s.UpdateLastBalanceUsdc()
 	})
 }
 
@@ -885,6 +949,27 @@ func (u *UserCryptoAddressUpsertBulk) AddLastBalance(v float64) *UserCryptoAddre
 func (u *UserCryptoAddressUpsertBulk) UpdateLastBalance() *UserCryptoAddressUpsertBulk {
 	return u.Update(func(s *UserCryptoAddressUpsert) {
 		s.UpdateLastBalance()
+	})
+}
+
+// SetLastBalanceUsdc sets the "last_balance_usdc" field.
+func (u *UserCryptoAddressUpsertBulk) SetLastBalanceUsdc(v float64) *UserCryptoAddressUpsertBulk {
+	return u.Update(func(s *UserCryptoAddressUpsert) {
+		s.SetLastBalanceUsdc(v)
+	})
+}
+
+// AddLastBalanceUsdc adds v to the "last_balance_usdc" field.
+func (u *UserCryptoAddressUpsertBulk) AddLastBalanceUsdc(v float64) *UserCryptoAddressUpsertBulk {
+	return u.Update(func(s *UserCryptoAddressUpsert) {
+		s.AddLastBalanceUsdc(v)
+	})
+}
+
+// UpdateLastBalanceUsdc sets the "last_balance_usdc" field to the value that was provided on create.
+func (u *UserCryptoAddressUpsertBulk) UpdateLastBalanceUsdc() *UserCryptoAddressUpsertBulk {
+	return u.Update(func(s *UserCryptoAddressUpsert) {
+		s.UpdateLastBalanceUsdc()
 	})
 }
 

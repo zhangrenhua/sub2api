@@ -88,11 +88,11 @@
                   {{ t('payment.rechargeRatePreview', { usd: balanceRechargeMultiplier.toFixed(2) }) }}
                 </p>
                 <div v-if="isUsdtMethod && usdtRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
-                  <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.usdtPayable') }}</span>
-                  <span class="text-lg font-bold text-[#26A17B]">{{ usdtPayDisplay }} USDT</span>
+                  <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.usdtPayable', { unit: cryptoUnitLabel }) }}</span>
+                  <span class="text-lg font-bold text-[#26A17B]">{{ usdtPayDisplay }} {{ cryptoUnitLabel }}</span>
                 </div>
                 <p v-if="isUsdtMethod && usdtRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ t('payment.usdtRateNote', { rate: usdtRate }) }}
+                  {{ t('payment.usdtRateNote', { rate: usdtRate, unit: cryptoUnitLabel }) }}
                 </p>
                 <div v-if="isPaypalMethod && paypalRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
                   <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.paypalPayable') }}</span>
@@ -108,7 +108,7 @@
                 <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                 {{ t('common.processing') }}
               </span>
-              <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ usdtPayDisplay }} USDT</span>
+              <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ usdtPayDisplay }} {{ cryptoUnitLabel }}</span>
               <span v-else-if="isPaypalMethod && paypalRate > 0">{{ t('payment.createOrder') }} {{ paypalPayDisplay }} USD</span>
               <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(totalAmount) }}</span>
             </button>
@@ -186,11 +186,11 @@
                     <span class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ formatSelectedPaymentAmount(subTotalAmount) }}</span>
                   </div>
                   <div v-if="isUsdtMethod && usdtRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
-                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.usdtPayable') }}</span>
-                    <span class="text-lg font-bold text-[#26A17B]">{{ subUsdtPayDisplay }} USDT</span>
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.usdtPayable', { unit: cryptoUnitLabel }) }}</span>
+                    <span class="text-lg font-bold text-[#26A17B]">{{ subUsdtPayDisplay }} {{ cryptoUnitLabel }}</span>
                   </div>
                   <p v-if="isUsdtMethod && usdtRate > 0" class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ t('payment.usdtRateNote', { rate: usdtRate }) }}
+                    {{ t('payment.usdtRateNote', { rate: usdtRate, unit: cryptoUnitLabel }) }}
                   </p>
                   <div v-if="isPaypalMethod && paypalRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
                     <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.paypalPayable') }}</span>
@@ -202,7 +202,7 @@
                 </div>
               </div>
               <p v-else-if="isUsdtMethod && usdtRate > 0" class="px-1 text-center text-xs text-gray-500 dark:text-gray-400">
-                {{ t('payment.usdtPayableNote', { amount: subUsdtPayDisplay, rate: usdtRate }) }}
+                {{ t('payment.usdtPayableNote', { amount: subUsdtPayDisplay, rate: usdtRate, unit: cryptoUnitLabel }) }}
               </p>
               <p v-else-if="isPaypalMethod && paypalRate > 0" class="px-1 text-center text-xs text-gray-500 dark:text-gray-400">
                 {{ t('payment.paypalPayableNote', { amount: subPaypalPayDisplay, rate: paypalRate }) }}
@@ -212,7 +212,7 @@
                   <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                   {{ t('common.processing') }}
                 </span>
-                <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ subUsdtPayDisplay }} USDT</span>
+                <span v-else-if="isUsdtMethod && usdtRate > 0">{{ t('payment.createOrder') }} {{ subUsdtPayDisplay }} {{ cryptoUnitLabel }}</span>
                 <span v-else-if="isPaypalMethod && paypalRate > 0">{{ t('payment.createOrder') }} {{ subPaypalPayDisplay }} USD</span>
                 <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(feeRate > 0 ? subTotalAmount : selectedPlan.price) }}</span>
               </button>
@@ -675,9 +675,14 @@ const subTotalAmount = computed(() => {
   return Math.round((price + subFeeAmount.value) * 100) / 100
 })
 
-// USDT (TRC20): plans/recharge are priced in CNY; show the converted USDT
-// amount and the rate note when this method is selected.
-const isUsdtMethod = computed(() => selectedMethod.value === 'usdt_trc20' || selectedMethod.value === 'usdt_erc20')
+// Stablecoin (USDT/USDC): plans/recharge are priced in CNY; show the converted
+// token amount and the rate note when such a method is selected.
+const isUsdtMethod = computed(() =>
+  selectedMethod.value === 'usdt_trc20' ||
+  selectedMethod.value === 'usdt_erc20' ||
+  selectedMethod.value === 'usdc_erc20'
+)
+const cryptoUnitLabel = computed(() => (selectedMethod.value === 'usdc_erc20' ? 'USDC' : 'USDT'))
 const usdtRate = computed(() => selectedLimit.value?.rate ?? 0)
 const usdtPayDisplay = computed(() =>
   usdtRate.value > 0 ? (totalAmount.value / usdtRate.value).toFixed(2) : ''

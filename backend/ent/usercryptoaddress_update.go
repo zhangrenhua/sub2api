@@ -119,6 +119,27 @@ func (_u *UserCryptoAddressUpdate) AddLastBalance(v float64) *UserCryptoAddressU
 	return _u
 }
 
+// SetLastBalanceUsdc sets the "last_balance_usdc" field.
+func (_u *UserCryptoAddressUpdate) SetLastBalanceUsdc(v float64) *UserCryptoAddressUpdate {
+	_u.mutation.ResetLastBalanceUsdc()
+	_u.mutation.SetLastBalanceUsdc(v)
+	return _u
+}
+
+// SetNillableLastBalanceUsdc sets the "last_balance_usdc" field if the given value is not nil.
+func (_u *UserCryptoAddressUpdate) SetNillableLastBalanceUsdc(v *float64) *UserCryptoAddressUpdate {
+	if v != nil {
+		_u.SetLastBalanceUsdc(*v)
+	}
+	return _u
+}
+
+// AddLastBalanceUsdc adds value to the "last_balance_usdc" field.
+func (_u *UserCryptoAddressUpdate) AddLastBalanceUsdc(v float64) *UserCryptoAddressUpdate {
+	_u.mutation.AddLastBalanceUsdc(v)
+	return _u
+}
+
 // SetLastBalanceAt sets the "last_balance_at" field.
 func (_u *UserCryptoAddressUpdate) SetLastBalanceAt(v time.Time) *UserCryptoAddressUpdate {
 	_u.mutation.SetLastBalanceAt(v)
@@ -237,6 +258,12 @@ func (_u *UserCryptoAddressUpdate) sqlSave(ctx context.Context) (_node int, err 
 	if value, ok := _u.mutation.AddedLastBalance(); ok {
 		_spec.AddField(usercryptoaddress.FieldLastBalance, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.LastBalanceUsdc(); ok {
+		_spec.SetField(usercryptoaddress.FieldLastBalanceUsdc, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLastBalanceUsdc(); ok {
+		_spec.AddField(usercryptoaddress.FieldLastBalanceUsdc, field.TypeFloat64, value)
+	}
 	if value, ok := _u.mutation.LastBalanceAt(); ok {
 		_spec.SetField(usercryptoaddress.FieldLastBalanceAt, field.TypeTime, value)
 	}
@@ -354,6 +381,27 @@ func (_u *UserCryptoAddressUpdateOne) SetNillableLastBalance(v *float64) *UserCr
 // AddLastBalance adds value to the "last_balance" field.
 func (_u *UserCryptoAddressUpdateOne) AddLastBalance(v float64) *UserCryptoAddressUpdateOne {
 	_u.mutation.AddLastBalance(v)
+	return _u
+}
+
+// SetLastBalanceUsdc sets the "last_balance_usdc" field.
+func (_u *UserCryptoAddressUpdateOne) SetLastBalanceUsdc(v float64) *UserCryptoAddressUpdateOne {
+	_u.mutation.ResetLastBalanceUsdc()
+	_u.mutation.SetLastBalanceUsdc(v)
+	return _u
+}
+
+// SetNillableLastBalanceUsdc sets the "last_balance_usdc" field if the given value is not nil.
+func (_u *UserCryptoAddressUpdateOne) SetNillableLastBalanceUsdc(v *float64) *UserCryptoAddressUpdateOne {
+	if v != nil {
+		_u.SetLastBalanceUsdc(*v)
+	}
+	return _u
+}
+
+// AddLastBalanceUsdc adds value to the "last_balance_usdc" field.
+func (_u *UserCryptoAddressUpdateOne) AddLastBalanceUsdc(v float64) *UserCryptoAddressUpdateOne {
+	_u.mutation.AddLastBalanceUsdc(v)
 	return _u
 }
 
@@ -504,6 +552,12 @@ func (_u *UserCryptoAddressUpdateOne) sqlSave(ctx context.Context) (_node *UserC
 	}
 	if value, ok := _u.mutation.AddedLastBalance(); ok {
 		_spec.AddField(usercryptoaddress.FieldLastBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.LastBalanceUsdc(); ok {
+		_spec.SetField(usercryptoaddress.FieldLastBalanceUsdc, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLastBalanceUsdc(); ok {
+		_spec.AddField(usercryptoaddress.FieldLastBalanceUsdc, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.LastBalanceAt(); ok {
 		_spec.SetField(usercryptoaddress.FieldLastBalanceAt, field.TypeTime, value)

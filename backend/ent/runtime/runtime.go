@@ -2205,12 +2205,16 @@ func init() {
 	usercryptoaddressDescLastBalance := usercryptoaddressFields[4].Descriptor()
 	// usercryptoaddress.DefaultLastBalance holds the default value on creation for the last_balance field.
 	usercryptoaddress.DefaultLastBalance = usercryptoaddressDescLastBalance.Default.(float64)
+	// usercryptoaddressDescLastBalanceUsdc is the schema descriptor for last_balance_usdc field.
+	usercryptoaddressDescLastBalanceUsdc := usercryptoaddressFields[5].Descriptor()
+	// usercryptoaddress.DefaultLastBalanceUsdc holds the default value on creation for the last_balance_usdc field.
+	usercryptoaddress.DefaultLastBalanceUsdc = usercryptoaddressDescLastBalanceUsdc.Default.(float64)
 	// usercryptoaddressDescCreatedAt is the schema descriptor for created_at field.
-	usercryptoaddressDescCreatedAt := usercryptoaddressFields[6].Descriptor()
+	usercryptoaddressDescCreatedAt := usercryptoaddressFields[7].Descriptor()
 	// usercryptoaddress.DefaultCreatedAt holds the default value on creation for the created_at field.
 	usercryptoaddress.DefaultCreatedAt = usercryptoaddressDescCreatedAt.Default.(func() time.Time)
 	// usercryptoaddressDescUpdatedAt is the schema descriptor for updated_at field.
-	usercryptoaddressDescUpdatedAt := usercryptoaddressFields[7].Descriptor()
+	usercryptoaddressDescUpdatedAt := usercryptoaddressFields[8].Descriptor()
 	// usercryptoaddress.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	usercryptoaddress.DefaultUpdatedAt = usercryptoaddressDescUpdatedAt.Default.(func() time.Time)
 	// usercryptoaddress.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

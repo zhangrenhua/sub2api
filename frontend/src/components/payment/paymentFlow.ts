@@ -19,9 +19,10 @@ const VISIBLE_METHOD_ALIASES = {
   paypal: 'paypal',
   usdt_trc20: 'usdt_trc20',
   usdt_erc20: 'usdt_erc20',
+  usdc_erc20: 'usdc_erc20',
 } as const
 
-export type VisiblePaymentMethod = 'alipay' | 'wxpay' | 'stripe' | 'airwallex' | 'paypal' | 'usdt_trc20' | 'usdt_erc20'
+export type VisiblePaymentMethod = 'alipay' | 'wxpay' | 'stripe' | 'airwallex' | 'paypal' | 'usdt_trc20' | 'usdt_erc20' | 'usdc_erc20'
 export type StripeVisibleMethod = 'alipay' | 'wechat_pay'
 export type PaymentLaunchKind =
   | 'qr_waiting'
