@@ -62,18 +62,32 @@
           <p class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-400">
             {{ content.chrome.toc }}
           </p>
-          <a
-            v-for="section in content.sections"
-            :key="section.id"
-            :href="`#${section.id}`"
-            @click.prevent="scrollTo(section.id)"
-            class="block rounded-lg px-3 py-1.5 text-sm transition-colors"
-            :class="activeId === section.id
-              ? 'bg-primary-50 font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-dark-300 dark:hover:bg-dark-800 dark:hover:text-white'"
-          >
-            {{ section.title }}
-          </a>
+          <template v-for="section in toc" :key="section.id">
+            <a
+              :href="`#${section.id}`"
+              @click.prevent="scrollTo(section.id)"
+              class="block rounded-lg px-3 py-1.5 text-sm transition-colors"
+              :class="expandedSectionId === section.id
+                ? 'bg-primary-50 font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-dark-300 dark:hover:bg-dark-800 dark:hover:text-white'"
+            >
+              {{ section.title }}
+            </a>
+            <template v-if="section.items.length && expandedSectionId === section.id">
+              <a
+                v-for="item in section.items"
+                :key="item.id"
+                :href="`#${item.id}`"
+                @click.prevent="scrollTo(item.id)"
+                class="block rounded-lg py-1 pl-7 pr-3 text-[13px] transition-colors"
+                :class="activeId === item.id
+                  ? 'font-medium text-primary-700 dark:text-primary-300'
+                  : 'text-gray-500 hover:text-gray-900 dark:text-dark-400 dark:hover:text-gray-200'"
+              >
+                {{ item.text }}
+              </a>
+            </template>
+          </template>
         </nav>
       </aside>
 
@@ -111,18 +125,32 @@
             </button>
           </div>
           <nav class="space-y-1">
-            <a
-              v-for="section in content.sections"
-              :key="section.id"
-              :href="`#${section.id}`"
-              @click.prevent="scrollTo(section.id); mobileTocOpen = false"
-              class="block rounded-lg px-3 py-2 text-sm transition-colors"
-              :class="activeId === section.id
-                ? 'bg-primary-50 font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                : 'text-gray-600 hover:bg-gray-100 dark:text-dark-300 dark:hover:bg-dark-800'"
-            >
-              {{ section.title }}
-            </a>
+            <template v-for="section in toc" :key="section.id">
+              <a
+                :href="`#${section.id}`"
+                @click.prevent="scrollTo(section.id); mobileTocOpen = false"
+                class="block rounded-lg px-3 py-2 text-sm transition-colors"
+                :class="expandedSectionId === section.id
+                  ? 'bg-primary-50 font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                  : 'text-gray-600 hover:bg-gray-100 dark:text-dark-300 dark:hover:bg-dark-800'"
+              >
+                {{ section.title }}
+              </a>
+              <template v-if="section.items.length">
+                <a
+                  v-for="item in section.items"
+                  :key="item.id"
+                  :href="`#${item.id}`"
+                  @click.prevent="scrollTo(item.id); mobileTocOpen = false"
+                  class="block rounded-lg py-1.5 pl-7 pr-3 text-[13px] transition-colors"
+                  :class="activeId === item.id
+                    ? 'font-medium text-primary-700 dark:text-primary-300'
+                    : 'text-gray-500 hover:text-gray-900 dark:text-dark-400 dark:hover:text-gray-200'"
+                >
+                  {{ item.text }}
+                </a>
+              </template>
+            </template>
           </nav>
         </aside>
       </Transition>
@@ -151,6 +179,7 @@
             v-for="(block, i) in section.blocks"
             :key="i"
             :block="block"
+            :anchor-id="block.t === 'h3' ? `${section.id}__b${i}` : undefined"
             :copy-label="content.chrome.copy"
             :copied-label="content.chrome.copied"
           />
@@ -178,7 +207,7 @@ import { useAppStore, useAuthStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import HelpBlock from './help/HelpBlock.vue'
-import { zh, en, type HelpFactory, type HelpContent } from './help/content'
+import { zh, en, type HelpFactory, type HelpContent, type Block } from './help/content'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
@@ -219,6 +248,25 @@ const toggleMobileToc = () => { mobileTocOpen.value = !mobileTocOpen.value }
 
 const activeId = ref<string>(content.value.sections[0]?.id ?? '')
 
+// 两级目录：一级=章节(section.title)，二级=章节内的 h3 小标题(锚点 id = `${section.id}__b${blockIndex}`)。
+const toc = computed(() =>
+  content.value.sections.map(section => ({
+    id: section.id,
+    title: section.title,
+    items: (section.blocks as Block[])
+      .map((b, i) => ({ b, i }))
+      .filter((x): x is { b: Extract<Block, { t: 'h3' }>; i: number } => x.b.t === 'h3')
+      .map(x => ({ id: `${section.id}__b${x.i}`, text: x.b.text })),
+  })),
+)
+
+// 当前展开的一级章节：activeId 可能是章节 id 或二级锚点 id(`section__bN`)，取其所属章节。
+const expandedSectionId = computed(() => {
+  const id = activeId.value
+  const idx = id.indexOf('__b')
+  return idx >= 0 ? id.slice(0, idx) : id
+})
+
 const scrollTo = (id: string) => {
   const el = document.getElementById(id)
   if (!el) return
@@ -241,9 +289,13 @@ const observeSections = () => {
     },
     { rootMargin: '-100px 0px -60% 0px', threshold: 0 }
   )
-  content.value.sections.forEach(section => {
+  toc.value.forEach(section => {
     const el = document.getElementById(section.id)
     if (el) observer!.observe(el)
+    section.items.forEach(item => {
+      const sub = document.getElementById(item.id)
+      if (sub) observer!.observe(sub)
+    })
   })
 }
 
@@ -287,6 +339,7 @@ watch(locale, async () => {
   margin-top: 1.75rem;
   margin-bottom: 0.75rem;
   color: rgb(17 24 39);
+  scroll-margin-top: 5rem;
 }
 :global(.dark) .help-prose :deep(h3) {
   color: rgb(243 244 246) !important;

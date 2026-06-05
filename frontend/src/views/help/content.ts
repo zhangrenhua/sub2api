@@ -249,29 +249,61 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'opencode',
-      title: '7. Open Code 及其他工具',
+      title: '7. Open Code',
       blocks: [
-        { t: 'h3', text: '7.1 修改 opencode.json' },
         { t: 'code', lang: 'json', code: `{\n  "$schema": "https://opencode.ai/config.json",\n  "provider": {\n    "anthropic": {\n      "options": {\n        "baseURL": "${base}/v1",\n        "apiKey": "sk-你的api key"\n      }\n    }\n  },\n  "model": "anthropic/claude-opus-4-6",\n  "small_model": "anthropic/claude-haiku-4-5"\n}` },
         { t: 'ul', items: [
           '<code>opencode.json</code> 一般在 <code>~/.config/opencode/opencode.json</code>，最新版本可能是 <code>opencode.jsonc</code>，请先确认',
           '请务必使用 anthropic 协议，不要用 openai 协议，否则可能调用报错'
         ]},
         { t: 'p', html: '启动：<code>opencode</code>' },
-        { t: 'p', html: '参考文档：<a href="https://opencode.ai/docs/zh-cn/providers/" target="_blank" rel="noopener noreferrer">opencode.ai/docs</a>' },
-        { t: 'h3', text: '7.2 Hermes Agent' },
-        { t: 'p', html: '参考文档：<a href="https://www.runoob.com/ai-agent/hermes-agent.html" target="_blank" rel="noopener noreferrer">runoob.com / hermes-agent</a>。域名和 Key 换成中转服务的即可。' },
-        { t: 'h3', text: '7.3 Cursor' },
+        { t: 'p', html: '参考文档：<a href="https://opencode.ai/docs/zh-cn/providers/" target="_blank" rel="noopener noreferrer">opencode.ai/docs</a>' }
+      ]
+    },
+    {
+      id: 'hermes',
+      title: '8. Hermes Agent',
+      blocks: [
+        { t: 'p', html: 'Hermes Agent 是 <a href="https://github.com/NousResearch" target="_blank" rel="noopener noreferrer">Nous Research</a> 开源的「自进化」AI 智能体框架，能<strong>自动从任务中提炼技能、越用越强</strong>，让模型自主规划并调用工具完成多步任务。' },
+        { t: 'p', html: '接入「中转」的本质就是把 Hermes <strong>指向一个 OpenAI 兼容的模型端点</strong>（base_url 必须以 <code>/v1</code> 结尾），不涉及网络代理。接入本服务时：端点填 <code>本服务地址/v1</code>、Key 填你的 <code>sk-...</code>、模型填本平台支持的模型。下面三种方法任选其一。' },
+        { t: 'h4', text: '方法一：hermes model 交互式配置（最推荐）' },
+        { t: 'steps', items: [
+          '终端运行 <code>hermes model</code>',
+          '在 provider 列表里选 <code>Custom endpoint (self-hosted / VLLM / etc.)</code>',
+          `填写 Base URL <code>${base}/v1</code>、API Key（输入无回显，粘贴后直接回车）、模型名称（如 <code>gpt-5.5</code> / <code>claude-opus-4-8</code>）`,
+          '保存后发一条消息验证回复正常；之后可随时用 <code>hermes model</code> 在不同配置间切换'
+        ]},
+        { t: 'h4', text: '方法二：编辑 ~/.hermes/config.yaml（长期固定）' },
+        { t: 'code', lang: 'yaml', code: `# ~/.hermes/config.yaml\nmodel:\n  provider: custom\n  base_url: ${base}/v1\n  model: gpt-5.5\n  # api_key 留空则自动读取 .env 里的 OPENAI_API_KEY` },
+        { t: 'p', html: '密钥务必放到 <code>~/.hermes/.env</code>（不要写进 config.yaml；Hermes 会自动加载并读取其中的 <code>OPENAI_API_KEY</code>，文件权限设为 0600）：' },
+        { t: 'code', lang: 'bash', code: `echo 'OPENAI_API_KEY=sk-你的api key' >> ~/.hermes/.env` },
+        { t: 'h4', text: '方法三：OPENAI_BASE_URL 环境变量（旧版兼容，不推荐）' },
+        { t: 'p', html: '新版 Hermes 主模型已改为以 <code>config.yaml</code> 的 <code>model.base_url</code> 为准；<code>OPENAI_BASE_URL</code> 仅作为旧版回退仍被识别。若你在老环境里临时试用可用下面方式，正式配置请优先用方法一或方法二。' },
+        { t: 'code', lang: 'bash', code: `# 持久化：写入 ~/.hermes/.env\nOPENAI_API_KEY=sk-你的api key\nOPENAI_BASE_URL=${base}/v1\n\n# 临时（单次会话）\nexport OPENAI_BASE_URL="${base}/v1" && hermes` },
+        { t: 'callout', variant: 'tip', html: '💡 <strong>base_url 必须以 <code>/v1</code> 结尾</strong>（OpenAI 兼容标准路径，缺了常报 404）；API Key 只放 <code>.env</code>，切勿提交到公开仓库；若用 Anthropic 系模型，按对应工具改用 anthropic 协议地址。' },
+        { t: 'ul', items: [
+          '连接超时 → 用 <code>curl -v 本服务地址/v1/models</code> 测连通性',
+          '回复乱码 / 格式异常 → 确认上游已开启 OpenAI 兼容',
+          'API Key 报错 → 检查 <code>~/.hermes/.env</code> 路径与密钥前后空格',
+          '请求 404 → base_url 缺少 <code>/v1</code> 后缀'
+        ]},
+        { t: 'p', html: '参考文档（官方）：<a href="https://hermes-agent.nousresearch.com/docs/user-guide/configuration" target="_blank" rel="noopener noreferrer">Configuration</a> · <a href="https://hermes-agent.nousresearch.com/docs/integrations/providers" target="_blank" rel="noopener noreferrer">AI Providers</a> · <a href="https://github.com/NousResearch/hermes-agent" target="_blank" rel="noopener noreferrer">GitHub</a>' }
+      ]
+    },
+    {
+      id: 'cursor',
+      title: '9. Cursor',
+      blocks: [
         { t: 'p', html: '参考文档：<a href="https://gitcode.csdn.net/69b92f9f0a2f6a37c5981c5e.html" target="_blank" rel="noopener noreferrer">gitcode.csdn.net</a>' }
       ]
     },
     {
       id: 'pricing',
-      title: '8. 计费说明',
+      title: '10. 计费说明',
       blocks: [
-        { t: 'h3', text: '8.1 计费方式' },
+        { t: 'h3', text: '10.1 计费方式' },
         { t: 'p', html: '我们的中转服务采用与 Anthropic 官方<strong>完全一致的 1:1 计价</strong>，按 Token 用量计费，不额外加价。' },
-        { t: 'h3', text: '8.2 Claude 模型价格参考' },
+        { t: 'h3', text: '10.2 Claude 模型价格参考' },
         { t: 'table', head: ['模型', '基础输入 Token', '5分钟缓存写入', '1小时缓存写入', '缓存命中与刷新', '输出 Token'], rows: [
           ['Claude Opus 4.8', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
           ['Claude Opus 4.7', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
@@ -303,14 +335,14 @@ export const zh: HelpFactory = (base) => ({
         ]},
         { t: 'callout', variant: 'warning', html: '不要使用低价的 haiku 模型，可能会遇到官方限流，建议使用 sonnet 或 opus 系列模型。' },
         { t: 'callout', variant: 'tip', html: '💡 <strong>Prompt Caching</strong>（提示缓存）可以大幅降低重复内容的费用，缓存命中的输入 Token 价格降低 90%。我们的中转服务完整支持 Prompt Caching。' },
-        { t: 'h3', text: '8.3 Claude Code 日均费用参考' },
+        { t: 'h3', text: '10.3 Claude Code 日均费用参考' },
         { t: 'p', html: '根据 Anthropic 官方数据：' },
         { t: 'ul', items: [
           '平均每位开发者每天约 <strong>$6</strong>',
           '90% 的用户日均费用低于 <strong>$12</strong>',
           '使用 Sonnet 模型月均约 <strong>$100–200</strong>'
         ]},
-        { t: 'h3', text: '8.4 省钱技巧' },
+        { t: 'h3', text: '10.4 省钱技巧' },
         { t: 'ul', items: [
           '使用 Sonnet 模型处理日常编码任务（性价比最高）',
           '只在复杂架构设计时切换到 Opus',
@@ -322,7 +354,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'codex',
-      title: '9. CodeX 使用教程',
+      title: '11. CodeX 使用教程',
       blocks: [
         { t: 'p', html: '支持的模型清单：' },
         { t: 'code', lang: 'bash', code: 'gpt-5.2\ngpt-5.3\ngpt-5.4\ngpt-5.4-mini\ngpt-5.5\ngpt-image-2\ngpt-5.3-codex\ncodex-auto-review' },
@@ -341,7 +373,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'image-gen',
-      title: '10. 图像生成（gpt-image-2）',
+      title: '12. 图像生成（gpt-image-2）',
       blocks: [
         { t: 'h3', text: '注意事项' },
         { t: 'callout', variant: 'warning', html: 'image-2 生图不能用于非法目的，会触发 GPT 的风控。我们这边也有自己的风控系统，部分内容会被打回要求修改提示词，我们也会定时检查各渠道的风控情况。' },
@@ -393,7 +425,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'video-gen',
-      title: '11. 视频生成（Sora/Seedance 2.0）',
+      title: '13. 视频生成（Sora/Seedance 2.0）',
       blocks: [
         { t: 'p', html: '视频生成是<strong>异步任务接口</strong>：创建任务 → 轮询状态 → 下载视频。需使用在<strong>视频分组</strong>下创建的 API Key。支持 Sora（<strong>按秒计费</strong>）与 Seedance 2.0（<strong>按次计费</strong>）两类模型。' },
         { t: 'h3', text: '支持的模型' },
@@ -442,7 +474,7 @@ export const zh: HelpFactory = (base) => ({
     },
     {
       id: 'faq',
-      title: '12. 常见问题',
+      title: '14. 常见问题',
       blocks: [
         { t: 'h3', text: '安装相关' },
         { t: 'faq', items: [
@@ -858,29 +890,61 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'opencode',
-      title: '7. Open Code and other tools',
+      title: '7. Open Code',
       blocks: [
-        { t: 'h3', text: '7.1 Edit opencode.json' },
         { t: 'code', lang: 'json', code: `{\n  "$schema": "https://opencode.ai/config.json",\n  "provider": {\n    "anthropic": {\n      "options": {\n        "baseURL": "${base}/v1",\n        "apiKey": "sk-your-api-key"\n      }\n    }\n  },\n  "model": "anthropic/claude-opus-4-6",\n  "small_model": "anthropic/claude-haiku-4-5"\n}` },
         { t: 'ul', items: [
           '<code>opencode.json</code> usually lives at <code>~/.config/opencode/opencode.json</code>. Newer versions may use <code>opencode.jsonc</code> — check first.',
           'Use the <strong>anthropic</strong> protocol, not openai, otherwise requests may fail.'
         ]},
         { t: 'p', html: 'Launch: <code>opencode</code>' },
-        { t: 'p', html: 'Reference: <a href="https://opencode.ai/docs/zh-cn/providers/" target="_blank" rel="noopener noreferrer">opencode.ai/docs</a>' },
-        { t: 'h3', text: '7.2 Hermes Agent' },
-        { t: 'p', html: 'Reference: <a href="https://www.runoob.com/ai-agent/hermes-agent.html" target="_blank" rel="noopener noreferrer">runoob.com / hermes-agent</a>. Swap the host and key for the gateway\'s.' },
-        { t: 'h3', text: '7.3 Cursor' },
+        { t: 'p', html: 'Reference: <a href="https://opencode.ai/docs/zh-cn/providers/" target="_blank" rel="noopener noreferrer">opencode.ai/docs</a>' }
+      ]
+    },
+    {
+      id: 'hermes',
+      title: '8. Hermes Agent',
+      blocks: [
+        { t: 'p', html: 'Hermes Agent is a <strong>self-evolving</strong> AI agent framework open-sourced by <a href="https://github.com/NousResearch" target="_blank" rel="noopener noreferrer">Nous Research</a> that <strong>distills skills from tasks and improves with use</strong>, letting the model plan autonomously and call tools across multi-step tasks.' },
+        { t: 'p', html: 'Setting a "relay" simply means <strong>pointing Hermes at an OpenAI-compatible model endpoint</strong> (the base URL must end with <code>/v1</code>) — no network proxy involved. For this gateway: endpoint = <code>&lt;gateway&gt;/v1</code>, key = your <code>sk-...</code>, model = any model we support. Pick one of the three methods below.' },
+        { t: 'h4', text: 'Method 1: hermes model interactive config (recommended)' },
+        { t: 'steps', items: [
+          'Run <code>hermes model</code> in a terminal',
+          'In the provider list, choose <code>Custom endpoint (self-hosted / VLLM / etc.)</code>',
+          `Enter Base URL <code>${base}/v1</code>, API Key (no echo — paste then press Enter), and model name (e.g. <code>gpt-5.5</code> / <code>claude-opus-4-8</code>)`,
+          'Send a message to verify; switch configs anytime with <code>hermes model</code>'
+        ]},
+        { t: 'h4', text: 'Method 2: edit ~/.hermes/config.yaml (persistent)' },
+        { t: 'code', lang: 'yaml', code: `# ~/.hermes/config.yaml\nmodel:\n  provider: custom\n  base_url: ${base}/v1\n  model: gpt-5.5\n  # leave api_key empty to fall back to OPENAI_API_KEY in .env` },
+        { t: 'p', html: 'Put the key in <code>~/.hermes/.env</code> (not in config.yaml; Hermes auto-loads it and reads <code>OPENAI_API_KEY</code>, with file mode 0600):' },
+        { t: 'code', lang: 'bash', code: `echo 'OPENAI_API_KEY=sk-your-api-key' >> ~/.hermes/.env` },
+        { t: 'h4', text: 'Method 3: OPENAI_BASE_URL env var (legacy fallback, not recommended)' },
+        { t: 'p', html: 'Recent Hermes resolves the main model from <code>model.base_url</code> in <code>config.yaml</code>; <code>OPENAI_BASE_URL</code> is only kept as a legacy fallback. Use it for quick tests on older setups — for real config prefer Method 1 or 2.' },
+        { t: 'code', lang: 'bash', code: `# Persistent: append to ~/.hermes/.env\nOPENAI_API_KEY=sk-your-api-key\nOPENAI_BASE_URL=${base}/v1\n\n# Temporary (one session)\nexport OPENAI_BASE_URL="${base}/v1" && hermes` },
+        { t: 'callout', variant: 'tip', html: '💡 <strong>base_url must end with <code>/v1</code></strong> (the OpenAI-compatible path; missing it usually returns 404). Keep the API key in <code>.env</code> only — never commit it. For Anthropic-family models, use the anthropic-protocol endpoint as your tool requires.' },
+        { t: 'ul', items: [
+          'Connection timeout → test with <code>curl -v &lt;gateway&gt;/v1/models</code>',
+          'Garbled / malformed replies → confirm the upstream has OpenAI compatibility enabled',
+          'API key errors → check the <code>~/.hermes/.env</code> path and stray spaces around the key',
+          '404 on requests → base_url is missing the <code>/v1</code> suffix'
+        ]},
+        { t: 'p', html: 'Official docs: <a href="https://hermes-agent.nousresearch.com/docs/user-guide/configuration" target="_blank" rel="noopener noreferrer">Configuration</a> · <a href="https://hermes-agent.nousresearch.com/docs/integrations/providers" target="_blank" rel="noopener noreferrer">AI Providers</a> · <a href="https://github.com/NousResearch/hermes-agent" target="_blank" rel="noopener noreferrer">GitHub</a>' }
+      ]
+    },
+    {
+      id: 'cursor',
+      title: '9. Cursor',
+      blocks: [
         { t: 'p', html: 'Reference: <a href="https://gitcode.csdn.net/69b92f9f0a2f6a37c5981c5e.html" target="_blank" rel="noopener noreferrer">gitcode.csdn.net</a>' }
       ]
     },
     {
       id: 'pricing',
-      title: '8. Pricing',
+      title: '10. Pricing',
       blocks: [
-        { t: 'h3', text: '8.1 Pricing model' },
+        { t: 'h3', text: '10.1 Pricing model' },
         { t: 'p', html: 'Our gateway uses <strong>1:1 pricing matching Anthropic\'s official rates</strong> — pay per token, no markup.' },
-        { t: 'h3', text: '8.2 Claude model prices' },
+        { t: 'h3', text: '10.2 Claude model prices' },
         { t: 'table', head: ['Model', 'Base Input Tokens', '5m Cache Writes', '1h Cache Writes', 'Cache Hits & Refreshes', 'Output Tokens'], rows: [
           ['Claude Opus 4.8', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
           ['Claude Opus 4.7', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
@@ -912,14 +976,14 @@ export const en: HelpFactory = (base) => ({
         ]},
         { t: 'callout', variant: 'warning', html: 'Avoid the cheap haiku model — you may hit upstream rate limits. Prefer sonnet or opus.' },
         { t: 'callout', variant: 'tip', html: '💡 <strong>Prompt Caching</strong> cuts cost dramatically for repeated context — cache hits are billed at 10% of the normal input price. Our gateway fully supports it.' },
-        { t: 'h3', text: '8.3 Average Claude Code spend' },
+        { t: 'h3', text: '10.3 Average Claude Code spend' },
         { t: 'p', html: 'Per Anthropic\'s data:' },
         { t: 'ul', items: [
           'Average developer: ~<strong>$6/day</strong>',
           '90th percentile users stay below <strong>$12/day</strong>',
           'Sonnet-only users average <strong>$100–200/month</strong>'
         ]},
-        { t: 'h3', text: '8.4 Cost-saving tips' },
+        { t: 'h3', text: '10.4 Cost-saving tips' },
         { t: 'ul', items: [
           'Use Sonnet for day-to-day coding (best value)',
           'Switch to Opus only for hard architecture decisions',
@@ -931,7 +995,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'codex',
-      title: '9. Codex setup',
+      title: '11. Codex setup',
       blocks: [
         { t: 'p', html: 'Supported models:' },
         { t: 'code', lang: 'bash', code: 'gpt-5.2\ngpt-5.3\ngpt-5.4\ngpt-5.4-mini\ngpt-5.5\ngpt-image-2\ngpt-5.3-codex\ncodex-auto-review' },
@@ -950,7 +1014,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'image-gen',
-      title: '10. Image generation (gpt-image-2)',
+      title: '12. Image generation (gpt-image-2)',
       blocks: [
         { t: 'h3', text: 'Caveats' },
         { t: 'callout', variant: 'warning', html: 'Do not use image-2 for unlawful content — it will trip GPT\'s safety filters. We also run our own moderation; some prompts will be rejected with a request to rephrase. We sweep upstream channels regularly for moderation issues.' },
@@ -1002,7 +1066,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'video-gen',
-      title: '11. Video generation (Sora / Seedance 2.0)',
+      title: '13. Video generation (Sora / Seedance 2.0)',
       blocks: [
         { t: 'p', html: 'Video generation is an <strong>async job API</strong>: create a job → poll status → download the video. Use an API key created under a <strong>video-enabled group</strong>. Supports Sora (<strong>per-second billing</strong>) and Seedance 2.0 (<strong>per-request billing</strong>).' },
         { t: 'h3', text: 'Supported models' },
@@ -1051,7 +1115,7 @@ export const en: HelpFactory = (base) => ({
     },
     {
       id: 'faq',
-      title: '12. FAQ',
+      title: '14. FAQ',
       blocks: [
         { t: 'h3', text: 'Install issues' },
         { t: 'faq', items: [

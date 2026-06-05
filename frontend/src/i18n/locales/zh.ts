@@ -3,7 +3,7 @@ export default {
   home: {
     viewOnGithub: '在 GitHub 上查看',
     viewDocs: '查看文档',
-    help: '帮助文档',
+    help: '使用教程',
     docs: '文档',
     switchToLight: '切换到浅色模式',
     switchToDark: '切换到深色模式',
@@ -410,7 +410,7 @@ export default {
     mySubscriptions: '我的订阅',
     buySubscription: '充值/订阅',
     docs: '文档',
-    help: '帮助',
+    help: '使用教程',
     myOrders: '我的订单',
     orderManagement: '订单管理',
     paymentDashboard: '支付概览',

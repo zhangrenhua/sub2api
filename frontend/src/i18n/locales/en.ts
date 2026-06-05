@@ -3,7 +3,7 @@ export default {
   home: {
     viewOnGithub: 'View on GitHub',
     viewDocs: 'View Documentation',
-    help: 'Help',
+    help: 'Tutorial',
     docs: 'Docs',
     switchToLight: 'Switch to Light Mode',
     switchToDark: 'Switch to Dark Mode',
@@ -411,7 +411,7 @@ export default {
     mySubscriptions: 'My Subscriptions',
     buySubscription: 'Recharge / Subscription',
     docs: 'Docs',
-    help: 'Help',
+    help: 'Tutorial',
     myOrders: 'My Orders',
     orderManagement: 'Orders',
     paymentDashboard: 'Payment Dashboard',

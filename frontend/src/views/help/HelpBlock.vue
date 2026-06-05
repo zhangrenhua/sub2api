@@ -4,7 +4,7 @@
   </template>
 
   <template v-else-if="block.t === 'h3'">
-    <h3>{{ block.text }}</h3>
+    <h3 :id="anchorId">{{ block.text }}</h3>
   </template>
 
   <template v-else-if="block.t === 'h4'">
@@ -102,5 +102,6 @@ defineProps<{
   block: Block
   copyLabel?: string
   copiedLabel?: string
+  anchorId?: string
 }>()
 </script>
