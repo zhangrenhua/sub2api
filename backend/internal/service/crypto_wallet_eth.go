@@ -58,29 +58,60 @@ func (s *CryptoWalletService) resolveEth(ctx context.Context) (*ethSettings, err
 	return s.resolveEthByKey(ctx, payment.TypeERC20)
 }
 
-// resolveEthByKey reads the enabled Ethereum provider instance for the given
-// provider key (usdt_erc20 / usdc_erc20) and builds an Etherscan client plus
-// operational parameters. `tokens` holds just this instance's token; the sweep
-// uses resolveEthSweep to aggregate across instances.
-func (s *CryptoWalletService) resolveEthByKey(ctx context.Context, providerKey string) (*ethSettings, error) {
-	inst, err := s.entClient.PaymentProviderInstance.Query().
+// ethInstanceConfig returns the parsed config of the enabled provider instance
+// for the given Ethereum provider key. found is false when no enabled instance
+// exists for that key.
+func (s *CryptoWalletService) ethInstanceConfig(ctx context.Context, providerKey string) (cfg map[string]string, found bool, err error) {
+	inst, qerr := s.entClient.PaymentProviderInstance.Query().
 		Where(
 			paymentproviderinstance.ProviderKeyEQ(providerKey),
 			paymentproviderinstance.EnabledEQ(true),
 		).
 		Order(dbent.Asc(paymentproviderinstance.FieldSortOrder)).
 		First(ctx)
-	if dbent.IsNotFound(err) {
-		return &ethSettings{}, nil
+	if dbent.IsNotFound(qerr) {
+		return nil, false, nil
 	}
-	if err != nil {
-		return nil, fmt.Errorf("query %s instance: %w", providerKey, err)
+	if qerr != nil {
+		return nil, false, fmt.Errorf("query %s instance: %w", providerKey, qerr)
 	}
-
-	cfg := map[string]string{}
+	cfg = map[string]string{}
 	if strings.TrimSpace(inst.Config) != "" {
 		if jerr := json.Unmarshal([]byte(inst.Config), &cfg); jerr != nil {
-			return nil, fmt.Errorf("parse %s instance config: %w", providerKey, jerr)
+			return nil, false, fmt.Errorf("parse %s instance config: %w", providerKey, jerr)
+		}
+	}
+	return cfg, true, nil
+}
+
+// ethSharedConnectionKeys are the chain-connection settings USDT and USDC share
+// (same network). A secondary token (USDC) inherits any it leaves blank from the
+// USDT-ERC20 instance, so the operator only sets contract + rate on USDC.
+var ethSharedConnectionKeys = []string{"etherscanApiBase", "etherscanApiKey", "chainId", "ethRpcUrl", "confirmSeconds", "gasTopUpWei"}
+
+// resolveEthByKey reads the enabled Ethereum provider instance for the given
+// provider key (usdt_erc20 / usdc_erc20) and builds an Etherscan client plus
+// operational parameters. `tokens` holds just this instance's token; the sweep
+// uses resolveEthSweep to aggregate across instances.
+func (s *CryptoWalletService) resolveEthByKey(ctx context.Context, providerKey string) (*ethSettings, error) {
+	cfg, found, err := s.ethInstanceConfig(ctx, providerKey)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return &ethSettings{}, nil
+	}
+
+	// USDC shares the Ethereum chain with USDT: inherit Etherscan/RPC/gas
+	// settings from the USDT-ERC20 instance for any blank field, so a USDC
+	// instance configured with only contract + rate still works.
+	if providerKey != payment.TypeERC20 {
+		if base, ok, berr := s.ethInstanceConfig(ctx, payment.TypeERC20); berr == nil && ok {
+			for _, k := range ethSharedConnectionKeys {
+				if strings.TrimSpace(cfg[k]) == "" {
+					cfg[k] = base[k]
+				}
+			}
 		}
 	}
 
