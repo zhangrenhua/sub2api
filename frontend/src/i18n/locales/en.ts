@@ -6964,6 +6964,8 @@ export default {
     amountTooHigh: 'Maximum amount is {max}',
     amountNoMethod: 'No payment method available for this amount',
     rechargeRatePreview: 'Current rate: 1 CNY = {usd} USD',
+    rechargePerYuan: 'Pay 1 CNY ≈ {x} balance (after recharge rate)',
+    refundContactNote: 'Having issues? Contact support for a refund.',
     refundReason: 'Refund Reason',
     refundReasonPlaceholder: 'Please describe your refund reason',
     stripeLoadFailed: 'Failed to load payment component. Please refresh and try again.',

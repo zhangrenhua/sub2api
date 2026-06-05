@@ -7143,6 +7143,8 @@ export default {
     amountTooHigh: '最高金额为 {max}',
     amountNoMethod: '该金额没有可用的支付方式',
     rechargeRatePreview: '当前倍率：1 CNY = {usd} USD',
+    rechargePerYuan: '支付 1 元 ≈ {x} 余额（按充值倍率结算）',
+    refundContactNote: '如有问题可联系客服退款',
     refundReason: '退款原因',
     refundReasonPlaceholder: '请描述您的退款原因',
     stripeLoadFailed: '支付组件加载失败，请刷新页面重试',
