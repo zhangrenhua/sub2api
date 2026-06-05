@@ -372,6 +372,7 @@ const paymentMethods: PaymentMethodChip[] = [
   { label: t('payment.methods.alipay'), icon: alipayIcon },
   { label: t('payment.methods.wxpay'), icon: wxpayIcon },
   { label: 'USDT (TRC20 / ERC20)', icon: usdtIcon },
+  { label: 'USDC (ERC20)', badge: 'C', badgeClass: 'bg-[#2775CA]' },
   { label: 'PayPal', badge: 'P', badgeClass: 'bg-[#003087]' },
 ]
 
