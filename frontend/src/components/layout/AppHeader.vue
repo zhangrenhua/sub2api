@@ -23,6 +23,9 @@
 
       <!-- Right: Announcements + Docs + Language + Subscriptions + Balance + User Dropdown -->
       <div class="flex items-center gap-3">
+        <!-- Announcement Bell -->
+        <AnnouncementBell v-if="user" />
+
         <!-- Model Plaza (logged-in; reuses the Available Channels page that lists
              channel model pricing + public group rate multipliers) -->
         <router-link
@@ -34,9 +37,6 @@
           <Icon name="grid" size="sm" />
           <span class="hidden sm:inline">{{ t('nav.modelPlaza') }}</span>
         </router-link>
-
-        <!-- Announcement Bell -->
-        <AnnouncementBell v-if="user" />
 
         <!-- Help Link (in-app) -->
         <router-link

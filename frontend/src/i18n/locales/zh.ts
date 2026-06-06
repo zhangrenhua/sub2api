@@ -7113,6 +7113,7 @@ export default {
     actualPay: '实付金额',
     usdtPayable: '应付 {unit}',
     usdtRateNote: '按 1 {unit} = ¥{rate} 折算',
+    cryptoArrivalNote: '链上转账受区块链网络情况影响,通常需 3-5 分钟到账,请耐心等待。',
     usdtPayableNote: '应付 {amount} {unit}（1 {unit} = ¥{rate}）',
     paypalPayable: '应付 USD',
     paypalRateNote: '按 1 USD = ¥{rate} 折算',

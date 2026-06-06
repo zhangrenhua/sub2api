@@ -70,7 +70,7 @@
       </div>
       <div
         v-else
-        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
         <article
           v-for="m in filteredModels"
@@ -90,9 +90,22 @@
                 <PlatformIcon :platform="m.platform as GroupPlatform" size="sm" />
               </span>
               <div class="min-w-0 flex-1">
-                <b class="block truncate text-sm font-semibold text-gray-900 dark:text-white">
-                  {{ m.name }}
-                </b>
+                <div class="flex items-center gap-1">
+                  <b
+                    class="truncate text-[13px] font-semibold leading-snug text-gray-900 dark:text-white"
+                    :title="m.name"
+                  >
+                    {{ m.name }}
+                  </b>
+                  <button
+                    type="button"
+                    class="flex-shrink-0 rounded p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-dark-700 dark:hover:text-gray-200"
+                    :title="t('common.copy')"
+                    @click.stop="copyName(m.key, m.name)"
+                  >
+                    <Icon :name="copiedKey === m.key ? 'check' : 'copy'" size="xs" :class="copiedKey === m.key ? 'text-green-500' : ''" />
+                  </button>
+                </div>
                 <span class="text-[11px] uppercase tracking-wide text-gray-400 dark:text-gray-500">
                   {{ m.platform }}
                 </span>
@@ -117,16 +130,25 @@
                 </div>
                 <div class="mt-1.5 text-[11px] text-gray-400 dark:text-gray-500">{{ t('modelPlaza.perMillion') }}</div>
               </template>
-              <template v-else-if="m.pricing && m.pricing.billing_mode === 'per_request'">
-                <div class="flex items-baseline gap-2">
-                  <b class="font-mono text-xl text-gray-900 dark:text-white">{{ price(m.pricing.per_request_price, 1) }}</b>
-                  <span class="text-[13px] text-gray-500 dark:text-gray-400">{{ t('modelPlaza.perRequest') }}</span>
-                </div>
-              </template>
-              <template v-else-if="m.pricing && m.pricing.billing_mode === 'image'">
-                <div class="flex items-baseline gap-2">
-                  <b class="font-mono text-xl text-gray-900 dark:text-white">{{ price(m.pricing.image_output_price, 1) }}</b>
-                  <span class="text-[13px] text-gray-500 dark:text-gray-400">{{ t('modelPlaza.perImage') }}</span>
+              <template v-else-if="m.pricing && (m.pricing.billing_mode === 'per_request' || m.pricing.billing_mode === 'image')">
+                <!-- 分级价格（如 gpt-image-2 按分辨率/质量分档），价格存在 intervals 里 -->
+                <template v-if="m.pricing.intervals && m.pricing.intervals.length">
+                  <div
+                    v-for="(iv, i) in m.pricing.intervals"
+                    :key="i"
+                    class="flex items-baseline justify-between py-0.5 text-[13px] text-gray-500 dark:text-gray-400"
+                  >
+                    <span class="truncate pr-2">{{ iv.tier_label || intervalRange(iv) }}</span>
+                    <b class="flex-shrink-0 font-mono text-sm text-gray-900 dark:text-white">{{ price(iv.per_request_price, 1) }}</b>
+                  </div>
+                  <div class="mt-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+                    {{ m.pricing.billing_mode === 'image' ? t('modelPlaza.perImage') : t('modelPlaza.perRequest') }}
+                  </div>
+                </template>
+                <!-- 单一价格 -->
+                <div v-else class="flex items-baseline gap-2">
+                  <b class="font-mono text-xl text-gray-900 dark:text-white">{{ price(m.pricing.billing_mode === 'image' ? m.pricing.image_output_price : m.pricing.per_request_price, 1) }}</b>
+                  <span class="text-[13px] text-gray-500 dark:text-gray-400">{{ m.pricing.billing_mode === 'image' ? t('modelPlaza.perImage') : t('modelPlaza.perRequest') }}</span>
                 </div>
               </template>
               <div v-else class="text-[12px] italic text-gray-400 dark:text-gray-500">
@@ -219,6 +241,19 @@ const loading = ref(false)
 const search = ref('')
 const activePlatform = ref('')
 const openKeys = ref<Set<string>>(new Set())
+const copiedKey = ref('')
+let copiedTimer: ReturnType<typeof setTimeout> | undefined
+
+async function copyName(key: string, name: string) {
+  try {
+    await navigator.clipboard.writeText(name)
+    copiedKey.value = key
+    clearTimeout(copiedTimer)
+    copiedTimer = setTimeout(() => { copiedKey.value = '' }, 1500)
+  } catch {
+    /* clipboard unavailable — no-op */
+  }
+}
 
 const activeCls = 'bg-primary-600 text-white'
 const idleCls =
@@ -285,6 +320,11 @@ function formatRate(v: number): string {
 
 function price(value: number | null, scale: number): string {
   return formatScaled(value, scale)
+}
+
+// Label for a pricing tier that has no explicit tier_label — show its token range.
+function intervalRange(iv: { min_tokens: number; max_tokens: number | null }): string {
+  return `${iv.min_tokens}–${iv.max_tokens ?? '∞'}`
 }
 
 // 折算后实际单价 = 基准单价 × 分组倍率

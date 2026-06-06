@@ -6934,6 +6934,7 @@ export default {
     actualPay: 'Actual Payment',
     usdtPayable: '{unit} Payable',
     usdtRateNote: 'Converted at 1 {unit} = ¥{rate}',
+    cryptoArrivalNote: 'On-chain transfers depend on blockchain network conditions and usually take 3-5 minutes to arrive. Please wait.',
     usdtPayableNote: 'Pay {amount} {unit} (1 {unit} = ¥{rate})',
     paypalPayable: 'USD Payable',
     paypalRateNote: 'Converted at 1 USD = ¥{rate}',

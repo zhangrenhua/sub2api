@@ -103,6 +103,9 @@
                 </p>
               </div>
             </div>
+            <p v-if="isUsdtMethod" class="px-1 text-center text-xs text-amber-600 dark:text-amber-400">
+              {{ t('payment.cryptoArrivalNote') }}
+            </p>
             <button :class="['btn w-full py-2.5 text-base font-medium', paymentButtonClass]" :disabled="!canSubmit || submitting" @click="handleSubmitRecharge">
               <span v-if="submitting" class="flex items-center justify-center gap-2">
                 <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
@@ -206,6 +209,9 @@
               </p>
               <p v-else-if="isPaypalMethod && paypalRate > 0" class="px-1 text-center text-xs text-gray-500 dark:text-gray-400">
                 {{ t('payment.paypalPayableNote', { amount: subPaypalPayDisplay, rate: paypalRate }) }}
+              </p>
+              <p v-if="isUsdtMethod" class="px-1 text-center text-xs text-amber-600 dark:text-amber-400">
+                {{ t('payment.cryptoArrivalNote') }}
               </p>
               <button :class="['btn w-full py-2.5 text-base font-medium', paymentButtonClass]" :disabled="!canSubmitSubscription || submitting" @click="confirmSubscribe">
                 <span v-if="submitting" class="flex items-center justify-center gap-2">
