@@ -42,7 +42,10 @@ const (
 	// OpenAI Platform API for API Key accounts (fallback)
 	openaiPlatformAPIURL   = "https://api.openai.com/v1/responses"
 	openaiStickySessionTTL = time.Hour // 粘性会话TTL
-	codexCLIUserAgent      = "codex_cli_rs/0.125.0"
+	// 与真实 Codex CLI 的 User-Agent 结构对齐：
+	// {originator}/{version} ({OS} {OS_version}; {arch}) {terminal}
+	// 旧值 "codex_cli_rs/0.125.0" 缺少 OS/架构/终端后缀，易被上游指纹识别为非官方客户端。
+	codexCLIUserAgent = "codex_cli_rs/0.125.0 (Ubuntu 22.4.0; x86_64) xterm-256color"
 	// codex_cli_only 拒绝时单个请求头日志长度上限（字符）
 	codexCLIOnlyHeaderValueMaxBytes = 256
 
@@ -2499,7 +2502,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	instructions := gjson.GetBytes(body, "instructions")
 	instructionsEmpty := !instructions.Exists() || instructions.Type != gjson.String || strings.TrimSpace(instructions.String()) == ""
 	if instructionsEmpty && !compatMessagesBridge {
-		markPatchSet("instructions", "You are a helpful coding assistant.")
+		markPatchSet("instructions", defaultCodexSynthInstructions(reqModel))
 	}
 
 	billingModel := account.GetMappedModel(reqModel)
@@ -2609,6 +2612,10 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			codexResult = applyCodexOAuthTransform(decoded, isCodexCLI, isCompactRequest)
 		}
 		if codexResult.Modified {
+			markDecodedModified()
+		}
+		// 带真实 device_id 时补齐 client_metadata 安装标识，与真实 Codex 对齐（compact 形态不同，跳过）。
+		if !isCompactRequest && applyCodexClientMetadata(decoded, account) {
 			markDecodedModified()
 		}
 		if codexResult.NormalizedModel != "" {
@@ -5835,7 +5842,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		usageLog.TotalCost = cost.TotalCost
 		usageLog.ActualCost = cost.ActualCost
 	}
-	if result.ImageCount > 0 {
+	if result.ImageCount > 0 && (cost == nil || cost.BillingMode != string(BillingModeToken)) {
 		usageLog.RateMultiplier = imageMultiplier
 	} else {
 		usageLog.RateMultiplier = multiplier
@@ -5929,7 +5936,10 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 ) (*CostBreakdown, error) {
 	billingModel := firstUsageBillingModel(billingModels)
 	if result != nil && result.ImageCount > 0 {
-		return s.calculateOpenAIImageCost(ctx, billingModel, apiKey, result, imageMultiplier), nil
+		// 渠道定价为 token 计费时走 token 路径，否则走图片计费
+		if resolved := s.resolveOpenAIChannelPricing(ctx, billingModel, apiKey); resolved == nil || resolved.Mode != BillingModeToken {
+			return s.calculateOpenAIImageCost(ctx, billingModel, apiKey, result, imageMultiplier), nil
+		}
 	}
 	if len(billingModels) == 0 || billingModel == "" {
 		return nil, errors.New("openai usage billing model is empty")
