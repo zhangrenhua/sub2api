@@ -33,9 +33,10 @@ const (
 	maxRespBytes         = 8 << 20 // 8MB
 	usdtDecimals         = 6       // mainnet USDT (ERC20) precision
 
-	// Etherscan free tier allows 5 req/s with an API key; gate just under that.
-	// Keyless access is far stricter (~1 req/5s), so back off hard when no key.
-	keyedMinInterval   = 220 * time.Millisecond
+	// Etherscan's API caps at 3 req/s with a key; pace at 350ms (~2.85 req/s) to
+	// stay safely under it (220ms ≈ 4.5 req/s overshot and caused intermittent
+	// 429s). Keyless access is far stricter (~1 req/5s), so back off hard then.
+	keyedMinInterval   = 350 * time.Millisecond
 	keylessMinInterval = 5 * time.Second
 )
 
