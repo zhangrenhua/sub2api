@@ -539,31 +539,14 @@ func (s *CryptoWalletService) RefreshBalances(ctx context.Context) (int, error) 
 
 	now := time.Now()
 	refreshed := 0
-	// balanceOf returns the primary token balance (USDT for both chains) and, for
-	// ERC20 rows, the USDC balance on the same shared address.
-	balanceOf := func(network, address string) (usdt float64, usdcBal float64, ok bool) {
-		switch network {
-		case cryptoNetworkERC20:
-			if !es.instancePresent {
-				return 0, 0, false
-			}
-			bal, err := es.client.ERC20Balance(ctx, address, es.contract)
-			if err != nil {
-				return 0, 0, false
-			}
-			if usdc.instancePresent {
-				if ub, uberr := usdc.client.ERC20Balance(ctx, address, usdc.contract); uberr == nil {
-					usdcBal = ub
-				}
-			}
-			return bal, usdcBal, true
-		default:
-			if !ts.instancePresent {
-				return 0, 0, false
-			}
-			bal, err := ts.client.TRC20Balance(ctx, address, ts.contract)
-			return bal, 0, err == nil
-		}
+
+	// One Etherscan client serves BOTH USDT and USDC reads. Using each instance's
+	// own client would give them independent rate limiters, but Etherscan throttles
+	// per API key — two unpaced clients overshoot the limit and fail intermittently.
+	// USDT and USDC share the key/chain, so a single paced client is correct.
+	ethClient := es.client
+	if !es.instancePresent && usdc.instancePresent {
+		ethClient = usdc.client // USDC-only deployment
 	}
 
 	rows, err := s.entClient.UserCryptoAddress.Query().All(ctx)
@@ -571,15 +554,42 @@ func (s *CryptoWalletService) RefreshBalances(ctx context.Context) (int, error) 
 		return 0, err
 	}
 	for _, r := range rows {
-		bal, usdcBal, ok := balanceOf(r.Network, r.Address)
-		if !ok {
-			continue
+		upd := s.entClient.UserCryptoAddress.UpdateOneID(r.ID)
+		changed := false
+
+		switch r.Network {
+		case cryptoNetworkERC20:
+			if ethClient == nil {
+				continue
+			}
+			// Only write a token's balance when its query SUCCEEDS — a transient
+			// failure must not overwrite the last good cached value with 0.
+			if es.instancePresent {
+				if bal, berr := ethClient.ERC20Balance(ctx, r.Address, es.contract); berr == nil {
+					upd = upd.SetLastBalance(bal)
+					changed = true
+				}
+			}
+			if usdc.instancePresent {
+				if bal, berr := ethClient.ERC20Balance(ctx, r.Address, usdc.contract); berr == nil {
+					upd = upd.SetLastBalanceUsdc(bal)
+					changed = true
+				}
+			}
+		default:
+			if !ts.instancePresent {
+				continue
+			}
+			if bal, berr := ts.client.TRC20Balance(ctx, r.Address, ts.contract); berr == nil {
+				upd = upd.SetLastBalance(bal)
+				changed = true
+			}
 		}
-		if _, serr := s.entClient.UserCryptoAddress.UpdateOneID(r.ID).
-			SetLastBalance(bal).
-			SetLastBalanceUsdc(usdcBal).
-			SetLastBalanceAt(now).
-			Save(ctx); serr == nil {
+
+		if !changed {
+			continue // all queries failed → leave cached balances untouched
+		}
+		if _, serr := upd.SetLastBalanceAt(now).Save(ctx); serr == nil {
 			refreshed++
 		}
 	}
