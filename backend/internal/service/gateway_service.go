@@ -5457,7 +5457,11 @@ func (s *GatewayService) buildUpstreamRequestAnthropicAPIKeyPassthrough(
 		return nil, nil, err
 	}
 
-	if c != nil && c.Request != nil {
+	// 账号级「模拟 Claude CLI 客户端」：开启时跳过客户端 header 透传，避免客户端原始
+	// x-stainless-* / user-agent 与下方注入的伪装头混在一起被 Anthropic 判 third-party。
+	simulateCliHeaders := s.shouldSimulateCliHeaders(ctx, c, account, body)
+
+	if !simulateCliHeaders && c != nil && c.Request != nil {
 		for key, values := range c.Request.Header {
 			lowerKey := strings.ToLower(strings.TrimSpace(key))
 			if !allowedHeaders[lowerKey] {
@@ -5482,6 +5486,17 @@ func (s *GatewayService) buildUpstreamRequestAnthropicAPIKeyPassthrough(
 	}
 	if getHeaderRaw(req.Header, "anthropic-version") == "" {
 		setHeaderRaw(req.Header, "anthropic-version", "2023-06-01")
+	}
+
+	// 仅改写出站头为 Claude CLI 指纹（身份头），不动 body。
+	if simulateCliHeaders {
+		applyClaudeCodeMimicHeaders(req, gjson.GetBytes(body, "stream").Bool())
+		// 跳过了客户端 header 透传，但 anthropic-beta 是功能开关（prompt-caching / 1m-context 等，
+		// 非身份指纹），必须保留客户端原值——否则与已按 clientBeta 做过 sanitize 的 body 不一致，
+		// 上游会拒。注意：不注入 oauth/claude-code beta（API-key 请求带这些会被上游拒）。
+		if clientBeta != "" {
+			setHeaderRaw(req.Header, "anthropic-beta", clientBeta)
+		}
 	}
 
 	return req, body, nil
@@ -6247,6 +6262,25 @@ func (s *GatewayService) handleBedrockNonStreamingResponse(
 	return usage, nil
 }
 
+// shouldSimulateCliHeaders 判定本次请求是否需要把出站头改写为 Claude CLI 指纹：
+// 账号开启 simulate_claude_cli_client（仅 anthropic API-key）、且客户端本身不是真实 CLI。
+// 自包含判定：同时覆盖普通路径和 Anthropic API-key passthrough 路径（后者在 Forward 中
+// 提前 return，无法依赖 gin.Context 中转）。
+func (s *GatewayService) shouldSimulateCliHeaders(ctx context.Context, c *gin.Context, account *Account, body []byte) bool {
+	if account == nil || !account.ShouldSimulateClaudeCli() {
+		return false
+	}
+	ua := ""
+	if c != nil {
+		ua = c.GetHeader("User-Agent")
+	}
+	metaUID := gjson.GetBytes(body, "metadata.user_id").String()
+	if IsClaudeCodeClient(ctx) || isClaudeCodeClient(ua, metaUID) {
+		return false
+	}
+	return true
+}
+
 func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Context, account *Account, body []byte, token, tokenType, modelID string, reqStream bool, mimicClaudeCode bool) (*http.Request, []byte, error) {
 	if account.Platform == PlatformAnthropic && account.Type == AccountTypeServiceAccount {
 		req, err := s.buildUpstreamRequestAnthropicVertex(ctx, c, account, body, token, modelID, reqStream)
@@ -6356,12 +6390,17 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 		setHeaderRaw(req.Header, "x-api-key", token)
 	}
 
+	// 账号级「模拟 Claude CLI 客户端」（anthropic API-key 账号）：仅改写出站头。
+	// 与 OAuth mimic 一样需要跳过客户端 header 透传，避免客户端原始 x-stainless-* /
+	// user-agent 等与下方注入的伪装头混在一起被 Anthropic 判 third-party。
+	simulateCliHeaders := s.shouldSimulateCliHeaders(ctx, c, account, body)
+
 	// 白名单透传 headers
 	// OAuth mimicry 路径：跳过客户端 header 透传，与 Parrot 对齐。
 	// Parrot 的 build_upstream_headers 只发 9 个精确 header，不透传任何客户端 header。
 	// 透传客户端 header 会引入不一致的 x-stainless-* / anthropic-beta / user-agent /
 	// x-claude-code-session-id 等值，和我们注入的伪装 header 冲突，被 Anthropic 判 third-party。
-	if tokenType != "oauth" || !mimicClaudeCode {
+	if (tokenType != "oauth" || !mimicClaudeCode) && !simulateCliHeaders {
 		for key, values := range clientHeaders {
 			lowerKey := strings.ToLower(key)
 			if allowedHeaders[lowerKey] {
@@ -6392,6 +6431,13 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 	// OAuth + mimic Claude Code：强制注入 CLI 指纹相关 header
 	// （user-agent/x-stainless-*/x-app/Accept/x-stainless-helper-method/x-client-request-id）
 	if tokenType == "oauth" && mimicClaudeCode {
+		applyClaudeCodeMimicHeaders(req, reqStream)
+	}
+
+	// 账号级模拟（anthropic API-key 账号）：仅改写出站头为 Claude CLI 指纹，不动 body。
+	// 复用同一套 header 写入；anthropic-beta 仍走下方 API-key 分支（不注入 oauth/cc beta，
+	// 因为 API-key 请求带 oauth beta 会被上游拒绝）。
+	if simulateCliHeaders {
 		applyClaudeCodeMimicHeaders(req, reqStream)
 	}
 
@@ -9711,7 +9757,11 @@ func (s *GatewayService) buildCountTokensRequestAnthropicAPIKeyPassthrough(
 		return nil, err
 	}
 
-	if c != nil && c.Request != nil {
+	// 账号级「模拟 Claude CLI 客户端」：与 /v1/messages passthrough 保持一致，
+	// 开启时跳过客户端 header 透传并改写为 CLI 指纹（count_tokens 永不流式）。
+	simulateCliHeaders := s.shouldSimulateCliHeaders(ctx, c, account, body)
+
+	if !simulateCliHeaders && c != nil && c.Request != nil {
 		for key, values := range c.Request.Header {
 			lowerKey := strings.ToLower(strings.TrimSpace(key))
 			if !allowedHeaders[lowerKey] {
@@ -9735,6 +9785,15 @@ func (s *GatewayService) buildCountTokensRequestAnthropicAPIKeyPassthrough(
 	}
 	if req.Header.Get("anthropic-version") == "" {
 		req.Header.Set("anthropic-version", "2023-06-01")
+	}
+
+	if simulateCliHeaders {
+		applyClaudeCodeMimicHeaders(req, false)
+		// 同 messages passthrough：保留客户端 anthropic-beta（功能开关，非身份指纹），
+		// 与已 sanitize 的 body 保持一致。
+		if clientBeta != "" {
+			req.Header.Set("anthropic-beta", clientBeta)
+		}
 	}
 
 	return req, nil
@@ -9826,13 +9885,18 @@ func (s *GatewayService) buildCountTokensRequest(ctx context.Context, c *gin.Con
 		setHeaderRaw(req.Header, "x-api-key", token)
 	}
 
+	// 账号级「模拟 Claude CLI 客户端」（anthropic API-key）：开启时跳过客户端 header 透传。
+	simulateCliHeaders := s.shouldSimulateCliHeaders(ctx, c, account, body)
+
 	// 白名单透传 headers（恢复真实 wire casing）
-	for key, values := range clientHeaders {
-		lowerKey := strings.ToLower(key)
-		if allowedHeaders[lowerKey] {
-			wireKey := resolveWireCasing(key)
-			for _, v := range values {
-				addHeaderRaw(req.Header, wireKey, v)
+	if !simulateCliHeaders {
+		for key, values := range clientHeaders {
+			lowerKey := strings.ToLower(key)
+			if allowedHeaders[lowerKey] {
+				wireKey := resolveWireCasing(key)
+				for _, v := range values {
+					addHeaderRaw(req.Header, wireKey, v)
+				}
 			}
 		}
 	}
@@ -9855,6 +9919,11 @@ func (s *GatewayService) buildCountTokensRequest(ctx context.Context, c *gin.Con
 
 	// OAuth + mimic Claude Code：强制注入 CLI 指纹 header
 	if tokenType == "oauth" && mimicClaudeCode {
+		applyClaudeCodeMimicHeaders(req, false)
+	}
+
+	// 账号级模拟（anthropic API-key 账号）：仅改写出站头为 Claude CLI 指纹。
+	if simulateCliHeaders {
 		applyClaudeCodeMimicHeaders(req, false)
 	}
 

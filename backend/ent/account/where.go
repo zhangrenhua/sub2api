@@ -140,6 +140,11 @@ func AutoPauseOnExpired(v bool) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldAutoPauseOnExpired, v))
 }
 
+// SimulateClaudeCliClient applies equality check predicate on the "simulate_claude_cli_client" field. It's identical to SimulateClaudeCliClientEQ.
+func SimulateClaudeCliClient(v bool) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSimulateClaudeCliClient, v))
+}
+
 // Schedulable applies equality check predicate on the "schedulable" field. It's identical to SchedulableEQ.
 func Schedulable(v bool) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldSchedulable, v))
@@ -1033,6 +1038,16 @@ func AutoPauseOnExpiredEQ(v bool) predicate.Account {
 // AutoPauseOnExpiredNEQ applies the NEQ predicate on the "auto_pause_on_expired" field.
 func AutoPauseOnExpiredNEQ(v bool) predicate.Account {
 	return predicate.Account(sql.FieldNEQ(FieldAutoPauseOnExpired, v))
+}
+
+// SimulateClaudeCliClientEQ applies the EQ predicate on the "simulate_claude_cli_client" field.
+func SimulateClaudeCliClientEQ(v bool) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSimulateClaudeCliClient, v))
+}
+
+// SimulateClaudeCliClientNEQ applies the NEQ predicate on the "simulate_claude_cli_client" field.
+func SimulateClaudeCliClientNEQ(v bool) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldSimulateClaudeCliClient, v))
 }
 
 // SchedulableEQ applies the EQ predicate on the "schedulable" field.

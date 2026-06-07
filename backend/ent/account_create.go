@@ -251,6 +251,20 @@ func (_c *AccountCreate) SetNillableAutoPauseOnExpired(v *bool) *AccountCreate {
 	return _c
 }
 
+// SetSimulateClaudeCliClient sets the "simulate_claude_cli_client" field.
+func (_c *AccountCreate) SetSimulateClaudeCliClient(v bool) *AccountCreate {
+	_c.mutation.SetSimulateClaudeCliClient(v)
+	return _c
+}
+
+// SetNillableSimulateClaudeCliClient sets the "simulate_claude_cli_client" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSimulateClaudeCliClient(v *bool) *AccountCreate {
+	if v != nil {
+		_c.SetSimulateClaudeCliClient(*v)
+	}
+	return _c
+}
+
 // SetSchedulable sets the "schedulable" field.
 func (_c *AccountCreate) SetSchedulable(v bool) *AccountCreate {
 	_c.mutation.SetSchedulable(v)
@@ -497,6 +511,10 @@ func (_c *AccountCreate) defaults() error {
 		v := account.DefaultAutoPauseOnExpired
 		_c.mutation.SetAutoPauseOnExpired(v)
 	}
+	if _, ok := _c.mutation.SimulateClaudeCliClient(); !ok {
+		v := account.DefaultSimulateClaudeCliClient
+		_c.mutation.SetSimulateClaudeCliClient(v)
+	}
 	if _, ok := _c.mutation.Schedulable(); !ok {
 		v := account.DefaultSchedulable
 		_c.mutation.SetSchedulable(v)
@@ -561,6 +579,9 @@ func (_c *AccountCreate) check() error {
 	}
 	if _, ok := _c.mutation.AutoPauseOnExpired(); !ok {
 		return &ValidationError{Name: "auto_pause_on_expired", err: errors.New(`ent: missing required field "Account.auto_pause_on_expired"`)}
+	}
+	if _, ok := _c.mutation.SimulateClaudeCliClient(); !ok {
+		return &ValidationError{Name: "simulate_claude_cli_client", err: errors.New(`ent: missing required field "Account.simulate_claude_cli_client"`)}
 	}
 	if _, ok := _c.mutation.Schedulable(); !ok {
 		return &ValidationError{Name: "schedulable", err: errors.New(`ent: missing required field "Account.schedulable"`)}
@@ -668,6 +689,10 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.AutoPauseOnExpired(); ok {
 		_spec.SetField(account.FieldAutoPauseOnExpired, field.TypeBool, value)
 		_node.AutoPauseOnExpired = value
+	}
+	if value, ok := _c.mutation.SimulateClaudeCliClient(); ok {
+		_spec.SetField(account.FieldSimulateClaudeCliClient, field.TypeBool, value)
+		_node.SimulateClaudeCliClient = value
 	}
 	if value, ok := _c.mutation.Schedulable(); ok {
 		_spec.SetField(account.FieldSchedulable, field.TypeBool, value)
@@ -1089,6 +1114,18 @@ func (u *AccountUpsert) SetAutoPauseOnExpired(v bool) *AccountUpsert {
 // UpdateAutoPauseOnExpired sets the "auto_pause_on_expired" field to the value that was provided on create.
 func (u *AccountUpsert) UpdateAutoPauseOnExpired() *AccountUpsert {
 	u.SetExcluded(account.FieldAutoPauseOnExpired)
+	return u
+}
+
+// SetSimulateClaudeCliClient sets the "simulate_claude_cli_client" field.
+func (u *AccountUpsert) SetSimulateClaudeCliClient(v bool) *AccountUpsert {
+	u.Set(account.FieldSimulateClaudeCliClient, v)
+	return u
+}
+
+// UpdateSimulateClaudeCliClient sets the "simulate_claude_cli_client" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSimulateClaudeCliClient() *AccountUpsert {
+	u.SetExcluded(account.FieldSimulateClaudeCliClient)
 	return u
 }
 
@@ -1619,6 +1656,20 @@ func (u *AccountUpsertOne) SetAutoPauseOnExpired(v bool) *AccountUpsertOne {
 func (u *AccountUpsertOne) UpdateAutoPauseOnExpired() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.UpdateAutoPauseOnExpired()
+	})
+}
+
+// SetSimulateClaudeCliClient sets the "simulate_claude_cli_client" field.
+func (u *AccountUpsertOne) SetSimulateClaudeCliClient(v bool) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSimulateClaudeCliClient(v)
+	})
+}
+
+// UpdateSimulateClaudeCliClient sets the "simulate_claude_cli_client" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSimulateClaudeCliClient() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSimulateClaudeCliClient()
 	})
 }
 
@@ -2341,6 +2392,20 @@ func (u *AccountUpsertBulk) SetAutoPauseOnExpired(v bool) *AccountUpsertBulk {
 func (u *AccountUpsertBulk) UpdateAutoPauseOnExpired() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.UpdateAutoPauseOnExpired()
+	})
+}
+
+// SetSimulateClaudeCliClient sets the "simulate_claude_cli_client" field.
+func (u *AccountUpsertBulk) SetSimulateClaudeCliClient(v bool) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSimulateClaudeCliClient(v)
+	})
+}
+
+// UpdateSimulateClaudeCliClient sets the "simulate_claude_cli_client" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSimulateClaudeCliClient() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSimulateClaudeCliClient()
 	})
 }
 

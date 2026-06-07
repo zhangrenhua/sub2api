@@ -53,6 +53,8 @@ const (
 	FieldExpiresAt = "expires_at"
 	// FieldAutoPauseOnExpired holds the string denoting the auto_pause_on_expired field in the database.
 	FieldAutoPauseOnExpired = "auto_pause_on_expired"
+	// FieldSimulateClaudeCliClient holds the string denoting the simulate_claude_cli_client field in the database.
+	FieldSimulateClaudeCliClient = "simulate_claude_cli_client"
 	// FieldSchedulable holds the string denoting the schedulable field in the database.
 	FieldSchedulable = "schedulable"
 	// FieldRateLimitedAt holds the string denoting the rate_limited_at field in the database.
@@ -131,6 +133,7 @@ var Columns = []string{
 	FieldLastUsedAt,
 	FieldExpiresAt,
 	FieldAutoPauseOnExpired,
+	FieldSimulateClaudeCliClient,
 	FieldSchedulable,
 	FieldRateLimitedAt,
 	FieldRateLimitResetAt,
@@ -194,6 +197,8 @@ var (
 	StatusValidator func(string) error
 	// DefaultAutoPauseOnExpired holds the default value on creation for the "auto_pause_on_expired" field.
 	DefaultAutoPauseOnExpired bool
+	// DefaultSimulateClaudeCliClient holds the default value on creation for the "simulate_claude_cli_client" field.
+	DefaultSimulateClaudeCliClient bool
 	// DefaultSchedulable holds the default value on creation for the "schedulable" field.
 	DefaultSchedulable bool
 	// SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
@@ -291,6 +296,11 @@ func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
 // ByAutoPauseOnExpired orders the results by the auto_pause_on_expired field.
 func ByAutoPauseOnExpired(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAutoPauseOnExpired, opts...).ToFunc()
+}
+
+// BySimulateClaudeCliClient orders the results by the simulate_claude_cli_client field.
+func BySimulateClaudeCliClient(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSimulateClaudeCliClient, opts...).ToFunc()
 }
 
 // BySchedulable orders the results by the schedulable field.

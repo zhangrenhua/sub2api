@@ -109,6 +109,7 @@ type CreateAccountRequest struct {
 	GroupIDs                []int64        `json:"group_ids"`
 	ExpiresAt               *int64         `json:"expires_at"`
 	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
+	SimulateClaudeCliClient *bool          `json:"simulate_claude_cli_client"` // 仅 anthropic + API-key 账号生效
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
@@ -129,6 +130,7 @@ type UpdateAccountRequest struct {
 	GroupIDs                *[]int64       `json:"group_ids"`
 	ExpiresAt               *int64         `json:"expires_at"`
 	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
+	SimulateClaudeCliClient *bool          `json:"simulate_claude_cli_client"` // 仅 anthropic + API-key 账号生效
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
@@ -534,21 +536,22 @@ func (h *AccountHandler) Create(c *gin.Context) {
 
 	result, err := executeAdminIdempotent(c, "admin.accounts.create", req, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
 		account, execErr := h.adminService.CreateAccount(ctx, &service.CreateAccountInput{
-			Name:                  req.Name,
-			Notes:                 req.Notes,
-			Platform:              req.Platform,
-			Type:                  req.Type,
-			Credentials:           req.Credentials,
-			Extra:                 req.Extra,
-			ProxyID:               req.ProxyID,
-			Concurrency:           req.Concurrency,
-			Priority:              req.Priority,
-			RateMultiplier:        req.RateMultiplier,
-			LoadFactor:            req.LoadFactor,
-			GroupIDs:              req.GroupIDs,
-			ExpiresAt:             req.ExpiresAt,
-			AutoPauseOnExpired:    req.AutoPauseOnExpired,
-			SkipMixedChannelCheck: skipCheck,
+			Name:                    req.Name,
+			Notes:                   req.Notes,
+			Platform:                req.Platform,
+			Type:                    req.Type,
+			Credentials:             req.Credentials,
+			Extra:                   req.Extra,
+			ProxyID:                 req.ProxyID,
+			Concurrency:             req.Concurrency,
+			Priority:                req.Priority,
+			RateMultiplier:          req.RateMultiplier,
+			LoadFactor:              req.LoadFactor,
+			GroupIDs:                req.GroupIDs,
+			ExpiresAt:               req.ExpiresAt,
+			AutoPauseOnExpired:      req.AutoPauseOnExpired,
+			SimulateClaudeCliClient: req.SimulateClaudeCliClient,
+			SkipMixedChannelCheck:   skipCheck,
 		})
 		if execErr != nil {
 			return nil, execErr
@@ -613,21 +616,22 @@ func (h *AccountHandler) Update(c *gin.Context) {
 	skipCheck := req.ConfirmMixedChannelRisk != nil && *req.ConfirmMixedChannelRisk
 
 	account, err := h.adminService.UpdateAccount(c.Request.Context(), accountID, &service.UpdateAccountInput{
-		Name:                  req.Name,
-		Notes:                 req.Notes,
-		Type:                  req.Type,
-		Credentials:           req.Credentials,
-		Extra:                 req.Extra,
-		ProxyID:               req.ProxyID,
-		Concurrency:           req.Concurrency, // 指针类型，nil 表示未提供
-		Priority:              req.Priority,    // 指针类型，nil 表示未提供
-		RateMultiplier:        req.RateMultiplier,
-		LoadFactor:            req.LoadFactor,
-		Status:                req.Status,
-		GroupIDs:              req.GroupIDs,
-		ExpiresAt:             req.ExpiresAt,
-		AutoPauseOnExpired:    req.AutoPauseOnExpired,
-		SkipMixedChannelCheck: skipCheck,
+		Name:                    req.Name,
+		Notes:                   req.Notes,
+		Type:                    req.Type,
+		Credentials:             req.Credentials,
+		Extra:                   req.Extra,
+		ProxyID:                 req.ProxyID,
+		Concurrency:             req.Concurrency, // 指针类型，nil 表示未提供
+		Priority:                req.Priority,    // 指针类型，nil 表示未提供
+		RateMultiplier:          req.RateMultiplier,
+		LoadFactor:              req.LoadFactor,
+		Status:                  req.Status,
+		GroupIDs:                req.GroupIDs,
+		ExpiresAt:               req.ExpiresAt,
+		AutoPauseOnExpired:      req.AutoPauseOnExpired,
+		SimulateClaudeCliClient: req.SimulateClaudeCliClient,
+		SkipMixedChannelCheck:   skipCheck,
 	})
 	if err != nil {
 		// 检查是否为混合渠道错误

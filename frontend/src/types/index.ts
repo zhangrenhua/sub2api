@@ -874,6 +874,8 @@ export interface Account {
   last_used_at: string | null
   expires_at: number | null
   auto_pause_on_expired: boolean
+  // 仅 anthropic + API-key 账号有意义：模拟 Claude CLI 客户端请求头
+  simulate_claude_cli_client?: boolean
   created_at: string
   updated_at: string
   proxy?: Proxy
@@ -1063,6 +1065,7 @@ export interface CreateAccountRequest {
   group_ids?: number[]
   expires_at?: number | null
   auto_pause_on_expired?: boolean
+  simulate_claude_cli_client?: boolean
   confirm_mixed_channel_risk?: boolean
 }
 
@@ -1082,6 +1085,7 @@ export interface UpdateAccountRequest {
   group_ids?: number[]
   expires_at?: number | null
   auto_pause_on_expired?: boolean
+  simulate_claude_cli_client?: boolean
   confirm_mixed_channel_risk?: boolean
 }
 

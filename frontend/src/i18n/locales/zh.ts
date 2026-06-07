@@ -3677,6 +3677,9 @@ export default {
         apiKeyPassthrough: '自动透传（仅替换认证）',
         apiKeyPassthroughDesc:
           '仅对 Anthropic API Key 生效。开启后，messages/count_tokens 请求将透传上游并仅替换认证，保留计费/并发/审计及必要安全过滤；关闭即可回滚到现有兼容链路。',
+        simulateClaudeCli: '模拟 Claude CLI 客户端',
+        simulateClaudeCliDesc:
+          '仅对 Anthropic API Key 生效。开启后，对非真实 CLI 客户端的请求，转发上游前把请求头改写为官方 Claude CLI 指纹（User-Agent / x-stainless-* / x-app 等），仅改请求头不动 body；客户端本身已是真实 CLI 时原样透传。',
         webSearchEmulation: 'Web Search 模拟',
         webSearchEmulationDesc:
           '为该 API Key 账号启用 web search 模拟。客户端发送纯 web_search 请求时，由网关调用第三方搜索 API 并构造响应返回。默认跟随渠道配置。',
