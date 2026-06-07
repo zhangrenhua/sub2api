@@ -39,6 +39,10 @@ type Account struct {
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 
+	// SimulateClaudeCliClient: 仅 anthropic + API-key 账号生效；开启后对非真实 CLI 客户端
+	// 的请求，把出站请求头改写为官方 Claude CLI 指纹（不改 body）。
+	SimulateClaudeCliClient bool
+
 	Schedulable bool
 
 	RateLimitedAt    *time.Time
@@ -781,6 +785,15 @@ func (a *Account) GetClaudeUserID() string {
 		return v
 	}
 	return ""
+}
+
+// ShouldSimulateClaudeCli reports whether this account is configured to rewrite
+// outbound headers to mimic the official Claude CLI. Only anthropic API-key
+// accounts are eligible; the per-request "client is not already a real CLI" gate
+// is applied at the call site (see Forward).
+func (a *Account) ShouldSimulateClaudeCli() bool {
+	return a != nil && a.SimulateClaudeCliClient &&
+		a.Platform == PlatformAnthropic && a.Type == AccountTypeAPIKey
 }
 
 // matchAntigravityWildcard 通配符匹配（仅支持末尾 *）

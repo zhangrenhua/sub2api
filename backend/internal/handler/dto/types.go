@@ -184,6 +184,9 @@ type Account struct {
 	CreatedAt          time.Time       `json:"created_at"`
 	UpdatedAt          time.Time       `json:"updated_at"`
 
+	// SimulateClaudeCliClient: 仅 anthropic + API-key 账号有意义
+	SimulateClaudeCliClient bool `json:"simulate_claude_cli_client"`
+
 	Schedulable bool `json:"schedulable"`
 
 	RateLimitedAt    *time.Time `json:"rate_limited_at"`

@@ -211,8 +211,8 @@ type CreateGroupInput struct {
 	VideoRateMultiplier   *float64
 	VideoPricePerSecond   *float64
 	VideoPricePerSecondHD *float64
-	ClaudeCodeOnly       bool   // 仅允许 Claude Code 客户端
-	FallbackGroupID      *int64 // 降级分组 ID
+	ClaudeCodeOnly        bool   // 仅允许 Claude Code 客户端
+	FallbackGroupID       *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -259,8 +259,8 @@ type UpdateGroupInput struct {
 	VideoRateMultiplier   *float64
 	VideoPricePerSecond   *float64
 	VideoPricePerSecondHD *float64
-	ClaudeCodeOnly       *bool  // 仅允许 Claude Code 客户端
-	FallbackGroupID      *int64 // 降级分组 ID
+	ClaudeCodeOnly        *bool  // 仅允许 Claude Code 客户端
+	FallbackGroupID       *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -284,20 +284,21 @@ type UpdateGroupInput struct {
 }
 
 type CreateAccountInput struct {
-	Name               string
-	Notes              *string
-	Platform           string
-	Type               string
-	Credentials        map[string]any
-	Extra              map[string]any
-	ProxyID            *int64
-	Concurrency        int
-	Priority           int
-	RateMultiplier     *float64 // 账号计费倍率（>=0，允许 0）
-	LoadFactor         *int
-	GroupIDs           []int64
-	ExpiresAt          *int64
-	AutoPauseOnExpired *bool
+	Name                    string
+	Notes                   *string
+	Platform                string
+	Type                    string
+	Credentials             map[string]any
+	Extra                   map[string]any
+	ProxyID                 *int64
+	Concurrency             int
+	Priority                int
+	RateMultiplier          *float64 // 账号计费倍率（>=0，允许 0）
+	LoadFactor              *int
+	GroupIDs                []int64
+	ExpiresAt               *int64
+	AutoPauseOnExpired      *bool
+	SimulateClaudeCliClient *bool
 	// SkipDefaultGroupBind prevents auto-binding to platform default group when GroupIDs is empty.
 	SkipDefaultGroupBind bool
 	// SkipMixedChannelCheck skips the mixed channel risk check when binding groups.
@@ -306,21 +307,22 @@ type CreateAccountInput struct {
 }
 
 type UpdateAccountInput struct {
-	Name                  string
-	Notes                 *string
-	Type                  string // Account type: oauth, setup-token, apikey
-	Credentials           map[string]any
-	Extra                 map[string]any
-	ProxyID               *int64
-	Concurrency           *int     // 使用指针区分"未提供"和"设置为0"
-	Priority              *int     // 使用指针区分"未提供"和"设置为0"
-	RateMultiplier        *float64 // 账号计费倍率（>=0，允许 0）
-	LoadFactor            *int
-	Status                string
-	GroupIDs              *[]int64
-	ExpiresAt             *int64
-	AutoPauseOnExpired    *bool
-	SkipMixedChannelCheck bool // 跳过混合渠道检查（用户已确认风险）
+	Name                    string
+	Notes                   *string
+	Type                    string // Account type: oauth, setup-token, apikey
+	Credentials             map[string]any
+	Extra                   map[string]any
+	ProxyID                 *int64
+	Concurrency             *int     // 使用指针区分"未提供"和"设置为0"
+	Priority                *int     // 使用指针区分"未提供"和"设置为0"
+	RateMultiplier          *float64 // 账号计费倍率（>=0，允许 0）
+	LoadFactor              *int
+	Status                  string
+	GroupIDs                *[]int64
+	ExpiresAt               *int64
+	AutoPauseOnExpired      *bool
+	SimulateClaudeCliClient *bool
+	SkipMixedChannelCheck   bool // 跳过混合渠道检查（用户已确认风险）
 }
 
 // BulkUpdateAccountsInput describes the payload for bulk updating accounts.
@@ -2632,6 +2634,9 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 	} else {
 		account.AutoPauseOnExpired = true
 	}
+	if input.SimulateClaudeCliClient != nil {
+		account.SimulateClaudeCliClient = *input.SimulateClaudeCliClient
+	}
 	if input.RateMultiplier != nil {
 		if *input.RateMultiplier < 0 {
 			return nil, errors.New("rate_multiplier must be >= 0")
@@ -2777,6 +2782,9 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	}
 	if input.AutoPauseOnExpired != nil {
 		account.AutoPauseOnExpired = *input.AutoPauseOnExpired
+	}
+	if input.SimulateClaudeCliClient != nil {
+		account.SimulateClaudeCliClient = *input.SimulateClaudeCliClient
 	}
 
 	// 先验证分组是否存在（在任何写操作之前）

@@ -137,6 +137,12 @@ func (Account) Fields() []ent.Field {
 			Default(true).
 			Comment("Auto pause scheduling when account expires."),
 
+		// simulate_claude_cli_client: 模拟 Claude CLI 客户端请求头
+		// 仅 anthropic + API-key 账号、且客户端非真实 CLI 时生效（DB 列见 deploy/manual-sql）
+		field.Bool("simulate_claude_cli_client").
+			Default(false).
+			Comment("Rewrite outbound headers to mimic the official Claude CLI (anthropic API-key accounts)."),
+
 		// ========== 调度和速率限制相关字段 ==========
 		// 这些字段在 migrations/005_schema_parity.sql 中添加
 

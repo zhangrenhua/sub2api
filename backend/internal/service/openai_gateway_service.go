@@ -3008,10 +3008,11 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			_ = resp.Body.Close()
 			resp.Body = io.NopCloser(bytes.NewReader(respBody))
 
-			upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(respBody))
-			upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
+			upstreamMsgRaw := strings.TrimSpace(extractUpstreamErrorMessage(respBody))
+			upstreamMsg := sanitizeUpstreamErrorMessage(upstreamMsgRaw)
 			upstreamCode := extractUpstreamErrorCode(respBody)
-			if !httpInvalidEncryptedContentRetryTried && resp.StatusCode == http.StatusBadRequest && upstreamCode == "invalid_encrypted_content" {
+			if !httpInvalidEncryptedContentRetryTried && resp.StatusCode == http.StatusBadRequest &&
+				isOpenAIInvalidEncryptedContentError(upstreamCode, upstreamMsgRaw) {
 				decoded, decodeErr := ensureReqBody()
 				if decodeErr != nil {
 					return nil, decodeErr
@@ -5518,6 +5519,23 @@ func (s *OpenAIGatewayService) validateUpstreamBaseURL(raw string) (string, erro
 // - 其他情况：追加 /v1/responses
 func buildOpenAIResponsesURL(base string) string {
 	return buildOpenAIEndpointURL(base, "/v1/responses")
+}
+
+// isOpenAIInvalidEncryptedContentError 判断上游 400 是否为「加密推理内容无法验证/解密」。
+// 对齐 WSv2 分类器 classifyOpenAIWSErrorEventFromRaw 的消息兜底，使非 WSv2 HTTP 路径
+// 在中转返回非标准 code（如 "thinking_signature_invalid"）时也能识别并恢复。
+// 消息匹配强约束「必须含 encrypted content」，把误判面压到最小。
+func isOpenAIInvalidEncryptedContentError(code, msg string) bool {
+	switch strings.ToLower(strings.TrimSpace(code)) {
+	case "invalid_encrypted_content", "thinking_signature_invalid":
+		return true
+	}
+	m := strings.ToLower(msg)
+	if strings.Contains(m, "invalid_encrypted_content") {
+		return true
+	}
+	return strings.Contains(m, "encrypted content") &&
+		(strings.Contains(m, "could not be verified") || strings.Contains(m, "could not be decrypted"))
 }
 
 func trimOpenAIEncryptedReasoningItems(reqBody map[string]any) bool {
