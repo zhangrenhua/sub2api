@@ -5540,33 +5540,35 @@ func normalizeOpenAIInputItems(v any) ([]any, bool) {
 	}
 }
 
-// recursivelyStripEncryptedContent 递归删除任意层级 map 中的 encrypted_content 字段，返回删除个数。
-func recursivelyStripEncryptedContent(v any) int {
+// itemContainsEncryptedContent 判断某个 input item 的子树里是否含 encrypted_content 字段（任意层级）。
+func itemContainsEncryptedContent(v any) bool {
 	switch x := v.(type) {
 	case map[string]any:
-		n := 0
 		if _, ok := x["encrypted_content"]; ok {
-			delete(x, "encrypted_content")
-			n++
+			return true
 		}
 		for _, vv := range x {
-			n += recursivelyStripEncryptedContent(vv)
+			if itemContainsEncryptedContent(vv) {
+				return true
+			}
 		}
-		return n
+		return false
 	case []any:
-		n := 0
 		for _, vv := range x {
-			n += recursivelyStripEncryptedContent(vv)
+			if itemContainsEncryptedContent(vv) {
+				return true
+			}
 		}
-		return n
+		return false
 	case []map[string]any:
-		n := 0
 		for i := range x {
-			n += recursivelyStripEncryptedContent(x[i])
+			if itemContainsEncryptedContent(x[i]) {
+				return true
+			}
 		}
-		return n
+		return false
 	default:
-		return 0
+		return false
 	}
 }
 
@@ -5574,65 +5576,76 @@ func recursivelyStripEncryptedContent(v any) int {
 type openAIEncryptedRecoveryDiag struct {
 	inputItems       int
 	droppedReasoning int
-	strippedEnc      int
+	droppedEncrypted int
 	residualEnc      int
 	typeCounts       map[string]int
 }
 
 func (d openAIEncryptedRecoveryDiag) String() string {
-	return fmt.Sprintf("input_items=%d dropped_reasoning=%d stripped_encrypted_content=%d residual_encrypted_content=%d types=%v",
-		d.inputItems, d.droppedReasoning, d.strippedEnc, d.residualEnc, d.typeCounts)
+	return fmt.Sprintf("input_items=%d dropped_reasoning=%d dropped_encrypted_items=%d residual_encrypted_content=%d types=%v",
+		d.inputItems, d.droppedReasoning, d.droppedEncrypted, d.residualEnc, d.typeCounts)
 }
 
-// sanitizeOpenAIEncryptedContentForRetry 是 HTTP（非 WSv2）路径专用的恢复策略（彻底版）：
-// 命中 invalid_encrypted_content / thinking_signature_invalid 时：
-//  1) 丢弃 input 里所有 type=="reasoning" 项（不论顶层是否有 encrypted_content，连嵌套带密文的也清掉）；
-//  2) 递归剥离 body 内任意位置残留的 encrypted_content 字段（挂在非 reasoning item / 嵌套结构上的）。
+// sanitizeOpenAIEncryptedContentForRetry 是 HTTP（非 WSv2）路径专用的恢复策略。
+// 命中 invalid_encrypted_content / thinking_signature_invalid 时，对 input 做【整项删除】：
+// 丢弃任何「type=="reasoning"」或「子树含 encrypted_content」的顶层 input 项——绝不只剥字段。
 //
-// 比「只删顶层带密文的 reasoning 项」更彻底的原因：生产环境出现过删掉 53 个 reasoning 项后，
-// 上游仍报同一条 thinking_signature_invalid——说明那段解不开的密文还挂在别的承载点上。
-// residual_encrypted_content>0 表示清理后 body 里仍出现 "encrypted_content" 子串（多半嵌在某字符串值里），
-// 用于排障定位。仅用于 HTTP 重试；WS 路径仍用 trimOpenAIEncryptedReasoningItems，行为不变。
+// 为什么必须整项删、不能剥字段：OpenAI Responses API（store=false / 中转）要求 reasoning 项
+// 要么「原样回传（exact copy，含 encrypted_content）」要么「整项丢弃」。只删 encrypted_content
+// 字段却保留项，会被上游判为 missing_required_parameter: input[i].encrypted_content（生产实证）。
+// 坏密文挂在非 reasoning 承载点上时同理——整项删，而不是剥字段。
+// 仅用于 HTTP 重试；WS 路径仍用 trimOpenAIEncryptedReasoningItems，行为不变。
+// residual_encrypted_content>0 表示删完后 body 里仍出现 "encrypted_content" 子串（多半嵌在某字符串值里），用于排障。
 func sanitizeOpenAIEncryptedContentForRetry(reqBody map[string]any) (openAIEncryptedRecoveryDiag, bool) {
 	diag := openAIEncryptedRecoveryDiag{typeCounts: map[string]int{}}
 	if len(reqBody) == 0 {
 		return diag, false
 	}
 
-	if inputValue, has := reqBody["input"]; has {
-		if items, ok := normalizeOpenAIInputItems(inputValue); ok {
-			diag.inputItems = len(items)
-			filtered := make([]any, 0, len(items))
-			for _, item := range items {
-				t := openAIInputItemType(item)
-				if t == "" {
-					t = "<none>"
-				}
-				diag.typeCounts[t]++
-				if t == "reasoning" {
-					diag.droppedReasoning++
-					continue
-				}
-				filtered = append(filtered, item)
-			}
-			if diag.droppedReasoning > 0 {
-				if len(filtered) == 0 {
-					delete(reqBody, "input")
-				} else {
-					reqBody["input"] = filtered
-				}
-			}
-		}
+	inputValue, has := reqBody["input"]
+	if !has {
+		return diag, false
+	}
+	items, ok := normalizeOpenAIInputItems(inputValue)
+	if !ok {
+		return diag, false
 	}
 
-	diag.strippedEnc = recursivelyStripEncryptedContent(reqBody)
+	diag.inputItems = len(items)
+	filtered := make([]any, 0, len(items))
+	for _, item := range items {
+		t := openAIInputItemType(item)
+		if t == "" {
+			t = "<none>"
+		}
+		diag.typeCounts[t]++
+		if t == "reasoning" {
+			diag.droppedReasoning++
+			continue
+		}
+		if itemContainsEncryptedContent(item) {
+			diag.droppedEncrypted++
+			continue
+		}
+		filtered = append(filtered, item)
+	}
+
+	changed := diag.droppedReasoning > 0 || diag.droppedEncrypted > 0
+	if !changed {
+		return diag, false
+	}
+
+	if len(filtered) == 0 {
+		delete(reqBody, "input")
+	} else {
+		reqBody["input"] = filtered
+	}
 
 	if b, err := marshalOpenAIUpstreamJSON(reqBody); err == nil {
 		diag.residualEnc = strings.Count(string(b), "encrypted_content")
 	}
 
-	changed := diag.droppedReasoning > 0 || diag.strippedEnc > 0
-	return diag, changed
+	return diag, true
 }
 
 func trimOpenAIEncryptedReasoningItems(reqBody map[string]any) bool {

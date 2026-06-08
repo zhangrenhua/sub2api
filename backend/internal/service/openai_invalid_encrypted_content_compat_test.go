@@ -153,8 +153,8 @@ func TestOpenAIGatewayService_Forward_HTTPIngressRetriesThinkingSignatureInvalid
 	require.Equal(t, "hello", gjson.GetBytes(secondBody, "input.0.text").String())
 }
 
-// TestSanitizeOpenAIEncryptedContentForRetry 覆盖 HTTP 专用的「彻底清理」恢复函数：
-// 丢弃所有 reasoning 项（不论是否带密文）+ 递归剥离任意位置残留的 encrypted_content + 结构诊断。
+// TestSanitizeOpenAIEncryptedContentForRetry 覆盖 HTTP 专用的「整项删除」恢复函数：
+// 丢弃任何 reasoning 项或子树含 encrypted_content 的顶层 input 项（绝不剥字段）+ 结构诊断。
 func TestSanitizeOpenAIEncryptedContentForRetry(t *testing.T) {
 	t.Run("丢弃所有 reasoning 项（含无顶层密文的）", func(t *testing.T) {
 		body := map[string]any{
@@ -173,8 +173,9 @@ func TestSanitizeOpenAIEncryptedContentForRetry(t *testing.T) {
 		require.Equal(t, "message", items[0].(map[string]any)["type"])
 	})
 
-	t.Run("非 reasoning item 上的嵌套 encrypted_content 也被剥离", func(t *testing.T) {
-		// 模拟生产：删完 reasoning 后坏密文仍挂在非 reasoning 承载点（嵌套 content 里）
+	t.Run("非 reasoning item 含嵌套 encrypted_content → 整项删除", func(t *testing.T) {
+		// 模拟生产：坏密文挂在非 reasoning 承载点（嵌套 content 里）→ 整项删除该 item，
+		// 绝不只剥字段（剥字段会被上游判 missing_required_parameter）。
 		body := map[string]any{
 			"input": []any{
 				map[string]any{"type": "message", "role": "assistant", "content": []any{
@@ -184,15 +185,14 @@ func TestSanitizeOpenAIEncryptedContentForRetry(t *testing.T) {
 			},
 		}
 		diag, ok := sanitizeOpenAIEncryptedContentForRetry(body)
-		require.True(t, ok, "仅靠剥离嵌套 encrypted_content 也应判定为已改动")
+		require.True(t, ok, "含 encrypted_content 的 item 应触发删除")
 		require.Equal(t, 0, diag.droppedReasoning)
-		require.GreaterOrEqual(t, diag.strippedEnc, 1, "嵌套 encrypted_content 应被递归剥离")
-		require.Equal(t, 0, diag.residualEnc)
+		require.Equal(t, 1, diag.droppedEncrypted, "含嵌套 encrypted_content 的非 reasoning item 应整项删除")
+		require.Equal(t, 0, diag.residualEnc, "整项删除后不应残留 encrypted_content")
 		items := body["input"].([]any)
-		require.Len(t, items, 2)
-		c := items[0].(map[string]any)["content"].([]any)[0].(map[string]any)
-		_, has := c["encrypted_content"]
-		require.False(t, has, "嵌套 encrypted_content 应已删除")
+		require.Len(t, items, 1, "只剩不含密文的 input_text")
+		require.Equal(t, "input_text", items[0].(map[string]any)["type"])
+		require.Equal(t, "go on", items[0].(map[string]any)["text"])
 	})
 
 	t.Run("无 reasoning 且无密文 → 不改动", func(t *testing.T) {
