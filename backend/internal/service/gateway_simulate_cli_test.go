@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -181,4 +182,62 @@ func TestApplySimulateClaudeCliBody(t *testing.T) {
 		out := s.applySimulateClaudeCliBody(context.Background(), nil, body, nil, nil)
 		require.JSONEq(t, `{"temperature":0.5}`, string(out))
 	})
+}
+
+// TestAggregateAnthropicStreamToResponse covers the SSE→non-stream aggregation
+// that backs the "upstream stream, client non-stream" path: text/thinking deltas
+// concatenate by block index, stop_reason comes from message_delta, and usage is
+// merged across message_start (input/cache) + message_delta (output).
+func TestAggregateAnthropicStreamToResponse(t *testing.T) {
+	s := &GatewayService{}
+	sse := strings.Join([]string{
+		`event: message_start`,
+		`data: {"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-opus-4-8","content":[],"usage":{"input_tokens":10,"cache_read_input_tokens":2}}}`,
+		``,
+		`event: content_block_start`,
+		`data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":""}}`,
+		``,
+		`event: content_block_delta`,
+		`data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"hmm"}}`,
+		``,
+		`event: content_block_start`,
+		`data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}}`,
+		``,
+		`event: content_block_delta`,
+		`data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Hello"}}`,
+		``,
+		`event: content_block_delta`,
+		`data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" world"}}`,
+		``,
+		`event: message_delta`,
+		`data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":5}}`,
+		``,
+		`event: message_stop`,
+		`data: {"type":"message_stop"}`,
+		``,
+	}, "\n")
+
+	resp, err := s.aggregateAnthropicStreamToResponse(strings.NewReader(sse))
+	require.NoError(t, err)
+	require.Equal(t, "msg_1", resp.ID)
+	require.Equal(t, "message", resp.Type)
+	require.Equal(t, "end_turn", resp.StopReason)
+	require.Len(t, resp.Content, 2)
+	require.Equal(t, "hmm", resp.Content[0].Thinking)
+	require.Equal(t, "Hello world", resp.Content[1].Text)
+	require.Equal(t, 10, resp.Usage.InputTokens)
+	require.Equal(t, 5, resp.Usage.OutputTokens)
+	require.Equal(t, 2, resp.Usage.CacheReadInputTokens)
+
+	// Marshals to a normal Anthropic Message the non-stream tail can re-parse.
+	out, err := json.Marshal(resp)
+	require.NoError(t, err)
+	require.Equal(t, "Hello world", gjson.GetBytes(out, "content.1.text").String())
+	require.Equal(t, int64(5), gjson.GetBytes(out, "usage.output_tokens").Int())
+}
+
+func TestAggregateAnthropicStreamToResponse_NoMessage(t *testing.T) {
+	s := &GatewayService{}
+	_, err := s.aggregateAnthropicStreamToResponse(strings.NewReader("event: ping\ndata: {}\n\n"))
+	require.Error(t, err)
 }

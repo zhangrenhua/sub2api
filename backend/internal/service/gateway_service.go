@@ -4617,6 +4617,14 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	// （只动 metadata 格式 + 剥 temperature，不注入 CC system）。
 	simulateClaudeCliBody := s.shouldSimulateCliHeaders(ctx, c, account, body)
 
+	// 模拟 CLI + 客户端非流式：上游改用流式后在本端聚合回非流式。
+	// 检测型上游(newapi 等)的形态白名单只接受「流式主循环」或「无 thinking/tools 的非流式
+	// side-query」；非流式带 thinking 会被判 unknown_messages_shape。改对上游发 stream:true，
+	// 读取 SSE 后聚合成单条 Message 返回客户端，保留 thinking 语义且对客户端透明。
+	simulateAggregate := simulateClaudeCliBody && !reqStream
+	// 是否对“上游”使用流式（区别于客户端是否要流式 reqStream）。
+	upstreamStream := reqStream || simulateAggregate
+
 	if shouldMimicClaudeCode {
 		// 与 Parrot 对齐：OAuth 账号无条件重写 system（即使客户端已发了 Claude Code
 		// 风格的 system prompt）。原因：第三方工具（opencode 等）会发 "You are Claude
@@ -4679,6 +4687,16 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	if simulateClaudeCliBody {
 		if err := replaceBody(s.applySimulateClaudeCliBody(ctx, c, body, parsed, account)); err != nil {
 			return nil, err
+		}
+	}
+
+	// 模拟 CLI 聚合：客户端非流式但上游需流式，强制把出站 body 的 stream 置 true。
+	// 客户端响应模式仍由 reqStream(=false) 决定，二者解耦。
+	if simulateAggregate {
+		if next, ok := setJSONValueBytes(body, "stream", true); ok {
+			if err := replaceBody(next); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -4764,8 +4782,8 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	retryStart := time.Now()
 	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		// 构建上游请求（每次重试需要重新构建，因为请求体需要重新读取）
-		upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, reqStream)
-		upstreamReq, wireBody, err := s.buildUpstreamRequest(upstreamCtx, c, account, body, token, tokenType, reqModel, reqStream, shouldMimicClaudeCode)
+		upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, upstreamStream)
+		upstreamReq, wireBody, err := s.buildUpstreamRequest(upstreamCtx, c, account, body, token, tokenType, reqModel, upstreamStream, shouldMimicClaudeCode)
 		releaseUpstreamCtx()
 		if err != nil {
 			return nil, err
@@ -4848,8 +4866,8 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 					//    also downgrade tool_use/tool_result blocks to text.
 
 					filteredBody := FilterThinkingBlocksForRetry(body)
-					retryCtx, releaseRetryCtx := detachStreamUpstreamContext(ctx, reqStream)
-					retryReq, retryWireBody, buildErr := s.buildUpstreamRequest(retryCtx, c, account, filteredBody, token, tokenType, reqModel, reqStream, shouldMimicClaudeCode)
+					retryCtx, releaseRetryCtx := detachStreamUpstreamContext(ctx, upstreamStream)
+					retryReq, retryWireBody, buildErr := s.buildUpstreamRequest(retryCtx, c, account, filteredBody, token, tokenType, reqModel, upstreamStream, shouldMimicClaudeCode)
 					releaseRetryCtx()
 					if buildErr == nil {
 						retryResp, retryErr := s.httpUpstream.DoWithTLS(retryReq, proxyURL, account.ID, account.Concurrency, tlsProfile)
@@ -4889,8 +4907,8 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 								if looksLikeToolSignatureError(msg2) && time.Since(retryStart) < maxRetryElapsed {
 									logger.LegacyPrintf("service.gateway", "Account %d: signature retry still failing and looks tool-related, retrying with tool blocks downgraded", account.ID)
 									filteredBody2 := FilterSignatureSensitiveBlocksForRetry(body)
-									retryCtx2, releaseRetryCtx2 := detachStreamUpstreamContext(ctx, reqStream)
-									retryReq2, retryWireBody2, buildErr2 := s.buildUpstreamRequest(retryCtx2, c, account, filteredBody2, token, tokenType, reqModel, reqStream, shouldMimicClaudeCode)
+									retryCtx2, releaseRetryCtx2 := detachStreamUpstreamContext(ctx, upstreamStream)
+									retryReq2, retryWireBody2, buildErr2 := s.buildUpstreamRequest(retryCtx2, c, account, filteredBody2, token, tokenType, reqModel, upstreamStream, shouldMimicClaudeCode)
 									releaseRetryCtx2()
 									if buildErr2 == nil {
 										retryResp2, retryErr2 := s.httpUpstream.DoWithTLS(retryReq2, proxyURL, account.ID, account.Concurrency, tlsProfile)
@@ -4968,8 +4986,8 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 					rectifiedBody, applied := RectifyThinkingBudget(body)
 					if applied && time.Since(retryStart) < maxRetryElapsed {
 						logger.LegacyPrintf("service.gateway", "Account %d: detected budget_tokens constraint error, retrying with rectified budget (budget_tokens=%d, max_tokens=%d)", account.ID, BudgetRectifyBudgetTokens, BudgetRectifyMaxTokens)
-						budgetRetryCtx, releaseBudgetRetryCtx := detachStreamUpstreamContext(ctx, reqStream)
-						budgetRetryReq, budgetWireBody, buildErr := s.buildUpstreamRequest(budgetRetryCtx, c, account, rectifiedBody, token, tokenType, reqModel, reqStream, shouldMimicClaudeCode)
+						budgetRetryCtx, releaseBudgetRetryCtx := detachStreamUpstreamContext(ctx, upstreamStream)
+						budgetRetryReq, budgetWireBody, buildErr := s.buildUpstreamRequest(budgetRetryCtx, c, account, rectifiedBody, token, tokenType, reqModel, upstreamStream, shouldMimicClaudeCode)
 						releaseBudgetRetryCtx()
 						if buildErr == nil {
 							budgetRetryResp, retryErr := s.httpUpstream.DoWithTLS(budgetRetryReq, proxyURL, account.ID, account.Concurrency, tlsProfile)
@@ -5193,7 +5211,13 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	var usage *ClaudeUsage
 	var firstTokenMs *int
 	var clientDisconnect bool
-	if reqStream {
+	if simulateAggregate {
+		// 模拟 CLI 账号：上游以流式返回，这里聚合成单条非流式 Message 写回客户端。
+		usage, err = s.handleSimulatedNonStreamFromStream(ctx, resp, c, account, originalModel, reqModel)
+		if err != nil {
+			return nil, err
+		}
+	} else if reqStream {
 		streamResult, err := s.handleStreamingResponse(ctx, resp, c, account, startTime, originalModel, reqModel, shouldMimicClaudeCode)
 		if err != nil {
 			if err.Error() == "have error in stream" {
@@ -8320,6 +8344,14 @@ func (s *GatewayService) handleNonStreamingResponse(ctx context.Context, resp *h
 		return nil, err
 	}
 
+	return s.finishAnthropicNonStreamResponse(ctx, c, account, body, resp.Header, resp.StatusCode, originalModel, mappedModel)
+}
+
+// finishAnthropicNonStreamResponse 处理一段“完整的非流式 Anthropic Message JSON”：
+// 解析/修正 usage、按账号策略覆盖 cache TTL、回写模型名、写过滤后的响应头与 body 给客户端，
+// 返回计费用的 usage。从 handleNonStreamingResponse 抽出，供「模拟 CLI 聚合」路径复用
+// （后者把上游 SSE 聚合成同样形状的 JSON 后走这里），保证两条路径的计费/改写逻辑完全一致。
+func (s *GatewayService) finishAnthropicNonStreamResponse(ctx context.Context, c *gin.Context, account *Account, body []byte, upstreamHeader http.Header, statusCode int, originalModel, mappedModel string) (*ClaudeUsage, error) {
 	// 解析usage
 	var response struct {
 		Usage ClaudeUsage `json:"usage"`
@@ -8366,11 +8398,11 @@ func (s *GatewayService) handleNonStreamingResponse(ctx context.Context, resp *h
 		body = s.replaceModelInResponseBody(body, mappedModel, originalModel)
 	}
 
-	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+	responseheaders.WriteFilteredHeaders(c.Writer.Header(), upstreamHeader, s.responseHeaderFilter)
 
 	contentType := "application/json"
 	if s.cfg != nil && !s.cfg.Security.ResponseHeaders.Enabled {
-		if upstreamType := resp.Header.Get("Content-Type"); upstreamType != "" {
+		if upstreamType := upstreamHeader.Get("Content-Type"); upstreamType != "" {
 			contentType = upstreamType
 		}
 	}
@@ -8378,7 +8410,7 @@ func (s *GatewayService) handleNonStreamingResponse(ctx context.Context, resp *h
 	body = reverseToolNamesIfPresent(c, body)
 
 	// 写入响应
-	c.Data(resp.StatusCode, contentType, body)
+	c.Data(statusCode, contentType, body)
 
 	return &response.Usage, nil
 }
