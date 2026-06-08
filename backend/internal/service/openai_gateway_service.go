@@ -2628,6 +2628,25 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		}
 	}
 
+	// API-key 账号不经过上面 OAuth 的 codex transform，单独补一道 role:"tool" 归一化：
+	// Responses API 不接受 role:"tool"，必须转成 function_call_output（带 call_id）或退化为
+	// role:"user"（无 call_id），否则上游报 invalid_value: input[i] 'tool'。
+	// 复用现成 normalizeCodexToolRoleMessages，仅触碰 role:"tool" 项，其余原样。
+	// 先用 gjson 廉价探测是否真有 role:"tool"，避免对所有请求强制全量 decode
+	// （会破坏大数/大体积请求的 raw 透传，见 *DoesNotForceFullDecode 测试）。
+	if account.Type == AccountTypeAPIKey && gjson.GetBytes(body, `input.#(role=="tool")`).Exists() {
+		decoded, decodeErr := ensureReqBody()
+		if decodeErr != nil {
+			return nil, decodeErr
+		}
+		if input, ok := decoded["input"].([]any); ok {
+			if normalized, modified := normalizeCodexToolRoleMessages(input); modified {
+				decoded["input"] = normalized
+				markDecodedModified()
+			}
+		}
+	}
+
 	if !SupportsVerbosity(upstreamModel) && gjson.GetBytes(body, "text.verbosity").Exists() {
 		markPatchDelete("text.verbosity")
 	}
