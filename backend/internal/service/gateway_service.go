@@ -1309,6 +1309,58 @@ func (s *GatewayService) buildOAuthMetadataUserID(parsed *ParsedRequest, account
 	return FormatMetadataUserID(userID, accountUUID, sessionID, uaVersion)
 }
 
+// applySimulateClaudeCliBody 为账号级「模拟 Claude CLI 客户端」(anthropic API-key) 做最小请求体改写。
+// 实测检测型上游中转(newapi 等)判定"是否官方 Claude Code"只看两点:
+//  1. metadata.user_id 必须是 JSON 新格式 {"device_id":...,"session_id":...}(缺失或 legacy 格式 → 拒)
+//  2. 请求体不能带 temperature(opus-4.7+ 的真 CC 不发 temperature,带了 = 一眼假)
+//
+// 不注入 CC system prompt、不改 headers、不动用户消息,因此不影响被代理请求的语义。
+func (s *GatewayService) applySimulateClaudeCliBody(ctx context.Context, c *gin.Context, body []byte, parsed *ParsedRequest, account *Account) []byte {
+	if account == nil {
+		return body
+	}
+	// 1. 剥 temperature
+	if gjson.GetBytes(body, "temperature").Exists() {
+		if next, ok := deleteJSONPathBytes(body, "temperature"); ok {
+			body = next
+		}
+	}
+	// 2. metadata.user_id 强制 JSON 新格式(已是 JSON 则保留)
+	uid := strings.TrimSpace(gjson.GetBytes(body, "metadata.user_id").String())
+	if !strings.HasPrefix(uid, "{") {
+		deviceID := strings.TrimSpace(account.GetClaudeUserID())
+		if deviceID == "" && s.identityService != nil {
+			var hdr http.Header
+			if c != nil && c.Request != nil {
+				hdr = c.Request.Header
+			}
+			if fp, err := s.identityService.GetOrCreateFingerprint(ctx, account.ID, hdr); err == nil && fp != nil {
+				deviceID = strings.TrimSpace(fp.ClientID)
+			}
+		}
+		if deviceID == "" {
+			deviceID = generateClientID()
+		}
+		var firstUserText string
+		if parsed != nil && parsed.Body != nil {
+			firstUserText = extractFirstUserText(parsed.Body.Bytes())
+		}
+		var sc *SessionContext
+		if parsed != nil {
+			sc = parsed.SessionContext
+		}
+		seed := buildStableSessionSeed(account.ID, sessionContextDiscriminator(sc), firstUserText)
+		sessionID := generateSessionUUID(seed)
+		accountUUID := strings.TrimSpace(account.GetExtraString("account_uuid"))
+		// 强制传当前 CLI 版本 → FormatMetadataUserID 输出 JSON 新格式
+		jsonUID := FormatMetadataUserID(deviceID, accountUUID, sessionID, claude.CLICurrentVersion)
+		if next, ok := setJSONValueBytes(body, "metadata.user_id", jsonUID); ok {
+			body = next
+		}
+	}
+	return body
+}
+
 // applyClaudeCodeOAuthMimicryToBody 将"非 Claude Code 客户端 + Claude OAuth 账号"
 // 路径上原本只在 /v1/messages 里做的完整伪装应用到任意 body 上。
 //
@@ -4561,6 +4613,10 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	isClaudeCode := IsClaudeCodeClient(ctx) || isClaudeCodeClient(c.GetHeader("User-Agent"), parsed.MetadataUserID)
 	shouldMimicClaudeCode := account.IsOAuth() && !isClaudeCode
 
+	// 账号级「模拟 Claude CLI 客户端」(anthropic API-key)：最小请求体改写在 OAuth 块之后单独做
+	// （只动 metadata 格式 + 剥 temperature，不注入 CC system）。
+	simulateClaudeCliBody := s.shouldSimulateCliHeaders(ctx, c, account, body)
+
 	if shouldMimicClaudeCode {
 		// 与 Parrot 对齐：OAuth 账号无条件重写 system（即使客户端已发了 Claude Code
 		// 风格的 system prompt）。原因：第三方工具（opencode 等）会发 "You are Claude
@@ -4615,6 +4671,14 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 			if err := replaceBody(applyToolsLastCacheBreakpoint(body)); err != nil {
 				return nil, err
 			}
+		}
+	}
+
+	// 账号级「模拟 Claude CLI 客户端」(anthropic API-key)：最小请求体改写
+	// （metadata.user_id 强制 JSON 格式 + 剥 temperature），以通过检测型上游中转的官方客户端校验。
+	if simulateClaudeCliBody {
+		if err := replaceBody(s.applySimulateClaudeCliBody(ctx, c, body, parsed, account)); err != nil {
+			return nil, err
 		}
 	}
 
@@ -6434,9 +6498,7 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 		applyClaudeCodeMimicHeaders(req, reqStream)
 	}
 
-	// 账号级模拟（anthropic API-key 账号）：仅改写出站头为 Claude CLI 指纹，不动 body。
-	// 复用同一套 header 写入；anthropic-beta 仍走下方 API-key 分支（不注入 oauth/cc beta，
-	// 因为 API-key 请求带 oauth beta 会被上游拒绝）。
+	// 账号级模拟（anthropic API-key 账号）：改写出站头为 Claude CLI 指纹。
 	if simulateCliHeaders {
 		applyClaudeCodeMimicHeaders(req, reqStream)
 	}
@@ -9423,6 +9485,8 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 
 	isClaudeCodeCT := IsClaudeCodeClient(ctx) || isClaudeCodeClient(c.GetHeader("User-Agent"), parsed.MetadataUserID)
 	shouldMimicClaudeCode := account.IsOAuth() && !isClaudeCodeCT
+	// 账号级「模拟 Claude CLI 客户端」(anthropic API-key)：count_tokens 与 messages 对齐做最小改写。
+	simulateClaudeCliBody := s.shouldSimulateCliHeaders(ctx, c, account, body)
 
 	if shouldMimicClaudeCode {
 		normalizeOpts := claudeOAuthNormalizeOptions{stripSystemCacheControl: true}
@@ -9443,6 +9507,13 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 			if err := replaceBody(applyToolsLastCacheBreakpoint(body)); err != nil {
 				return err
 			}
+		}
+	}
+
+	// 账号级「模拟 Claude CLI 客户端」最小改写(metadata JSON + 剥 temperature)。
+	if simulateClaudeCliBody {
+		if err := replaceBody(s.applySimulateClaudeCliBody(ctx, c, body, parsed, account)); err != nil {
+			return err
 		}
 	}
 
