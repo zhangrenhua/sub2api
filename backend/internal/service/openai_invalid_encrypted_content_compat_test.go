@@ -153,40 +153,60 @@ func TestOpenAIGatewayService_Forward_HTTPIngressRetriesThinkingSignatureInvalid
 	require.Equal(t, "hello", gjson.GetBytes(secondBody, "input.0.text").String())
 }
 
-// TestDropOpenAIEncryptedReasoningItemsForRetry 覆盖 HTTP 专用的「整项丢弃」恢复函数：
-// 带 encrypted_content 的 reasoning 项整项删除（含 id/summary），其余 input 项原样保留。
-func TestDropOpenAIEncryptedReasoningItemsForRetry(t *testing.T) {
-	t.Run("混合：仅删带密文的 reasoning，整项删除", func(t *testing.T) {
+// TestSanitizeOpenAIEncryptedContentForRetry 覆盖 HTTP 专用的「彻底清理」恢复函数：
+// 丢弃所有 reasoning 项（不论是否带密文）+ 递归剥离任意位置残留的 encrypted_content + 结构诊断。
+func TestSanitizeOpenAIEncryptedContentForRetry(t *testing.T) {
+	t.Run("丢弃所有 reasoning 项（含无顶层密文的）", func(t *testing.T) {
 		body := map[string]any{
 			"input": []any{
-				map[string]any{"type": "reasoning", "id": "rs_1", "summary": []any{map[string]any{"type": "summary_text", "text": "x"}}, "encrypted_content": "gAAA"},
-				map[string]any{"type": "input_text", "text": "hi"},
-				map[string]any{"type": "reasoning", "id": "rs_2"}, // 无 encrypted_content → 保留
+				map[string]any{"type": "reasoning", "id": "rs_1", "summary": []any{}, "encrypted_content": "gAAA"},
+				map[string]any{"type": "message", "role": "user", "content": []any{map[string]any{"type": "input_text", "text": "hi"}}},
+				map[string]any{"type": "reasoning", "id": "rs_2"}, // 无顶层 encrypted_content 也要删
 			},
 		}
-		dropped, ok := dropOpenAIEncryptedReasoningItemsForRetry(body)
+		diag, ok := sanitizeOpenAIEncryptedContentForRetry(body)
 		require.True(t, ok)
-		require.Equal(t, 1, dropped)
+		require.Equal(t, 2, diag.droppedReasoning, "两个 reasoning 项都应删除")
+		require.Equal(t, 0, diag.residualEnc, "清理后不应残留 encrypted_content")
 		items := body["input"].([]any)
-		require.Len(t, items, 2)
-		require.Equal(t, "input_text", items[0].(map[string]any)["type"])
-		require.Equal(t, "reasoning", items[1].(map[string]any)["type"], "无密文的 reasoning 项应保留")
-		require.Equal(t, "rs_2", items[1].(map[string]any)["id"])
+		require.Len(t, items, 1)
+		require.Equal(t, "message", items[0].(map[string]any)["type"])
 	})
 
-	t.Run("无可删项 → 不改动", func(t *testing.T) {
+	t.Run("非 reasoning item 上的嵌套 encrypted_content 也被剥离", func(t *testing.T) {
+		// 模拟生产：删完 reasoning 后坏密文仍挂在非 reasoning 承载点（嵌套 content 里）
+		body := map[string]any{
+			"input": []any{
+				map[string]any{"type": "message", "role": "assistant", "content": []any{
+					map[string]any{"type": "output_text", "text": "ok", "encrypted_content": "gAAA_bad"},
+				}},
+				map[string]any{"type": "input_text", "text": "go on"},
+			},
+		}
+		diag, ok := sanitizeOpenAIEncryptedContentForRetry(body)
+		require.True(t, ok, "仅靠剥离嵌套 encrypted_content 也应判定为已改动")
+		require.Equal(t, 0, diag.droppedReasoning)
+		require.GreaterOrEqual(t, diag.strippedEnc, 1, "嵌套 encrypted_content 应被递归剥离")
+		require.Equal(t, 0, diag.residualEnc)
+		items := body["input"].([]any)
+		require.Len(t, items, 2)
+		c := items[0].(map[string]any)["content"].([]any)[0].(map[string]any)
+		_, has := c["encrypted_content"]
+		require.False(t, has, "嵌套 encrypted_content 应已删除")
+	})
+
+	t.Run("无 reasoning 且无密文 → 不改动", func(t *testing.T) {
 		body := map[string]any{"input": []any{map[string]any{"type": "input_text", "text": "x"}}}
-		dropped, ok := dropOpenAIEncryptedReasoningItemsForRetry(body)
+		_, ok := sanitizeOpenAIEncryptedContentForRetry(body)
 		require.False(t, ok)
-		require.Equal(t, 0, dropped)
 		require.Len(t, body["input"].([]any), 1)
 	})
 
-	t.Run("全为带密文 reasoning → 删空后移除 input 键", func(t *testing.T) {
+	t.Run("全为 reasoning → 删空后移除 input 键", func(t *testing.T) {
 		body := map[string]any{"input": []any{map[string]any{"type": "reasoning", "encrypted_content": "gAAA"}}}
-		dropped, ok := dropOpenAIEncryptedReasoningItemsForRetry(body)
+		diag, ok := sanitizeOpenAIEncryptedContentForRetry(body)
 		require.True(t, ok)
-		require.Equal(t, 1, dropped)
+		require.Equal(t, 1, diag.droppedReasoning)
 		_, stillHas := body["input"]
 		require.False(t, stillHas, "input 全删后应移除该键")
 	})
@@ -198,17 +218,16 @@ func TestDropOpenAIEncryptedReasoningItemsForRetry(t *testing.T) {
 				{"type": "input_text", "text": "hi"},
 			},
 		}
-		dropped, ok := dropOpenAIEncryptedReasoningItemsForRetry(body)
+		diag, ok := sanitizeOpenAIEncryptedContentForRetry(body)
 		require.True(t, ok)
-		require.Equal(t, 1, dropped)
+		require.Equal(t, 1, diag.droppedReasoning)
 		items := body["input"].([]any)
 		require.Len(t, items, 1)
 		require.Equal(t, "input_text", items[0].(map[string]any)["type"])
 	})
 
 	t.Run("无 input → 不改动", func(t *testing.T) {
-		dropped, ok := dropOpenAIEncryptedReasoningItemsForRetry(map[string]any{})
+		_, ok := sanitizeOpenAIEncryptedContentForRetry(map[string]any{})
 		require.False(t, ok)
-		require.Equal(t, 0, dropped)
 	})
 }

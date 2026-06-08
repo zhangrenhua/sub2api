@@ -352,10 +352,10 @@ func TestOpenAIGatewayService_Forward_HTTPRetryRecoveryDoesNotDecodeBeforeError(
 	require.Len(t, upstream.bodies, 2)
 	require.Equal(t, "gAAA", gjson.GetBytes(upstream.bodies[0], "input.0.encrypted_content").String())
 	require.Equal(t, "9007199254740993", gjson.GetBytes(upstream.bodies[0], "input.1.content.0.nonce").Raw)
-	// 重试体:本 fork 的 HTTP 路径对 invalid_encrypted_content 的恢复策略是【整项丢弃】
-	// 带 encrypted_content 的 reasoning 项(连同 id / summary 一起删除),而非只剥
-	// encrypted_content 字段(后者是 WS 路径 trimOpenAIEncryptedReasoningItems 的策略，
-	// 会留下带 id 的半剥离项导致上游继续报错)。详见 dropOpenAIEncryptedReasoningItemsForRetry。
+	// 重试体:本 fork 的 HTTP 路径对 invalid_encrypted_content 的恢复策略是【整项丢弃所有
+	// reasoning 项】(连同 id / summary 一起删除) + 递归剥离任意位置残留的 encrypted_content,
+	// 而非只剥顶层 encrypted_content 字段(后者是 WS 路径 trimOpenAIEncryptedReasoningItems 的
+	// 策略，会留下带 id 的半剥离项导致上游继续报错)。详见 sanitizeOpenAIEncryptedContentForRetry。
 	// 因此重试体里不应再有任何 reasoning 项,只剩原来的 message 项。
 	require.False(t, gjson.GetBytes(upstream.bodies[1], `input.#(type=="reasoning")`).Exists())
 	require.Equal(t, int64(1), gjson.GetBytes(upstream.bodies[1], "input.#").Int())

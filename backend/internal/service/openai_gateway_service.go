@@ -3005,16 +3005,16 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 				if decodeErr != nil {
 					return nil, decodeErr
 				}
-				if dropped, ok := dropOpenAIEncryptedReasoningItemsForRetry(decoded); ok {
+				if diag, ok := sanitizeOpenAIEncryptedContentForRetry(decoded); ok {
 					body, err = marshalOpenAIUpstreamJSON(decoded)
 					if err != nil {
 						return nil, fmt.Errorf("serialize invalid_encrypted_content retry body: %w", err)
 					}
 					httpInvalidEncryptedContentRetryTried = true
-					logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Retrying non-WSv2 request once after invalid_encrypted_content: dropped %d encrypted reasoning item(s) (account: %s)", dropped, account.Name)
+					logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Retrying non-WSv2 request once after invalid_encrypted_content (account: %s): %s", account.Name, diag.String())
 					continue
 				}
-				logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Skip non-WSv2 invalid_encrypted_content retry because encrypted reasoning items are missing (account: %s)", account.Name)
+				logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Skip non-WSv2 invalid_encrypted_content retry: nothing to sanitize (account: %s)", account.Name)
 			}
 			if s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) {
 				upstreamDetail := ""
@@ -5512,83 +5512,127 @@ func isOpenAIInvalidEncryptedContentError(code, msg string) bool {
 		(strings.Contains(m, "could not be verified") || strings.Contains(m, "could not be decrypted"))
 }
 
-// isOpenAIEncryptedReasoningItem 判断某个 input item 是否为「带 encrypted_content 的 reasoning 项」。
-func isOpenAIEncryptedReasoningItem(item any) bool {
-	m, ok := item.(map[string]any)
-	if !ok {
-		return false
+// openAIInputItemType 返回 input item 的 type 字段（trim 后）；非 map 返回空串。
+func openAIInputItemType(item any) string {
+	if m, ok := item.(map[string]any); ok {
+		if t, ok := m["type"].(string); ok {
+			return strings.TrimSpace(t)
+		}
 	}
-	if t, _ := m["type"].(string); strings.TrimSpace(t) != "reasoning" {
-		return false
-	}
-	_, has := m["encrypted_content"]
-	return has
+	return ""
 }
 
-// dropOpenAIEncryptedReasoningItemsForRetry 是 HTTP（非 WSv2）路径专用的恢复策略：
-// 命中 invalid_encrypted_content / thinking_signature_invalid 时，把带 encrypted_content 的
-// reasoning 项【整项删除】（连同 id / summary），而不是像 WS 路径的 trimOpenAIEncryptedReasoningItems
-// 那样只删 encrypted_content 字段。后者会保留带 id 的「半剥离」项，上游仍会按 id 去解密那段
-// 跨 key 生成的推理而继续报错。本函数仅用于 HTTP 重试，WS 路径行为保持不变。
-// 返回被删除的 reasoning 项数量及是否发生改动。
-func dropOpenAIEncryptedReasoningItemsForRetry(reqBody map[string]any) (int, bool) {
-	if len(reqBody) == 0 {
-		return 0, false
-	}
-	inputValue, has := reqBody["input"]
-	if !has {
-		return 0, false
-	}
-
-	dropFromSlice := func(items []any) ([]any, int) {
-		filtered := items[:0]
-		dropped := 0
-		for _, item := range items {
-			if isOpenAIEncryptedReasoningItem(item) {
-				dropped++
-				continue
-			}
-			filtered = append(filtered, item)
-		}
-		return filtered, dropped
-	}
-
-	switch input := inputValue.(type) {
+// normalizeOpenAIInputItems 把 input 归一化为 []any（兼容 []any / []map[string]any / 单对象）。
+func normalizeOpenAIInputItems(v any) ([]any, bool) {
+	switch x := v.(type) {
 	case []any:
-		filtered, dropped := dropFromSlice(input)
-		if dropped == 0 {
-			return 0, false
-		}
-		if len(filtered) == 0 {
-			delete(reqBody, "input")
-		} else {
-			reqBody["input"] = filtered
-		}
-		return dropped, true
+		return x, true
 	case []map[string]any:
-		generic := make([]any, len(input))
-		for i := range input {
-			generic[i] = input[i]
+		out := make([]any, len(x))
+		for i := range x {
+			out[i] = x[i]
 		}
-		filtered, dropped := dropFromSlice(generic)
-		if dropped == 0 {
-			return 0, false
-		}
-		if len(filtered) == 0 {
-			delete(reqBody, "input")
-		} else {
-			reqBody["input"] = filtered
-		}
-		return dropped, true
+		return out, true
 	case map[string]any:
-		if isOpenAIEncryptedReasoningItem(input) {
-			delete(reqBody, "input")
-			return 1, true
-		}
-		return 0, false
+		return []any{x}, true
 	default:
-		return 0, false
+		return nil, false
 	}
+}
+
+// recursivelyStripEncryptedContent 递归删除任意层级 map 中的 encrypted_content 字段，返回删除个数。
+func recursivelyStripEncryptedContent(v any) int {
+	switch x := v.(type) {
+	case map[string]any:
+		n := 0
+		if _, ok := x["encrypted_content"]; ok {
+			delete(x, "encrypted_content")
+			n++
+		}
+		for _, vv := range x {
+			n += recursivelyStripEncryptedContent(vv)
+		}
+		return n
+	case []any:
+		n := 0
+		for _, vv := range x {
+			n += recursivelyStripEncryptedContent(vv)
+		}
+		return n
+	case []map[string]any:
+		n := 0
+		for i := range x {
+			n += recursivelyStripEncryptedContent(x[i])
+		}
+		return n
+	default:
+		return 0
+	}
+}
+
+// openAIEncryptedRecoveryDiag 记录 HTTP 恢复清理的结构诊断（写日志用，不含明文内容）。
+type openAIEncryptedRecoveryDiag struct {
+	inputItems       int
+	droppedReasoning int
+	strippedEnc      int
+	residualEnc      int
+	typeCounts       map[string]int
+}
+
+func (d openAIEncryptedRecoveryDiag) String() string {
+	return fmt.Sprintf("input_items=%d dropped_reasoning=%d stripped_encrypted_content=%d residual_encrypted_content=%d types=%v",
+		d.inputItems, d.droppedReasoning, d.strippedEnc, d.residualEnc, d.typeCounts)
+}
+
+// sanitizeOpenAIEncryptedContentForRetry 是 HTTP（非 WSv2）路径专用的恢复策略（彻底版）：
+// 命中 invalid_encrypted_content / thinking_signature_invalid 时：
+//  1) 丢弃 input 里所有 type=="reasoning" 项（不论顶层是否有 encrypted_content，连嵌套带密文的也清掉）；
+//  2) 递归剥离 body 内任意位置残留的 encrypted_content 字段（挂在非 reasoning item / 嵌套结构上的）。
+//
+// 比「只删顶层带密文的 reasoning 项」更彻底的原因：生产环境出现过删掉 53 个 reasoning 项后，
+// 上游仍报同一条 thinking_signature_invalid——说明那段解不开的密文还挂在别的承载点上。
+// residual_encrypted_content>0 表示清理后 body 里仍出现 "encrypted_content" 子串（多半嵌在某字符串值里），
+// 用于排障定位。仅用于 HTTP 重试；WS 路径仍用 trimOpenAIEncryptedReasoningItems，行为不变。
+func sanitizeOpenAIEncryptedContentForRetry(reqBody map[string]any) (openAIEncryptedRecoveryDiag, bool) {
+	diag := openAIEncryptedRecoveryDiag{typeCounts: map[string]int{}}
+	if len(reqBody) == 0 {
+		return diag, false
+	}
+
+	if inputValue, has := reqBody["input"]; has {
+		if items, ok := normalizeOpenAIInputItems(inputValue); ok {
+			diag.inputItems = len(items)
+			filtered := make([]any, 0, len(items))
+			for _, item := range items {
+				t := openAIInputItemType(item)
+				if t == "" {
+					t = "<none>"
+				}
+				diag.typeCounts[t]++
+				if t == "reasoning" {
+					diag.droppedReasoning++
+					continue
+				}
+				filtered = append(filtered, item)
+			}
+			if diag.droppedReasoning > 0 {
+				if len(filtered) == 0 {
+					delete(reqBody, "input")
+				} else {
+					reqBody["input"] = filtered
+				}
+			}
+		}
+	}
+
+	diag.strippedEnc = recursivelyStripEncryptedContent(reqBody)
+
+	if b, err := marshalOpenAIUpstreamJSON(reqBody); err == nil {
+		diag.residualEnc = strings.Count(string(b), "encrypted_content")
+	}
+
+	changed := diag.droppedReasoning > 0 || diag.strippedEnc > 0
+	return diag, changed
 }
 
 func trimOpenAIEncryptedReasoningItems(reqBody map[string]any) bool {
