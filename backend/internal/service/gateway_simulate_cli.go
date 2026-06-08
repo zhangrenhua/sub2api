@@ -11,8 +11,19 @@ import (
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
+
+// upstreamStreamErrorEvent 表示上游在 HTTP 200 的 SSE 流中下发了 `event: error`
+// (检测型中转/限流常见)。聚合路径在写客户端前就消费完整个流，因此遇到它时尚未写出
+// 任何内容，可安全交由上层做 failover。
+type upstreamStreamErrorEvent struct{ payload string }
+
+func (e *upstreamStreamErrorEvent) Error() string {
+	return "upstream stream error event: " + e.payload
+}
 
 // handleSimulatedNonStreamFromStream 读取上游 Anthropic SSE 流，聚合成一条完整的非流式
 // Message，再复用 finishAnthropicNonStreamResponse 写回客户端。
@@ -30,6 +41,20 @@ func (s *GatewayService) handleSimulatedNonStreamFromStream(ctx context.Context,
 
 	finalResp, err := s.aggregateAnthropicStreamToResponse(resp.Body)
 	if err != nil {
+		// 上游 200 流内 error 事件:此刻还没向客户端写任何内容,做账号 failover
+		// (与 handleStreamingResponse 的 "have error in stream"→403 行为对齐;
+		//  聚合路径无半包写出问题,failover 更干净)。
+		var streamErr *upstreamStreamErrorEvent
+		if errors.As(err, &streamErr) {
+			logger.L().Warn("simulate-cli aggregate: upstream emitted error event in 200 stream; failing over",
+				zap.Int64("account_id", account.ID),
+				zap.String("payload", truncateString(streamErr.payload, 500)),
+			)
+			return nil, &UpstreamFailoverError{
+				StatusCode:   403,
+				ResponseBody: []byte(streamErr.payload),
+			}
+		}
 		return nil, err
 	}
 
@@ -38,6 +63,11 @@ func (s *GatewayService) handleSimulatedNonStreamFromStream(ctx context.Context,
 		return nil, fmt.Errorf("marshal aggregated message: %w", err)
 	}
 
+	// 聚合出的是 JSON,但 resp 是上游的 SSE 响应(Content-Type: text/event-stream)。
+	// 覆盖为 application/json,避免 WriteFilteredHeaders 把 text/event-stream 透传到
+	// 给客户端的非流式响应头里(gin 的 c.Data 不会覆盖已存在的 Content-Type)。
+	resp.Header.Set("Content-Type", "application/json")
+
 	// 聚合出的 JSON 与上游非流式响应同形,走同一条尾部逻辑(usage/cacheTTL/模型名/写回)。
 	return s.finishAnthropicNonStreamResponse(ctx, c, account, body, resp.Header, http.StatusOK, originalModel, mappedModel)
 }
@@ -45,6 +75,8 @@ func (s *GatewayService) handleSimulatedNonStreamFromStream(ctx context.Context,
 // aggregateAnthropicStreamToResponse 解析 Anthropic SSE 事件流并累积成一条非流式响应。
 // 与 gateway_forward_as_chat_completions.go 的缓冲聚合同构,但保留 Anthropic 原生结构
 // (不再转 Responses/ChatCompletions),供原生 /v1/messages 非流式返回使用。
+//
+// 若流中出现 `event: error`,返回 *upstreamStreamErrorEvent,由调用方决定 failover。
 func (s *GatewayService) aggregateAnthropicStreamToResponse(r io.Reader) (*apicompat.AnthropicResponse, error) {
 	scanner := bufio.NewScanner(r)
 	maxLineSize := defaultMaxLineSize
@@ -68,13 +100,17 @@ func (s *GatewayService) aggregateAnthropicStreamToResponse(r io.Reader) (*apico
 		if !strings.HasPrefix(dataLine, "data: ") {
 			continue
 		}
+		payload := dataLine[6:]
 
 		var event apicompat.AnthropicStreamEvent
-		if err := json.Unmarshal([]byte(dataLine[6:]), &event); err != nil {
+		if err := json.Unmarshal([]byte(payload), &event); err != nil {
 			continue
 		}
 
 		switch event.Type {
+		case "error":
+			// 上游在 200 流里报错(检测型中转/限流)。带原始 payload 上抛,交由上层 failover。
+			return nil, &upstreamStreamErrorEvent{payload: payload}
 		case "message_start":
 			// 初始响应骨架 + 命中缓存等初始 usage。
 			if event.Message != nil {

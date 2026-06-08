@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -240,4 +241,25 @@ func TestAggregateAnthropicStreamToResponse_NoMessage(t *testing.T) {
 	s := &GatewayService{}
 	_, err := s.aggregateAnthropicStreamToResponse(strings.NewReader("event: ping\ndata: {}\n\n"))
 	require.Error(t, err)
+}
+
+// A mid-stream `event: error` (HTTP 200 body, as detection relays emit) must be
+// surfaced as *upstreamStreamErrorEvent so the caller can fail over — not silently
+// dropped into a partial 200.
+func TestAggregateAnthropicStreamToResponse_ErrorEvent(t *testing.T) {
+	s := &GatewayService{}
+	sse := strings.Join([]string{
+		`event: message_start`,
+		`data: {"type":"message_start","message":{"id":"m","type":"message","role":"assistant","content":[]}}`,
+		``,
+		`event: error`,
+		`data: {"type":"error","error":{"type":"overloaded_error","message":"upstream busy"}}`,
+		``,
+	}, "\n")
+
+	_, err := s.aggregateAnthropicStreamToResponse(strings.NewReader(sse))
+	require.Error(t, err)
+	var se *upstreamStreamErrorEvent
+	require.True(t, errors.As(err, &se), "must be *upstreamStreamErrorEvent, got %T", err)
+	require.Contains(t, se.payload, "overloaded_error")
 }
