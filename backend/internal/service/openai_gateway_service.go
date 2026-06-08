@@ -3017,13 +3017,13 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 				if decodeErr != nil {
 					return nil, decodeErr
 				}
-				if trimOpenAIEncryptedReasoningItems(decoded) {
+				if dropped, ok := dropOpenAIEncryptedReasoningItemsForRetry(decoded); ok {
 					body, err = marshalOpenAIUpstreamJSON(decoded)
 					if err != nil {
 						return nil, fmt.Errorf("serialize invalid_encrypted_content retry body: %w", err)
 					}
 					httpInvalidEncryptedContentRetryTried = true
-					logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Retrying non-WSv2 request once after invalid_encrypted_content (account: %s)", account.Name)
+					logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Retrying non-WSv2 request once after invalid_encrypted_content: dropped %d encrypted reasoning item(s) (account: %s)", dropped, account.Name)
 					continue
 				}
 				logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Skip non-WSv2 invalid_encrypted_content retry because encrypted reasoning items are missing (account: %s)", account.Name)
@@ -5536,6 +5536,85 @@ func isOpenAIInvalidEncryptedContentError(code, msg string) bool {
 	}
 	return strings.Contains(m, "encrypted content") &&
 		(strings.Contains(m, "could not be verified") || strings.Contains(m, "could not be decrypted"))
+}
+
+// isOpenAIEncryptedReasoningItem 判断某个 input item 是否为「带 encrypted_content 的 reasoning 项」。
+func isOpenAIEncryptedReasoningItem(item any) bool {
+	m, ok := item.(map[string]any)
+	if !ok {
+		return false
+	}
+	if t, _ := m["type"].(string); strings.TrimSpace(t) != "reasoning" {
+		return false
+	}
+	_, has := m["encrypted_content"]
+	return has
+}
+
+// dropOpenAIEncryptedReasoningItemsForRetry 是 HTTP（非 WSv2）路径专用的恢复策略：
+// 命中 invalid_encrypted_content / thinking_signature_invalid 时，把带 encrypted_content 的
+// reasoning 项【整项删除】（连同 id / summary），而不是像 WS 路径的 trimOpenAIEncryptedReasoningItems
+// 那样只删 encrypted_content 字段。后者会保留带 id 的「半剥离」项，上游仍会按 id 去解密那段
+// 跨 key 生成的推理而继续报错。本函数仅用于 HTTP 重试，WS 路径行为保持不变。
+// 返回被删除的 reasoning 项数量及是否发生改动。
+func dropOpenAIEncryptedReasoningItemsForRetry(reqBody map[string]any) (int, bool) {
+	if len(reqBody) == 0 {
+		return 0, false
+	}
+	inputValue, has := reqBody["input"]
+	if !has {
+		return 0, false
+	}
+
+	dropFromSlice := func(items []any) ([]any, int) {
+		filtered := items[:0]
+		dropped := 0
+		for _, item := range items {
+			if isOpenAIEncryptedReasoningItem(item) {
+				dropped++
+				continue
+			}
+			filtered = append(filtered, item)
+		}
+		return filtered, dropped
+	}
+
+	switch input := inputValue.(type) {
+	case []any:
+		filtered, dropped := dropFromSlice(input)
+		if dropped == 0 {
+			return 0, false
+		}
+		if len(filtered) == 0 {
+			delete(reqBody, "input")
+		} else {
+			reqBody["input"] = filtered
+		}
+		return dropped, true
+	case []map[string]any:
+		generic := make([]any, len(input))
+		for i := range input {
+			generic[i] = input[i]
+		}
+		filtered, dropped := dropFromSlice(generic)
+		if dropped == 0 {
+			return 0, false
+		}
+		if len(filtered) == 0 {
+			delete(reqBody, "input")
+		} else {
+			reqBody["input"] = filtered
+		}
+		return dropped, true
+	case map[string]any:
+		if isOpenAIEncryptedReasoningItem(input) {
+			delete(reqBody, "input")
+			return 1, true
+		}
+		return 0, false
+	default:
+		return 0, false
+	}
 }
 
 func trimOpenAIEncryptedReasoningItems(reqBody map[string]any) bool {
