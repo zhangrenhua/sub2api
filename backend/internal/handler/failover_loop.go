@@ -92,7 +92,8 @@ func (s *FailoverState) HandleFailoverError(
 	}
 
 	// 同账号重试用尽，执行临时封禁
-	if failoverErr.RetryableOnSameAccount {
+	// Anthropic 账号关闭空响应/可重试错误的自动临时封禁
+	if failoverErr.RetryableOnSameAccount && platform != service.PlatformAnthropic {
 		gatewayService.TempUnscheduleRetryableError(ctx, accountID, failoverErr)
 	}
 
