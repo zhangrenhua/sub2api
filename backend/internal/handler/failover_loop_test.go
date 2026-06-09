@@ -394,6 +394,20 @@ func TestHandleFailoverError_TempUnschedule(t *testing.T) {
 		require.Equal(t, 502, mock.calls[0].failoverErr.StatusCode)
 		require.True(t, mock.calls[0].failoverErr.RetryableOnSameAccount)
 	})
+
+	t.Run("Anthropic账号重试耗尽后不调用TempUnschedule", func(t *testing.T) {
+		mock := &mockTempUnscheduler{}
+		fs := NewFailoverState(3, false)
+		err := newTestFailoverErr(502, true, false)
+
+		// 同账号重试耗尽 + 再触发一次切换；Anthropic 平台应跳过空响应自动临时封禁
+		for i := 0; i < maxSameAccountRetries; i++ {
+			fs.HandleFailoverError(context.Background(), mock, 42, service.PlatformAnthropic, err)
+		}
+		fs.HandleFailoverError(context.Background(), mock, 42, service.PlatformAnthropic, err)
+
+		require.Empty(t, mock.calls, "Anthropic 账号不应触发空响应自动临时封禁")
+	})
 }
 
 // ---------------------------------------------------------------------------
