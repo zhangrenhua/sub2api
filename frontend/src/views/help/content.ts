@@ -357,18 +357,18 @@ export const zh: HelpFactory = (base) => ({
       title: '11. CodeX 使用教程',
       blocks: [
         { t: 'p', html: '支持的模型清单：' },
-        { t: 'code', lang: 'bash', code: 'gpt-5.2\ngpt-5.3\ngpt-5.4\ngpt-5.4-mini\ngpt-5.5\ngpt-image-2\ngpt-5.3-codex\ncodex-auto-review' },
+        { t: 'code', lang: 'bash', code: 'gpt-5.4\ngpt-5.4-mini\ngpt-5.5\ngpt-image-2\ncodex-auto-review' },
         { t: 'callout', variant: 'warning', html: 'Codex 用户创建秘钥的时候，分组一定要选择 <strong>Codex</strong> 的分组。' },
         { t: 'h3', text: '在 Codex 中使用' },
         { t: 'code', lang: 'bash', code: 'vi ~/.codex/config.toml' },
-        { t: 'code', lang: 'toml', code: `model_provider = "OpenAI"\nmodel = "gpt-5.4"\nreview_model = "gpt-5.4"\nmodel_reasoning_effort = "xhigh"\ndisable_response_storage = true\nnetwork_access = "enabled"\nmodel_context_window = 200000\nmodel_auto_compact_token_limit = 160000\n\n[model_providers.OpenAI]\nname = "OpenAI"\nbase_url = "${base}/v1"\nwire_api = "responses"\nrequires_openai_auth = true` },
+        { t: 'code', lang: 'toml', code: `model_provider = "OpenAI"\nmodel = "gpt-5.5"\nreview_model = "gpt-5.5"\nmodel_reasoning_effort = "xhigh"\ndisable_response_storage = true\nnetwork_access = "enabled"\nmodel_context_window = 200000\nmodel_auto_compact_token_limit = 160000\n\n[model_providers.OpenAI]\nname = "OpenAI"\nbase_url = "${base}/v1"\nwire_api = "responses"\nrequires_openai_auth = true\nrequest_max_retries = 4\nstream_max_retries = 5` },
         { t: 'code', lang: 'bash', code: 'vi ~/.codex/auth.json' },
         { t: 'code', lang: 'json', code: '{\n  "OPENAI_API_KEY": "你的API_KEY秘钥"\n}' },
         { t: 'h3', text: '其它工具使用参考（支持以下标准 openai 接口协议）' },
         { t: 'p', html: '请求示例（需要开启流式返回：<code>stream:true</code>）：' },
-        { t: 'code', lang: 'bash', code: `curl ${base}/v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer sk-xxxx" \\\n  -d '{\n    "model": "gpt-5.4",\n    "messages": [\n      { "role": "user", "content": "你是谁？" }\n    ],\n    "stream": true\n  }'` },
-        { t: 'code', lang: 'bash', code: `curl ${base}/v1/messages \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer sk-xxxx" \\\n  -d '{\n    "model": "gpt-5.4",\n    "messages": [\n      { "role": "user", "content": "你是谁？" }\n    ],\n    "stream": true\n  }'` },
-        { t: 'code', lang: 'bash', code: `curl --request POST \\\n  --url ${base}/v1/responses \\\n  --header 'Authorization: Bearer sk-xxxx' \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    "model": "gpt-5.4",\n    "input": [\n      {\n        "role": "user",\n        "content": [\n          {"type": "input_text", "text": "Hello, what can you do?"}\n        ]\n      }\n    ],\n    "stream": true,\n    "reasoning": {"effort": "high"}\n  }'` }
+        { t: 'code', lang: 'bash', code: `curl ${base}/v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer sk-xxxx" \\\n  -d '{\n    "model": "gpt-5.5",\n    "messages": [\n      { "role": "user", "content": "你是谁？" }\n    ],\n    "stream": true\n  }'` },
+        { t: 'code', lang: 'bash', code: `curl ${base}/v1/messages \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer sk-xxxx" \\\n  -d '{\n    "model": "gpt-5.5",\n    "messages": [\n      { "role": "user", "content": "你是谁？" }\n    ],\n    "stream": true\n  }'` },
+        { t: 'code', lang: 'bash', code: `curl --request POST \\\n  --url ${base}/v1/responses \\\n  --header 'Authorization: Bearer sk-xxxx' \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    "model": "gpt-5.5",\n    "input": [\n      {\n        "role": "user",\n        "content": [\n          {"type": "input_text", "text": "Hello, what can you do?"}\n        ]\n      }\n    ],\n    "stream": true,\n    "reasoning": {"effort": "high"}\n  }'` }
       ]
     },
     {
@@ -1008,18 +1008,18 @@ export const en: HelpFactory = (base) => ({
       title: '11. Codex setup',
       blocks: [
         { t: 'p', html: 'Supported models:' },
-        { t: 'code', lang: 'bash', code: 'gpt-5.2\ngpt-5.3\ngpt-5.4\ngpt-5.4-mini\ngpt-5.5\ngpt-image-2\ngpt-5.3-codex\ncodex-auto-review' },
+        { t: 'code', lang: 'bash', code: 'gpt-5.4\ngpt-5.4-mini\ngpt-5.5\ngpt-image-2\ncodex-auto-review' },
         { t: 'callout', variant: 'warning', html: 'When creating an API key, Codex users must pick the <strong>Codex</strong> group.' },
         { t: 'h3', text: 'Codex CLI' },
         { t: 'code', lang: 'bash', code: 'vi ~/.codex/config.toml' },
-        { t: 'code', lang: 'toml', code: `model_provider = "OpenAI"\nmodel = "gpt-5.4"\nreview_model = "gpt-5.4"\nmodel_reasoning_effort = "xhigh"\ndisable_response_storage = true\nnetwork_access = "enabled"\nmodel_context_window = 200000\nmodel_auto_compact_token_limit = 160000\n\n[model_providers.OpenAI]\nname = "OpenAI"\nbase_url = "${base}/v1"\nwire_api = "responses"\nrequires_openai_auth = true` },
+        { t: 'code', lang: 'toml', code: `model_provider = "OpenAI"\nmodel = "gpt-5.5"\nreview_model = "gpt-5.5"\nmodel_reasoning_effort = "xhigh"\ndisable_response_storage = true\nnetwork_access = "enabled"\nmodel_context_window = 200000\nmodel_auto_compact_token_limit = 160000\n\n[model_providers.OpenAI]\nname = "OpenAI"\nbase_url = "${base}/v1"\nwire_api = "responses"\nrequires_openai_auth = true\nrequest_max_retries = 4\nstream_max_retries = 5` },
         { t: 'code', lang: 'bash', code: 'vi ~/.codex/auth.json' },
         { t: 'code', lang: 'json', code: '{\n  "OPENAI_API_KEY": "your-api-key"\n}' },
         { t: 'h3', text: 'Other tools (standard OpenAI protocol)' },
         { t: 'p', html: 'Request example (must enable streaming: <code>stream:true</code>):' },
-        { t: 'code', lang: 'bash', code: `curl ${base}/v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer sk-xxxx" \\\n  -d '{\n    "model": "gpt-5.4",\n    "messages": [\n      { "role": "user", "content": "Who are you?" }\n    ],\n    "stream": true\n  }'` },
-        { t: 'code', lang: 'bash', code: `curl ${base}/v1/messages \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer sk-xxxx" \\\n  -d '{\n    "model": "gpt-5.4",\n    "messages": [\n      { "role": "user", "content": "Who are you?" }\n    ],\n    "stream": true\n  }'` },
-        { t: 'code', lang: 'bash', code: `curl --request POST \\\n  --url ${base}/v1/responses \\\n  --header 'Authorization: Bearer sk-xxxx' \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    "model": "gpt-5.4",\n    "input": [\n      {\n        "role": "user",\n        "content": [\n          {"type": "input_text", "text": "Hello, what can you do?"}\n        ]\n      }\n    ],\n    "stream": true,\n    "reasoning": {"effort": "high"}\n  }'` }
+        { t: 'code', lang: 'bash', code: `curl ${base}/v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer sk-xxxx" \\\n  -d '{\n    "model": "gpt-5.5",\n    "messages": [\n      { "role": "user", "content": "Who are you?" }\n    ],\n    "stream": true\n  }'` },
+        { t: 'code', lang: 'bash', code: `curl ${base}/v1/messages \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer sk-xxxx" \\\n  -d '{\n    "model": "gpt-5.5",\n    "messages": [\n      { "role": "user", "content": "Who are you?" }\n    ],\n    "stream": true\n  }'` },
+        { t: 'code', lang: 'bash', code: `curl --request POST \\\n  --url ${base}/v1/responses \\\n  --header 'Authorization: Bearer sk-xxxx' \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    "model": "gpt-5.5",\n    "input": [\n      {\n        "role": "user",\n        "content": [\n          {"type": "input_text", "text": "Hello, what can you do?"}\n        ]\n      }\n    ],\n    "stream": true,\n    "reasoning": {"effort": "high"}\n  }'` }
       ]
     },
     {
