@@ -305,6 +305,7 @@ export const zh: HelpFactory = (base) => ({
         { t: 'p', html: '我们的中转服务采用与 Anthropic 官方<strong>完全一致的 1:1 计价</strong>，按 Token 用量计费，不额外加价。' },
         { t: 'h3', text: '10.2 Claude 模型价格参考' },
         { t: 'table', head: ['模型', '基础输入 Token', '5分钟缓存写入', '1小时缓存写入', '缓存命中与刷新', '输出 Token'], rows: [
+          ['Claude Fable 5', '$10 / MTok', '$12.50 / MTok', '$20 / MTok', '$1 / MTok', '$50 / MTok'],
           ['Claude Opus 4.8', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
           ['Claude Opus 4.7', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
           ['Claude Opus 4.6', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
@@ -319,6 +320,7 @@ export const zh: HelpFactory = (base) => ({
         ]},
         { t: 'p', html: '工具使用需要写模型全称，参考以下列表（区分大小写）：' },
         { t: 'table', rows: [
+          ['<code>claude-fable-5</code>'],
           ['<code>claude-opus-4-8</code>'],
           ['<code>claude-opus-4-8-thinking</code>'],
           ['<code>claude-opus-4-7</code>'],
@@ -958,6 +960,7 @@ export const en: HelpFactory = (base) => ({
         { t: 'p', html: 'Our gateway uses <strong>1:1 pricing matching Anthropic\'s official rates</strong> — pay per token, no markup.' },
         { t: 'h3', text: '10.2 Claude model prices' },
         { t: 'table', head: ['Model', 'Base Input Tokens', '5m Cache Writes', '1h Cache Writes', 'Cache Hits & Refreshes', 'Output Tokens'], rows: [
+          ['Claude Fable 5', '$10 / MTok', '$12.50 / MTok', '$20 / MTok', '$1 / MTok', '$50 / MTok'],
           ['Claude Opus 4.8', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
           ['Claude Opus 4.7', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
           ['Claude Opus 4.6', '$5 / MTok', '$6.25 / MTok', '$10 / MTok', '$0.50 / MTok', '$25 / MTok'],
@@ -972,6 +975,7 @@ export const en: HelpFactory = (base) => ({
         ]},
         { t: 'p', html: 'Tool integrations need the full model name — copy from the table below (case-sensitive):' },
         { t: 'table', rows: [
+          ['<code>claude-fable-5</code>'],
           ['<code>claude-opus-4-8</code>'],
           ['<code>claude-opus-4-8-thinking</code>'],
           ['<code>claude-opus-4-7</code>'],

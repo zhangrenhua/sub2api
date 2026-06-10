@@ -120,7 +120,7 @@ export default {
       description: '一个密钥，畅用业界领先的大模型',
       viewDocs: '查看文档',
       list: {
-        claudeOpus: { name: 'Claude Opus 4.8', desc: 'Anthropic 旗舰推理模型' },
+        claudeOpus: { name: 'Claude Fable 5', desc: 'Anthropic 旗舰推理模型' },
         claudeSonnet: { name: 'Claude Sonnet 4.6', desc: '强大且经济的全能模型' },
         claudeHaiku: { name: 'Claude Haiku 4.5', desc: '极速响应、低成本' },
         gpt5: { name: 'GPT-5', desc: 'OpenAI 最新一代模型' },
