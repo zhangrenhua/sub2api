@@ -44,8 +44,9 @@ describe('UseKeyModal', () => {
     expect(configToml).toContain('model = "gpt-5.5"')
     expect(configToml).toContain('review_model = "gpt-5.5"')
     expect(configToml).not.toContain('model = "gpt-5.4"')
-    expect(configToml).not.toContain('model_context_window')
-    expect(configToml).not.toContain('model_auto_compact_token_limit')
+    // Fork 定制:Codex 配置保留 200000/160000 上下文窗口(与 /help 文档一致),上游已移除该字段
+    expect(configToml).toContain('model_context_window = 200000')
+    expect(configToml).toContain('model_auto_compact_token_limit = 160000')
     expect(configToml).toContain('[features]\ngoals = true')
   })
 
@@ -84,8 +85,9 @@ describe('UseKeyModal', () => {
     expect(configToml).toContain('model = "gpt-5.5"')
     expect(configToml).toContain('review_model = "gpt-5.5"')
     expect(configToml).not.toContain('model = "gpt-5.4"')
-    expect(configToml).not.toContain('model_context_window')
-    expect(configToml).not.toContain('model_auto_compact_token_limit')
+    // Fork 定制:Codex 配置保留 200000/160000 上下文窗口(与 /help 文档一致),上游已移除该字段
+    expect(configToml).toContain('model_context_window = 200000')
+    expect(configToml).toContain('model_auto_compact_token_limit = 160000')
     expect(configToml).toContain('[features]\nresponses_websockets_v2 = true\ngoals = true')
   })
 
