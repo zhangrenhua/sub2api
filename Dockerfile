@@ -29,6 +29,8 @@ RUN pnpm install --frozen-lockfile
 
 # Copy frontend source and build
 COPY frontend/ ./
+# 前端以 ?raw 引入仓库根目录的合规文案(docs/legal),构建时必须存在于 /app/docs
+COPY docs/legal /app/docs/legal
 RUN pnpm run build
 
 # -----------------------------------------------------------------------------
