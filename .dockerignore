@@ -10,7 +10,9 @@
 # Documentation
 *.md
 !deploy/DOCKER.md
-docs/
+# 排除 docs 子项但保留 docs/legal(前端以 ?raw 引入合规文案,构建上下文必须保留)
+docs/*
+!docs/legal
 
 # IDE
 .idea/
