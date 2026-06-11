@@ -15,8 +15,9 @@ import (
 )
 
 // openAITransportErrorTempUnschedDuration is how long an account is temporarily
-// unscheduled after a durable transport failure (matches tokenRefreshTempUnschedDuration).
-const openAITransportErrorTempUnschedDuration = 10 * time.Minute
+// unscheduled after a durable transport failure. Kept short (1m) so a transient
+// network/route blip recovers quickly instead of evicting the account for long.
+const openAITransportErrorTempUnschedDuration = 1 * time.Minute
 
 // openAITransportFailoverBody is the OpenAI-format error body attached to the
 // failover error for a transport-level failure. Kept identical to the legacy
