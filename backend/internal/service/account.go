@@ -1000,6 +1000,57 @@ func (a *Account) IsPoolModeRetryableStatus(statusCode int) bool {
 	return false
 }
 
+// GetPoolModeRetryKeywords 返回账号自定义的池模式同账号重试关键词列表。
+// 命中上游响应体即触发同账号重试，与 pool_mode_retry_status_codes 为 OR 关系，
+// 大小写不敏感。返回 nil/空切片表示未配置（不按关键词触发）。
+func (a *Account) GetPoolModeRetryKeywords() []string {
+	if a == nil || a.Credentials == nil {
+		return nil
+	}
+	raw, ok := a.Credentials["pool_mode_retry_keywords"]
+	if !ok || raw == nil {
+		return nil
+	}
+	arr, ok := raw.([]any)
+	if !ok {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(arr))
+	keywords := make([]string, 0, len(arr))
+	for _, v := range arr {
+		s, ok := v.(string)
+		if !ok {
+			continue
+		}
+		kw := strings.ToLower(strings.TrimSpace(s))
+		if kw == "" {
+			continue
+		}
+		if _, exists := seen[kw]; exists {
+			continue
+		}
+		seen[kw] = struct{}{}
+		keywords = append(keywords, kw)
+	}
+	return keywords
+}
+
+// IsPoolModeRetryableBody 判断上游响应体是否命中任一池模式重试关键词（大小写不敏感）。
+// 未配置关键词或 body 为空时返回 false。
+func (a *Account) IsPoolModeRetryableBody(body []byte) bool {
+	keywords := a.GetPoolModeRetryKeywords()
+	if len(keywords) == 0 || len(body) == 0 {
+		return false
+	}
+	lower := strings.ToLower(string(body))
+	for _, kw := range keywords {
+		if strings.Contains(lower, kw) {
+			return true
+		}
+	}
+	return false
+}
+
 func (a *Account) GetCustomErrorCodes() []int {
 	if a.Credentials == nil {
 		return nil
