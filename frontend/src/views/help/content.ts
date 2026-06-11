@@ -295,23 +295,13 @@ export const zh: HelpFactory = (base) => ({
       title: '9. Cursor',
       blocks: [
         { t: 'p', html: '参考文档：<a href="https://gitcode.csdn.net/69b92f9f0a2f6a37c5981c5e.html" target="_blank" rel="noopener noreferrer">gitcode.csdn.net</a>' },
-        { t: 'callout', variant: 'warning', html: 'Cursor 必须使用<strong>自定义模型名称</strong>：直接填官方模型名可能与 Cursor 内置模型冲突。在官方模型名前加 <code>ccvibe_</code> 前缀即可，对照下表填写。' },
+        { t: 'callout', variant: 'warning', html: 'Cursor 必须使用<strong>自定义模型名称</strong>：直接填官方模型名可能与 Cursor 内置模型冲突。请按下表对照填写对应的自定义模型名。' },
         { t: 'table', head: ['模型名', 'Cursor 中填的模型名'], rows: [
-          ['<code>claude-fable-5</code>', '<code>ccvibe_claude-fable-5</code>'],
-          ['<code>claude-fable-5-thinking</code>', '<code>ccvibe_claude-fable-5-thinking</code>'],
-          ['<code>claude-opus-4-8</code>', '<code>ccvibe_claude-opus-4-8</code>'],
-          ['<code>claude-opus-4-8-thinking</code>', '<code>ccvibe_claude-opus-4-8-thinking</code>'],
-          ['<code>claude-opus-4-7</code>', '<code>ccvibe_claude-opus-4-7</code>'],
-          ['<code>claude-opus-4-7-thinking</code>', '<code>ccvibe_claude-opus-4-7-thinking</code>'],
-          ['<code>claude-opus-4-6</code>', '<code>ccvibe_claude-opus-4-6</code>'],
-          ['<code>claude-opus-4-6-20260130</code>', '<code>ccvibe_claude-opus-4-6-20260130</code>'],
-          ['<code>claude-opus-4-6-thinking</code>', '<code>ccvibe_claude-opus-4-6-thinking</code>'],
-          ['<code>claude-opus-4-5-20251101</code>', '<code>ccvibe_claude-opus-4-5-20251101</code>'],
-          ['<code>claude-sonnet-4-6</code>', '<code>ccvibe_claude-sonnet-4-6</code>'],
-          ['<code>claude-sonnet-4-5</code>', '<code>ccvibe_claude-sonnet-4-5</code>'],
-          ['<code>claude-sonnet-4-5-20250929</code>', '<code>ccvibe_claude-sonnet-4-5-20250929</code>'],
-          ['<code>claude-sonnet-4-20250514</code>', '<code>ccvibe_claude-sonnet-4-20250514</code>'],
-          ['<code>claude-haiku-4-5-20251001</code>', '<code>ccvibe_claude-haiku-4-5-20251001</code>']
+          ['<code>claude-fable-5</code>', '<code>ccvibe-5</code>'],
+          ['<code>claude-opus-4-8</code>', '<code>ccvibe-4-8</code>'],
+          ['<code>claude-opus-4-7</code>', '<code>ccvibe-4-7</code>'],
+          ['<code>claude-opus-4-6</code>', '<code>ccvibe-4-6</code>'],
+          ['<code>claude-opus-4-5-20251101</code>', '<code>ccvibe-4-5</code>']
         ]}
       ]
     },
@@ -968,23 +958,13 @@ export const en: HelpFactory = (base) => ({
       title: '9. Cursor',
       blocks: [
         { t: 'p', html: 'Reference: <a href="https://gitcode.csdn.net/69b92f9f0a2f6a37c5981c5e.html" target="_blank" rel="noopener noreferrer">gitcode.csdn.net</a>' },
-        { t: 'callout', variant: 'warning', html: 'Cursor requires <strong>custom model names</strong> — official model names may conflict with Cursor\'s built-in models. Add the <code>ccvibe_</code> prefix to the official model name, per the table below.' },
+        { t: 'callout', variant: 'warning', html: 'Cursor requires <strong>custom model names</strong> — official model names may conflict with Cursor\'s built-in models. Use the custom name from the table below.' },
         { t: 'table', head: ['Model', 'Model name in Cursor'], rows: [
-          ['<code>claude-fable-5</code>', '<code>ccvibe_claude-fable-5</code>'],
-          ['<code>claude-fable-5-thinking</code>', '<code>ccvibe_claude-fable-5-thinking</code>'],
-          ['<code>claude-opus-4-8</code>', '<code>ccvibe_claude-opus-4-8</code>'],
-          ['<code>claude-opus-4-8-thinking</code>', '<code>ccvibe_claude-opus-4-8-thinking</code>'],
-          ['<code>claude-opus-4-7</code>', '<code>ccvibe_claude-opus-4-7</code>'],
-          ['<code>claude-opus-4-7-thinking</code>', '<code>ccvibe_claude-opus-4-7-thinking</code>'],
-          ['<code>claude-opus-4-6</code>', '<code>ccvibe_claude-opus-4-6</code>'],
-          ['<code>claude-opus-4-6-20260130</code>', '<code>ccvibe_claude-opus-4-6-20260130</code>'],
-          ['<code>claude-opus-4-6-thinking</code>', '<code>ccvibe_claude-opus-4-6-thinking</code>'],
-          ['<code>claude-opus-4-5-20251101</code>', '<code>ccvibe_claude-opus-4-5-20251101</code>'],
-          ['<code>claude-sonnet-4-6</code>', '<code>ccvibe_claude-sonnet-4-6</code>'],
-          ['<code>claude-sonnet-4-5</code>', '<code>ccvibe_claude-sonnet-4-5</code>'],
-          ['<code>claude-sonnet-4-5-20250929</code>', '<code>ccvibe_claude-sonnet-4-5-20250929</code>'],
-          ['<code>claude-sonnet-4-20250514</code>', '<code>ccvibe_claude-sonnet-4-20250514</code>'],
-          ['<code>claude-haiku-4-5-20251001</code>', '<code>ccvibe_claude-haiku-4-5-20251001</code>']
+          ['<code>claude-fable-5</code>', '<code>ccvibe-5</code>'],
+          ['<code>claude-opus-4-8</code>', '<code>ccvibe-4-8</code>'],
+          ['<code>claude-opus-4-7</code>', '<code>ccvibe-4-7</code>'],
+          ['<code>claude-opus-4-6</code>', '<code>ccvibe-4-6</code>'],
+          ['<code>claude-opus-4-5-20251101</code>', '<code>ccvibe-4-5</code>']
         ]}
       ]
     },
