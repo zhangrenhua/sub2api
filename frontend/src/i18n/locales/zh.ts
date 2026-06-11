@@ -3772,6 +3772,8 @@ export default {
       poolModeRetryCountHint: '仅在池模式下生效。0 表示不原地重试；默认 {default}，最大 {max}。',
       poolModeRetryStatusCodes: '同账号重试状态码',
       poolModeRetryStatusCodesHint: '仅在池模式下生效。以英文逗号分隔的 HTTP 状态码（100-599），命中时触发同账号重试。留空使用默认值（{default}）。',
+      poolModeRetryKeywords: '同账号重试关键词',
+      poolModeRetryKeywordsHint: '仅在池模式下生效。每行一个关键词，大小写不敏感；上游响应体命中任一关键词即触发同账号重试。与「重试状态码」为「或」关系。留空表示不启用。',
       customErrorCodes: '自定义错误码',
       customErrorCodesHint: '仅对选中的错误码停止调度',
       customErrorCodesWarning: '仅选中的错误码会停止调度，其他错误将返回 500。',

@@ -1302,6 +1302,18 @@
               {{ t('admin.accounts.poolModeRetryStatusCodesHint', { default: DEFAULT_POOL_MODE_RETRY_STATUS_CODES.join(', ') }) }}
             </p>
           </div>
+          <div v-if="poolModeEnabled" class="mt-3">
+            <label class="input-label">{{ t('admin.accounts.poolModeRetryKeywords') }}</label>
+            <textarea
+              v-model="poolModeRetryKeywordsInput"
+              rows="3"
+              class="input"
+              placeholder="overloaded"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.poolModeRetryKeywordsHint') }}
+            </p>
+          </div>
         </div>
 
         <!-- Custom Error Codes Section -->
@@ -1657,6 +1669,18 @@
             />
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.poolModeRetryStatusCodesHint', { default: DEFAULT_POOL_MODE_RETRY_STATUS_CODES.join(', ') }) }}
+            </p>
+          </div>
+          <div v-if="poolModeEnabled" class="mt-3">
+            <label class="input-label">{{ t('admin.accounts.poolModeRetryKeywords') }}</label>
+            <textarea
+              v-model="poolModeRetryKeywordsInput"
+              rows="3"
+              class="input"
+              placeholder="overloaded"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.poolModeRetryKeywordsHint') }}
             </p>
           </div>
         </div>
@@ -3408,6 +3432,24 @@ function parsePoolModeRetryStatusCodes(input: string): number[] {
   }
   return out.sort((a, b) => a - b)
 }
+
+const poolModeRetryKeywordsInput = ref('')
+
+// 池模式重试关键词:每行一个,去重(大小写不敏感)、去空。命中上游响应体即触发同账号重试。
+function parsePoolModeRetryKeywords(input: string): string[] {
+  if (!input || !input.trim()) return []
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const line of input.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(trimmed)
+  }
+  return out
+}
 const customErrorCodesEnabled = ref(false)
 const selectedErrorCodes = ref<number[]>([])
 const customErrorCodeInput = ref<number | null>(null)
@@ -4536,6 +4578,10 @@ const handleSubmit = async () => {
       if (parsedRetryStatusCodes.length > 0) {
         credentials.pool_mode_retry_status_codes = parsedRetryStatusCodes
       }
+      const parsedRetryKeywords = parsePoolModeRetryKeywords(poolModeRetryKeywordsInput.value)
+      if (parsedRetryKeywords.length > 0) {
+        credentials.pool_mode_retry_keywords = parsedRetryKeywords
+      }
     }
 
     applyInterceptWarmup(credentials, interceptWarmupRequests.value, 'create')
@@ -4650,6 +4696,10 @@ const handleSubmit = async () => {
     const parsedRetryStatusCodes = parsePoolModeRetryStatusCodes(poolModeRetryStatusCodesInput.value)
     if (parsedRetryStatusCodes.length > 0) {
       credentials.pool_mode_retry_status_codes = parsedRetryStatusCodes
+    }
+    const parsedRetryKeywords = parsePoolModeRetryKeywords(poolModeRetryKeywordsInput.value)
+    if (parsedRetryKeywords.length > 0) {
+      credentials.pool_mode_retry_keywords = parsedRetryKeywords
     }
   }
 

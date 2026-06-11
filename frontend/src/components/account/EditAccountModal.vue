@@ -317,6 +317,18 @@
               {{ t('admin.accounts.poolModeRetryStatusCodesHint', { default: DEFAULT_POOL_MODE_RETRY_STATUS_CODES.join(', ') }) }}
             </p>
           </div>
+          <div v-if="poolModeEnabled" class="mt-3">
+            <label class="input-label">{{ t('admin.accounts.poolModeRetryKeywords') }}</label>
+            <textarea
+              v-model="poolModeRetryKeywordsInput"
+              rows="3"
+              class="input"
+              placeholder="overloaded"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.poolModeRetryKeywordsHint') }}
+            </p>
+          </div>
         </div>
 
         <!-- Custom Error Codes Section -->
@@ -995,6 +1007,18 @@
             />
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.poolModeRetryStatusCodesHint', { default: DEFAULT_POOL_MODE_RETRY_STATUS_CODES.join(', ') }) }}
+            </p>
+          </div>
+          <div v-if="poolModeEnabled" class="mt-3">
+            <label class="input-label">{{ t('admin.accounts.poolModeRetryKeywords') }}</label>
+            <textarea
+              v-model="poolModeRetryKeywordsInput"
+              rows="3"
+              class="input"
+              placeholder="overloaded"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.poolModeRetryKeywordsHint') }}
             </p>
           </div>
         </div>
@@ -2550,6 +2574,32 @@ function formatPoolModeRetryStatusCodes(value: unknown): string {
   }
   return out.sort((a, b) => a - b).join(', ')
 }
+
+const poolModeRetryKeywordsInput = ref('')
+
+// 池模式重试关键词:每行一个,去重(大小写不敏感)、去空。命中上游响应体即触发同账号重试。
+function parsePoolModeRetryKeywords(input: string): string[] {
+  if (!input || !input.trim()) return []
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const line of input.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(trimmed)
+  }
+  return out
+}
+
+function formatPoolModeRetryKeywords(value: unknown): string {
+  if (!Array.isArray(value)) return ''
+  return value
+    .filter((v) => typeof v === 'string' && v.trim())
+    .map((v) => String(v).trim())
+    .join('\n')
+}
 const customErrorCodesEnabled = ref(false)
 const selectedErrorCodes = ref<number[]>([])
 const customErrorCodeInput = ref<number | null>(null)
@@ -3141,6 +3191,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
       Number(credentials.pool_mode_retry_count ?? DEFAULT_POOL_MODE_RETRY_COUNT)
     )
     poolModeRetryStatusCodesInput.value = formatPoolModeRetryStatusCodes(credentials.pool_mode_retry_status_codes)
+    poolModeRetryKeywordsInput.value = formatPoolModeRetryKeywords(credentials.pool_mode_retry_keywords)
 
     // Load custom error codes
     customErrorCodesEnabled.value = credentials.custom_error_codes_enabled === true
@@ -3772,6 +3823,12 @@ const handleSubmit = async () => {
         } else {
           delete newCredentials.pool_mode_retry_status_codes
         }
+        const parsedRetryKeywords = parsePoolModeRetryKeywords(poolModeRetryKeywordsInput.value)
+        if (parsedRetryKeywords.length > 0) {
+          newCredentials.pool_mode_retry_keywords = parsedRetryKeywords
+        } else {
+          delete newCredentials.pool_mode_retry_keywords
+        }
       } else {
         delete newCredentials.pool_mode
         delete newCredentials.pool_mode_retry_count
@@ -3896,6 +3953,12 @@ const handleSubmit = async () => {
           newCredentials.pool_mode_retry_status_codes = parsedRetryStatusCodes
         } else {
           delete newCredentials.pool_mode_retry_status_codes
+        }
+        const parsedRetryKeywords = parsePoolModeRetryKeywords(poolModeRetryKeywordsInput.value)
+        if (parsedRetryKeywords.length > 0) {
+          newCredentials.pool_mode_retry_keywords = parsedRetryKeywords
+        } else {
+          delete newCredentials.pool_mode_retry_keywords
         }
       } else {
         delete newCredentials.pool_mode

@@ -3633,6 +3633,9 @@ export default {
       poolModeRetryStatusCodes: 'Retry Status Codes',
       poolModeRetryStatusCodesHint:
         'Comma-separated HTTP status codes (100-599) that trigger same-account retry in pool mode. Leave blank to use defaults ({default}).',
+      poolModeRetryKeywords: 'Retry Keywords',
+      poolModeRetryKeywordsHint:
+        'Pool mode only. One keyword per line, case-insensitive; a same-account retry triggers when the upstream response body contains any keyword. OR-combined with Retry Status Codes. Leave blank to disable.',
       customErrorCodes: 'Custom Error Codes',
       customErrorCodesHint: 'Only stop scheduling for selected error codes',
       customErrorCodesWarning:
