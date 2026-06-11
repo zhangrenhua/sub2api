@@ -245,28 +245,20 @@ func (s *GatewayService) handleResponsesBufferedStreamingResponse(
 	var usage ClaudeUsage
 
 	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "event: ") {
+		// 放宽 SSE 解析:逐行处理任意 `data:` 行(冒号后空格可选)。事件类型以 data 内 JSON 的 type 为准。
+		payload, ok := sseDataPayload(scanner.Text())
+		if !ok {
 			continue
 		}
-		eventType := strings.TrimPrefix(line, "event: ")
-
-		// Read the data line
-		if !scanner.Scan() {
-			break
-		}
-		dataLine := scanner.Text()
-		if !strings.HasPrefix(dataLine, "data: ") {
+		if payload == "" || payload == "[DONE]" {
 			continue
 		}
-		payload := dataLine[6:]
 
 		var event apicompat.AnthropicStreamEvent
 		if err := json.Unmarshal([]byte(payload), &event); err != nil {
 			logger.L().Warn("forward_as_responses buffered: failed to parse event",
 				zap.Error(err),
 				zap.String("request_id", requestID),
-				zap.String("event_type", eventType),
 			)
 			continue
 		}
@@ -300,7 +292,12 @@ func (s *GatewayService) handleResponsesBufferedStreamingResponse(
 				case "thinking_delta":
 					finalResp.Content[idx].Thinking += event.Delta.Thinking
 				case "input_json_delta":
-					finalResp.Content[idx].Input = appendRawJSON(finalResp.Content[idx].Input, event.Delta.PartialJSON)
+					// 首个 delta 到来时丢弃 content_block_start 的占位 {},否则会拼成 "{}{...}" 非法 JSON。
+					cur := finalResp.Content[idx].Input
+					if isPlaceholderEmptyJSONObject(cur) {
+						cur = nil
+					}
+					finalResp.Content[idx].Input = appendRawJSON(cur, event.Delta.PartialJSON)
 				}
 			}
 		}
@@ -467,28 +464,20 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 
 	// Read Anthropic SSE events
 	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "event: ") {
+		// 放宽 SSE 解析:逐行处理任意 `data:` 行(冒号后空格可选)。事件类型以 data 内 JSON 的 type 为准。
+		payload, ok := sseDataPayload(scanner.Text())
+		if !ok {
 			continue
 		}
-		eventType := strings.TrimPrefix(line, "event: ")
-
-		// Read data line
-		if !scanner.Scan() {
-			break
-		}
-		dataLine := scanner.Text()
-		if !strings.HasPrefix(dataLine, "data: ") {
+		if payload == "" || payload == "[DONE]" {
 			continue
 		}
-		payload := dataLine[6:]
 
 		var event apicompat.AnthropicStreamEvent
 		if err := json.Unmarshal([]byte(payload), &event); err != nil {
 			logger.L().Warn("forward_as_responses stream: failed to parse event",
 				zap.Error(err),
 				zap.String("request_id", requestID),
-				zap.String("event_type", eventType),
 			)
 			continue
 		}

@@ -235,19 +235,15 @@ func (s *GatewayService) handleCCBufferedFromAnthropic(
 	var usage ClaudeUsage
 
 	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "event: ") {
+		// 放宽 SSE 解析:逐行处理任意 `data:` 行(冒号后空格可选),不再要求 `event:`/`data:`
+		// 严格成对且带空格——兼容检测型中转的非标准 SSE 变体。事件类型以 data 内 JSON 的 type 为准。
+		payload, ok := sseDataPayload(scanner.Text())
+		if !ok {
 			continue
 		}
-
-		if !scanner.Scan() {
-			break
-		}
-		dataLine := scanner.Text()
-		if !strings.HasPrefix(dataLine, "data: ") {
+		if payload == "" || payload == "[DONE]" {
 			continue
 		}
-		payload := dataLine[6:]
 
 		var event apicompat.AnthropicStreamEvent
 		if err := json.Unmarshal([]byte(payload), &event); err != nil {
@@ -281,7 +277,11 @@ func (s *GatewayService) handleCCBufferedFromAnthropic(
 				case "thinking_delta":
 					finalResp.Content[idx].Thinking += event.Delta.Thinking
 				case "input_json_delta":
-					finalResp.Content[idx].Input = appendRawJSON(finalResp.Content[idx].Input, event.Delta.PartialJSON)
+					cur := finalResp.Content[idx].Input
+					if isPlaceholderEmptyJSONObject(cur) {
+						cur = nil
+					}
+					finalResp.Content[idx].Input = appendRawJSON(cur, event.Delta.PartialJSON)
 				}
 			}
 		}
@@ -442,19 +442,15 @@ func (s *GatewayService) handleCCStreamingFromAnthropic(
 	}
 
 	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "event: ") {
+		// 放宽 SSE 解析:逐行处理任意 `data:` 行(冒号后空格可选),不再要求 `event:`/`data:`
+		// 严格成对且带空格——兼容检测型中转的非标准 SSE 变体。事件类型以 data 内 JSON 的 type 为准。
+		payload, ok := sseDataPayload(scanner.Text())
+		if !ok {
 			continue
 		}
-
-		if !scanner.Scan() {
-			break
-		}
-		dataLine := scanner.Text()
-		if !strings.HasPrefix(dataLine, "data: ") {
+		if payload == "" || payload == "[DONE]" {
 			continue
 		}
-		payload := dataLine[6:]
 
 		var event apicompat.AnthropicStreamEvent
 		if err := json.Unmarshal([]byte(payload), &event); err != nil {

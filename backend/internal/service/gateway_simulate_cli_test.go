@@ -263,3 +263,110 @@ func TestAggregateAnthropicStreamToResponse_ErrorEvent(t *testing.T) {
 	require.True(t, errors.As(err, &se), "must be *upstreamStreamErrorEvent, got %T", err)
 	require.Contains(t, se.payload, "overloaded_error")
 }
+
+// 修复2:放宽 SSE 解析——冒号后无空格、且仅有 data 行(无 event: 行)也要能聚合。
+func TestAggregateAnthropicStreamToResponse_RelaxedSSE(t *testing.T) {
+	s := &GatewayService{}
+	// 无空格 `data:` + 无前导 `event:` 行(检测型中转常见变体)。
+	sse := strings.Join([]string{
+		`data:{"type":"message_start","message":{"id":"m","type":"message","role":"assistant","content":[]}}`,
+		`data:{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`,
+		`data:{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hi"}}`,
+		`data:{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":3}}`,
+		``,
+	}, "\n")
+
+	resp, err := s.aggregateAnthropicStreamToResponse(strings.NewReader(sse))
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Len(t, resp.Content, 1)
+	require.Equal(t, "hi", resp.Content[0].Text)
+	require.Equal(t, "end_turn", resp.StopReason)
+	require.Equal(t, 3, resp.Usage.OutputTokens)
+}
+
+// 修复1/3:classifyAnthropicJSONBody 区分「上游忽略 stream:true 返回的完整 JSON Message」、
+// 「200 JSON 错误体」与「无法识别」。
+func TestClassifyAnthropicJSONBody(t *testing.T) {
+	cases := []struct {
+		name string
+		body string
+		want string
+	}{
+		{"message", `{"type":"message","id":"m","role":"assistant","content":[]}`, "message"},
+		{"message_with_leading_ws", "\n  {\"type\":\"message\",\"content\":[]}", "message"},
+		{"error", `{"type":"error","error":{"type":"overloaded_error","message":"busy"}}`, "error"},
+		{"unknown_type", `{"type":"message_start","message":{}}`, ""},
+		{"not_json", `event: message_start`, ""},
+		{"empty", ``, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, classifyAnthropicJSONBody([]byte(tc.body)))
+		})
+	}
+}
+
+// 复现生产 bug:tool_use 块 content_block_start 带占位 input:{},随后 input_json_delta
+// 增量拼出真实 input。修复前会拼成 "{}{...}" 非法 JSON,marshal 报
+// "invalid character '{' after top-level value"。
+func TestAggregateAnthropicStreamToResponse_ToolUseInputAccumulation(t *testing.T) {
+	s := &GatewayService{}
+	sse := strings.Join([]string{
+		`data: {"type":"message_start","message":{"id":"m","type":"message","role":"assistant","content":[]}}`,
+		`data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"get_weather","input":{}}}`,
+		`data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"location\":"}}`,
+		`data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\"SF\"}"}}`,
+		`data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":7}}`,
+		``,
+	}, "\n")
+
+	resp, err := s.aggregateAnthropicStreamToResponse(strings.NewReader(sse))
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Len(t, resp.Content, 1)
+	require.Equal(t, "tool_use", resp.Content[0].Type)
+	// input 必须是合法、完整的 JSON(而非 "{}{...}")
+	require.JSONEq(t, `{"location":"SF"}`, string(resp.Content[0].Input))
+
+	// 关键:整条聚合结果可成功 marshal(生产报错点)
+	out, err := json.Marshal(resp)
+	require.NoError(t, err)
+	require.Contains(t, string(out), `"location":"SF"`)
+}
+
+// tool_use 无任何 input_json_delta 时,content_block_start 的占位 {} 应保留为合法空 input。
+func TestAggregateAnthropicStreamToResponse_ToolUseNoDelta(t *testing.T) {
+	s := &GatewayService{}
+	sse := strings.Join([]string{
+		`data: {"type":"message_start","message":{"id":"m","type":"message","role":"assistant","content":[]}}`,
+		`data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"t","name":"now","input":{}}}`,
+		`data: {"type":"message_delta","delta":{"stop_reason":"tool_use"}}`,
+		``,
+	}, "\n")
+	resp, err := s.aggregateAnthropicStreamToResponse(strings.NewReader(sse))
+	require.NoError(t, err)
+	require.JSONEq(t, `{}`, string(resp.Content[0].Input))
+	_, err = json.Marshal(resp)
+	require.NoError(t, err)
+}
+
+func TestSSEDataPayload(t *testing.T) {
+	cases := []struct {
+		line    string
+		payload string
+		ok      bool
+	}{
+		{`data: {"a":1}`, `{"a":1}`, true},
+		{`data:{"a":1}`, `{"a":1}`, true},
+		{`data:   spaced  `, `spaced`, true},
+		{`event: message_start`, ``, false},
+		{`: comment`, ``, false},
+		{``, ``, false},
+	}
+	for _, tc := range cases {
+		got, ok := sseDataPayload(tc.line)
+		require.Equal(t, tc.ok, ok, "line=%q", tc.line)
+		require.Equal(t, tc.payload, got, "line=%q", tc.line)
+	}
+}

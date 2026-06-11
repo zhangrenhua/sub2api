@@ -69,6 +69,73 @@ func TestHandleCCBufferedFromAnthropic_PreservesMessageStartCacheUsageAndReasoni
 	require.Equal(t, "high", *result.ReasoningEffort)
 }
 
+// 锁住兄弟路径的 tool_use 修复:content_block_start 占位 {} + input_json_delta 增量,
+// 必须拼成合法的 {"location":"SF"} 而非 "{}{...}"(修复前会导致后续转换/序列化报错)。
+func TestHandleCCBufferedFromAnthropic_ToolUseInputAccumulation(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	resp := &http.Response{
+		Header: http.Header{"x-request-id": []string{"rid_tool"}},
+		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
+			`event: message_start`,
+			`data: {"type":"message_start","message":{"id":"msg_t","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4.5","usage":{"input_tokens":5}}}`,
+			``,
+			`event: content_block_start`,
+			`data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"get_weather","input":{}}}`,
+			``,
+			`event: content_block_delta`,
+			`data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"location\":"}}`,
+			``,
+			`event: content_block_delta`,
+			`data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\"SF\"}"}}`,
+			``,
+			`event: message_delta`,
+			`data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":7}}`,
+			``,
+		}, "\n"))),
+	}
+
+	svc := &GatewayService{}
+	_, err := svc.handleCCBufferedFromAnthropic(resp, c, "gpt-5", "claude-sonnet-4.5", nil, time.Now())
+	require.NoError(t, err)
+
+	out := rec.Body.String()
+	// 工具参数必须是合法且完整的 {"location":"SF"},绝不能出现拼接占位导致的 "{}{"。
+	require.Contains(t, out, `"location`)
+	require.Contains(t, out, `SF`)
+	require.NotContains(t, out, `{}{`)
+}
+
+// 锁住兄弟路径的放宽 SSE:仅 data 行 + 冒号后无空格也要能聚合。
+func TestHandleCCBufferedFromAnthropic_RelaxedSSE(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	resp := &http.Response{
+		Header: http.Header{"x-request-id": []string{"rid_relaxed"}},
+		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
+			`data:{"type":"message_start","message":{"id":"m","type":"message","role":"assistant","content":[],"usage":{"input_tokens":4}}}`,
+			`data:{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`,
+			`data:{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hi"}}`,
+			`data:{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":2}}`,
+			``,
+		}, "\n"))),
+	}
+
+	svc := &GatewayService{}
+	result, err := svc.handleCCBufferedFromAnthropic(resp, c, "gpt-5", "claude-sonnet-4.5", nil, time.Now())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, 4, result.Usage.InputTokens)
+	require.Equal(t, 2, result.Usage.OutputTokens)
+	require.Contains(t, rec.Body.String(), "hi")
+}
+
 func TestHandleCCStreamingFromAnthropic_PreservesMessageStartCacheUsageAndReasoning(t *testing.T) {
 	t.Parallel()
 	gin.SetMode(gin.TestMode)

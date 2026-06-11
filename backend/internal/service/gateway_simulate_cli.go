@@ -2,6 +2,7 @@ package service
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -33,17 +34,29 @@ func (e *upstreamStreamErrorEvent) Error() string {
 // 形态白名单——它只接受「流式主循环」或「无 thinking/tools 的非流式 side-query」,
 // 非流式带 thinking 会被判 unknown_messages_shape。这里把上游 SSE 聚合回非流式,对客户端透明。
 //
+// 健壮性(三种上游异常形态的兜底):
+//  1. 上游忽略 stream:true 直接返回非流式 JSON Message → 直接当非流式响应透传;
+//  2. 上游 SSE 冒号后无空格 / 仅 data 行 → 放宽解析(见 aggregateAnthropicStreamToResponse);
+//  3. 既非有效 SSE 也非 JSON Message → 透传真实原因(含上游原文片段记日志),
+//     不再一律兜底成无信息的「Upstream request failed」。
+//
 // 局限:聚合基于 apicompat 类型,cache_creation 的 5m/1h 明细与 thinking 块的 signature
 // 不逐字段保留(前者退化为合计计费,后者对非 CLI 客户端无影响)。
 func (s *GatewayService) handleSimulatedNonStreamFromStream(ctx context.Context, resp *http.Response, c *gin.Context, account *Account, originalModel, mappedModel string) (*ClaudeUsage, error) {
 	// 与 handleNonStreamingResponse 对齐:更新 5h 窗口状态。
 	s.rateLimitService.UpdateSessionWindow(ctx, account, resp.Header)
 
-	finalResp, err := s.aggregateAnthropicStreamToResponse(resp.Body)
+	// 先读完整 body:既用于 SSE 聚合,也用于聚合失败时的 JSON 兜底与真因透传。
+	raw, readErr := io.ReadAll(resp.Body)
+	if readErr != nil &&
+		!errors.Is(readErr, context.Canceled) && !errors.Is(readErr, context.DeadlineExceeded) {
+		return nil, s.writeSimulateAggregateFailure(c, account,
+			fmt.Errorf("read upstream stream: %w", readErr), raw)
+	}
+
+	finalResp, err := s.aggregateAnthropicStreamToResponse(bytes.NewReader(raw))
 	if err != nil {
-		// 上游 200 流内 error 事件:此刻还没向客户端写任何内容,做账号 failover
-		// (与 handleStreamingResponse 的 "have error in stream"→403 行为对齐;
-		//  聚合路径无半包写出问题,failover 更干净)。
+		// (A) 上游 200 流内 error 事件:此刻还没向客户端写任何内容,做账号 failover。
 		var streamErr *upstreamStreamErrorEvent
 		if errors.As(err, &streamErr) {
 			logger.L().Warn("simulate-cli aggregate: upstream emitted error event in 200 stream; failing over",
@@ -55,7 +68,25 @@ func (s *GatewayService) handleSimulatedNonStreamFromStream(ctx context.Context,
 				ResponseBody: []byte(streamErr.payload),
 			}
 		}
-		return nil, err
+
+		// (B) 修复1:上游可能忽略 stream:true,直接返回非流式 JSON。按类型兜底处理。
+		switch classifyAnthropicJSONBody(raw) {
+		case "message":
+			logger.L().Warn("simulate-cli aggregate: upstream returned non-stream JSON message; passing through as-is",
+				zap.Int64("account_id", account.ID))
+			resp.Header.Set("Content-Type", "application/json")
+			return s.finishAnthropicNonStreamResponse(ctx, c, account, raw, resp.Header, http.StatusOK, originalModel, mappedModel)
+		case "error":
+			// 200 + JSON error body(检测型中转/限流的另一种形态)→ 同 stream error,做 failover。
+			logger.L().Warn("simulate-cli aggregate: upstream returned 200 JSON error body; failing over",
+				zap.Int64("account_id", account.ID),
+				zap.String("payload", truncateString(strings.TrimSpace(string(raw)), 500)),
+			)
+			return nil, &UpstreamFailoverError{StatusCode: 403, ResponseBody: raw}
+		}
+
+		// (C) 修复3:既非有效 SSE 也非 JSON Message → 透传真实原因,不再兜底成 generic。
+		return nil, s.writeSimulateAggregateFailure(c, account, err, raw)
 	}
 
 	body, err := json.Marshal(finalResp)
@@ -72,11 +103,81 @@ func (s *GatewayService) handleSimulatedNonStreamFromStream(ctx context.Context,
 	return s.finishAnthropicNonStreamResponse(ctx, c, account, body, resp.Header, http.StatusOK, originalModel, mappedModel)
 }
 
+// classifyAnthropicJSONBody 在 SSE 聚合失败时,判断上游 body 是否其实是一条完整的
+// 非流式 JSON 响应:返回 "message"(完整 Message,可直接透传)、"error"(JSON 错误体,
+// 应 failover)或 ""(不是可识别的 JSON,交由真因透传)。
+func classifyAnthropicJSONBody(raw []byte) string {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || trimmed[0] != '{' {
+		return ""
+	}
+	var probe struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(trimmed, &probe); err != nil {
+		return ""
+	}
+	switch probe.Type {
+	case "message":
+		return "message"
+	case "error":
+		return "error"
+	default:
+		return ""
+	}
+}
+
+// writeSimulateAggregateFailure 在聚合彻底失败(非 failover、非 JSON 兜底)时,向客户端写一条
+// 携带真实原因的 502 错误,并把上游原文片段记入 Ops/日志供排障——取代以往无信息的
+// 「Upstream request failed」兜底。返回 error 供上层日志记录;响应已写出,handler 不会重复写。
+func (s *GatewayService) writeSimulateAggregateFailure(c *gin.Context, account *Account, cause error, raw []byte) error {
+	reason := cause.Error()
+	// 客户端/Ops 可见文案统一脱敏(read 错误可能裹 *net.OpError,默认 Error() 会泄露内部
+	// IP/端口与上游地址);完整 reason 仅保留在下方低层 zap 日志中供运维诊断。
+	safeReason := sanitizeUpstreamErrorMessage(reason)
+	snippet := truncateString(strings.TrimSpace(string(raw)), 300)
+
+	setOpsUpstreamError(c, http.StatusBadGateway, safeReason, "")
+	appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+		Platform:           account.Platform,
+		AccountID:          account.ID,
+		AccountName:        account.Name,
+		UpstreamStatusCode: http.StatusBadGateway,
+		Kind:               "request_error",
+		Message:            safeReason,
+		Detail:             snippet,
+	})
+	logger.L().With(zap.String("component", "service.gateway")).Warn(
+		"simulate-cli aggregate failed",
+		zap.Int64("account_id", account.ID),
+		zap.String("account_name", account.Name),
+		zap.String("reason", reason),
+		zap.String("upstream_snippet", snippet),
+	)
+
+	if c != nil && c.Writer != nil && !c.Writer.Written() {
+		c.JSON(http.StatusBadGateway, gin.H{
+			"type": "error",
+			"error": gin.H{
+				"type": "upstream_error",
+				// 真因透传:客户端能看到具体原因(如 upstream stream ended without a message),
+				// 而非以往无信息的 "Upstream request failed"。
+				"message": "Simulated Claude CLI: upstream did not return a valid Anthropic message stream (" + safeReason + ")",
+			},
+		})
+	}
+	return fmt.Errorf("simulate-cli aggregate failed: %s", safeReason)
+}
+
 // aggregateAnthropicStreamToResponse 解析 Anthropic SSE 事件流并累积成一条非流式响应。
 // 与 gateway_forward_as_chat_completions.go 的缓冲聚合同构,但保留 Anthropic 原生结构
 // (不再转 Responses/ChatCompletions),供原生 /v1/messages 非流式返回使用。
 //
-// 若流中出现 `event: error`,返回 *upstreamStreamErrorEvent,由调用方决定 failover。
+// 修复2:放宽 SSE 解析——逐行处理任意 `data:` 行(冒号后空格可选),不再要求 `event: ` 与
+// `data: ` 严格成对且带空格。事件类型以 data 内 JSON 的 "type" 字段为准,因此兼容
+// 「仅 data 行」「event:/data: 无空格」等中转常见变体。
+//
+// 若流中出现 type==error 的事件,返回 *upstreamStreamErrorEvent,由调用方决定 failover。
 func (s *GatewayService) aggregateAnthropicStreamToResponse(r io.Reader) (*apicompat.AnthropicResponse, error) {
 	scanner := bufio.NewScanner(r)
 	maxLineSize := defaultMaxLineSize
@@ -90,17 +191,13 @@ func (s *GatewayService) aggregateAnthropicStreamToResponse(r io.Reader) (*apico
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if !strings.HasPrefix(line, "event: ") {
+		payload, ok := sseDataPayload(line)
+		if !ok {
 			continue
 		}
-		if !scanner.Scan() {
-			break
-		}
-		dataLine := scanner.Text()
-		if !strings.HasPrefix(dataLine, "data: ") {
+		if payload == "" || payload == "[DONE]" {
 			continue
 		}
-		payload := dataLine[6:]
 
 		var event apicompat.AnthropicStreamEvent
 		if err := json.Unmarshal([]byte(payload), &event); err != nil {
@@ -130,7 +227,14 @@ func (s *GatewayService) aggregateAnthropicStreamToResponse(r io.Reader) (*apico
 					case "thinking_delta":
 						finalResp.Content[idx].Thinking += event.Delta.Thinking
 					case "input_json_delta":
-						finalResp.Content[idx].Input = appendRawJSON(finalResp.Content[idx].Input, event.Delta.PartialJSON)
+						// tool_use 的完整 input 由 input_json_delta 增量拼出;而 content_block_start
+						// 里携带的是占位的空对象 {}。首个 delta 到来时必须先丢弃该占位,否则会拼成
+						// "{}{...}" 的非法 JSON,导致后续 marshal 报 invalid character '{' after top-level value。
+						cur := finalResp.Content[idx].Input
+						if isPlaceholderEmptyJSONObject(cur) {
+							cur = nil
+						}
+						finalResp.Content[idx].Input = appendRawJSON(cur, event.Delta.PartialJSON)
 					}
 				}
 			}
@@ -161,4 +265,19 @@ func (s *GatewayService) aggregateAnthropicStreamToResponse(r io.Reader) (*apico
 		CacheReadInputTokens:     usage.CacheReadInputTokens,
 	}
 	return finalResp, nil
+}
+
+// isPlaceholderEmptyJSONObject 判断 json.RawMessage 是否为 content_block_start 携带的占位空对象 `{}`。
+// 仅用于在首个 input_json_delta 到来时丢弃占位;若 tool_use 无任何 delta,则该 `{}` 保留为合法空 input。
+func isPlaceholderEmptyJSONObject(raw json.RawMessage) bool {
+	return len(raw) > 0 && bytes.Equal(bytes.TrimSpace(raw), []byte("{}"))
+}
+
+// sseDataPayload 从一行中取出 SSE `data:` 字段值(冒号后空格可选);非 data 行返回 false。
+func sseDataPayload(line string) (string, bool) {
+	const prefix = "data:"
+	if !strings.HasPrefix(line, prefix) {
+		return "", false
+	}
+	return strings.TrimSpace(line[len(prefix):]), true
 }
