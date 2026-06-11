@@ -57,6 +57,35 @@ func TestHandleResponsesBufferedStreamingResponse_PreservesMessageStartCacheUsag
 	require.Contains(t, rec.Body.String(), `"cached_tokens":9`)
 }
 
+// 锁住 responses 路径的 tool_use 修复 + 放宽 SSE(仅 data 行 + 无空格):工具入参必须拼成
+// 合法 {"location":"SF"} 而非 "{}{...}",且无 event: 行也能解析。
+func TestHandleResponsesBufferedStreaming_ToolUseInputAccumulation_RelaxedSSE(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	resp := &http.Response{
+		Header: http.Header{"x-request-id": []string{"rid_tool_resp"}},
+		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
+			`data:{"type":"message_start","message":{"id":"m","type":"message","role":"assistant","content":[],"usage":{"input_tokens":5}}}`,
+			`data:{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"get_weather","input":{}}}`,
+			`data:{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"location\":"}}`,
+			`data:{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\"SF\"}"}}`,
+			`data:{"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":7}}`,
+			``,
+		}, "\n"))),
+	}
+
+	svc := &GatewayService{}
+	_, err := svc.handleResponsesBufferedStreamingResponse(resp, c, "claude-sonnet-4.5", "claude-sonnet-4.5", nil, time.Now())
+	require.NoError(t, err)
+
+	out := rec.Body.String()
+	require.Contains(t, out, "SF")
+	require.NotContains(t, out, `{}{`)
+}
+
 func TestHandleResponsesStreamingResponse_PreservesMessageStartCacheUsage(t *testing.T) {
 	t.Parallel()
 	gin.SetMode(gin.TestMode)
