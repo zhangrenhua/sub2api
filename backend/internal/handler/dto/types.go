@@ -145,6 +145,7 @@ type AdminGroup struct {
 
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
 	DefaultMappedModel          string                                   `json:"default_mapped_model"`
+	PathVariable                string                                   `json:"path_variable"`
 	MessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	ModelsListConfig            domain.GroupModelsListConfig             `json:"models_list_config"`
 	VideoModelPricing           domain.GroupVideoPricingConfig           `json:"video_model_pricing"`

@@ -719,6 +719,20 @@ func (_u *GroupUpdate) SetNillableDefaultMappedModel(v *string) *GroupUpdate {
 	return _u
 }
 
+// SetPathVariable sets the "path_variable" field.
+func (_u *GroupUpdate) SetPathVariable(v string) *GroupUpdate {
+	_u.mutation.SetPathVariable(v)
+	return _u
+}
+
+// SetNillablePathVariable sets the "path_variable" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillablePathVariable(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetPathVariable(*v)
+	}
+	return _u
+}
+
 // SetMessagesDispatchModelConfig sets the "messages_dispatch_model_config" field.
 func (_u *GroupUpdate) SetMessagesDispatchModelConfig(v domain.OpenAIMessagesDispatchModelConfig) *GroupUpdate {
 	_u.mutation.SetMessagesDispatchModelConfig(v)
@@ -1058,6 +1072,11 @@ func (_u *GroupUpdate) check() error {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PathVariable(); ok {
+		if err := group.PathVariableValidator(v); err != nil {
+			return &ValidationError{Name: "path_variable", err: fmt.Errorf(`ent: validator failed for field "Group.path_variable": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1272,6 +1291,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.DefaultMappedModel(); ok {
 		_spec.SetField(group.FieldDefaultMappedModel, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PathVariable(); ok {
+		_spec.SetField(group.FieldPathVariable, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.MessagesDispatchModelConfig(); ok {
 		_spec.SetField(group.FieldMessagesDispatchModelConfig, field.TypeJSON, value)
@@ -2282,6 +2304,20 @@ func (_u *GroupUpdateOne) SetNillableDefaultMappedModel(v *string) *GroupUpdateO
 	return _u
 }
 
+// SetPathVariable sets the "path_variable" field.
+func (_u *GroupUpdateOne) SetPathVariable(v string) *GroupUpdateOne {
+	_u.mutation.SetPathVariable(v)
+	return _u
+}
+
+// SetNillablePathVariable sets the "path_variable" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillablePathVariable(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetPathVariable(*v)
+	}
+	return _u
+}
+
 // SetMessagesDispatchModelConfig sets the "messages_dispatch_model_config" field.
 func (_u *GroupUpdateOne) SetMessagesDispatchModelConfig(v domain.OpenAIMessagesDispatchModelConfig) *GroupUpdateOne {
 	_u.mutation.SetMessagesDispatchModelConfig(v)
@@ -2634,6 +2670,11 @@ func (_u *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PathVariable(); ok {
+		if err := group.PathVariableValidator(v); err != nil {
+			return &ValidationError{Name: "path_variable", err: fmt.Errorf(`ent: validator failed for field "Group.path_variable": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -2865,6 +2906,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.DefaultMappedModel(); ok {
 		_spec.SetField(group.FieldDefaultMappedModel, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PathVariable(); ok {
+		_spec.SetField(group.FieldPathVariable, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.MessagesDispatchModelConfig(); ok {
 		_spec.SetField(group.FieldMessagesDispatchModelConfig, field.TypeJSON, value)

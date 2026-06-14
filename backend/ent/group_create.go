@@ -537,6 +537,20 @@ func (_c *GroupCreate) SetNillableDefaultMappedModel(v *string) *GroupCreate {
 	return _c
 }
 
+// SetPathVariable sets the "path_variable" field.
+func (_c *GroupCreate) SetPathVariable(v string) *GroupCreate {
+	_c.mutation.SetPathVariable(v)
+	return _c
+}
+
+// SetNillablePathVariable sets the "path_variable" field if the given value is not nil.
+func (_c *GroupCreate) SetNillablePathVariable(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetPathVariable(*v)
+	}
+	return _c
+}
+
 // SetMessagesDispatchModelConfig sets the "messages_dispatch_model_config" field.
 func (_c *GroupCreate) SetMessagesDispatchModelConfig(v domain.OpenAIMessagesDispatchModelConfig) *GroupCreate {
 	_c.mutation.SetMessagesDispatchModelConfig(v)
@@ -808,6 +822,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultDefaultMappedModel
 		_c.mutation.SetDefaultMappedModel(v)
 	}
+	if _, ok := _c.mutation.PathVariable(); !ok {
+		v := group.DefaultPathVariable
+		_c.mutation.SetPathVariable(v)
+	}
 	if _, ok := _c.mutation.MessagesDispatchModelConfig(); !ok {
 		v := group.DefaultMessagesDispatchModelConfig
 		_c.mutation.SetMessagesDispatchModelConfig(v)
@@ -923,6 +941,14 @@ func (_c *GroupCreate) check() error {
 	if v, ok := _c.mutation.DefaultMappedModel(); ok {
 		if err := group.DefaultMappedModelValidator(v); err != nil {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PathVariable(); !ok {
+		return &ValidationError{Name: "path_variable", err: errors.New(`ent: missing required field "Group.path_variable"`)}
+	}
+	if v, ok := _c.mutation.PathVariable(); ok {
+		if err := group.PathVariableValidator(v); err != nil {
+			return &ValidationError{Name: "path_variable", err: fmt.Errorf(`ent: validator failed for field "Group.path_variable": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.MessagesDispatchModelConfig(); !ok {
@@ -1112,6 +1138,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DefaultMappedModel(); ok {
 		_spec.SetField(group.FieldDefaultMappedModel, field.TypeString, value)
 		_node.DefaultMappedModel = value
+	}
+	if value, ok := _c.mutation.PathVariable(); ok {
+		_spec.SetField(group.FieldPathVariable, field.TypeString, value)
+		_node.PathVariable = value
 	}
 	if value, ok := _c.mutation.MessagesDispatchModelConfig(); ok {
 		_spec.SetField(group.FieldMessagesDispatchModelConfig, field.TypeJSON, value)
@@ -1890,6 +1920,18 @@ func (u *GroupUpsert) SetDefaultMappedModel(v string) *GroupUpsert {
 // UpdateDefaultMappedModel sets the "default_mapped_model" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateDefaultMappedModel() *GroupUpsert {
 	u.SetExcluded(group.FieldDefaultMappedModel)
+	return u
+}
+
+// SetPathVariable sets the "path_variable" field.
+func (u *GroupUpsert) SetPathVariable(v string) *GroupUpsert {
+	u.Set(group.FieldPathVariable, v)
+	return u
+}
+
+// UpdatePathVariable sets the "path_variable" field to the value that was provided on create.
+func (u *GroupUpsert) UpdatePathVariable() *GroupUpsert {
+	u.SetExcluded(group.FieldPathVariable)
 	return u
 }
 
@@ -2691,6 +2733,20 @@ func (u *GroupUpsertOne) SetDefaultMappedModel(v string) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateDefaultMappedModel() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateDefaultMappedModel()
+	})
+}
+
+// SetPathVariable sets the "path_variable" field.
+func (u *GroupUpsertOne) SetPathVariable(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetPathVariable(v)
+	})
+}
+
+// UpdatePathVariable sets the "path_variable" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdatePathVariable() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdatePathVariable()
 	})
 }
 
@@ -3665,6 +3721,20 @@ func (u *GroupUpsertBulk) SetDefaultMappedModel(v string) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateDefaultMappedModel() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateDefaultMappedModel()
+	})
+}
+
+// SetPathVariable sets the "path_variable" field.
+func (u *GroupUpsertBulk) SetPathVariable(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetPathVariable(v)
+	})
+}
+
+// UpdatePathVariable sets the "path_variable" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdatePathVariable() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdatePathVariable()
 	})
 }
 

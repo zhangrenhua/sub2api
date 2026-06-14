@@ -802,6 +802,12 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			}
 			// 记录 Forward 前已写入字节数，Forward 后若增加则说明 SSE 内容已发，禁止 failover
 			writerSizeBeforeForward := c.Writer.Size()
+			// Fork：按当前生效分组（含降级后的分组）设置上游 path 变量，确保 fallback 用对路径。
+			groupPathVar := ""
+			if currentAPIKey != nil && currentAPIKey.Group != nil {
+				groupPathVar = currentAPIKey.Group.PathVariable
+			}
+			c.Set(service.CtxKeyGroupPathVar, groupPathVar)
 			if account.Platform == service.PlatformAntigravity && account.Type != service.AccountTypeAPIKey {
 				result, err = h.antigravityGatewayService.Forward(requestCtx, c, account, attemptBody, hasBoundSession)
 			} else {
@@ -1726,6 +1732,11 @@ func (h *GatewayHandler) CountTokens(c *gin.Context) {
 	if !ok {
 		h.errorResponse(c, http.StatusUnauthorized, "authentication_error", "Invalid API key")
 		return
+	}
+
+	// Fork：分组级上游 path 变量（count_tokens 同 messages 路径）。
+	if apiKey.Group != nil && apiKey.Group.PathVariable != "" {
+		c.Set(service.CtxKeyGroupPathVar, apiKey.Group.PathVariable)
 	}
 
 	_, ok = middleware2.GetAuthSubjectFromContext(c)

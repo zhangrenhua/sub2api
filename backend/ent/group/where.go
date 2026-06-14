@@ -230,6 +230,11 @@ func DefaultMappedModel(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDefaultMappedModel, v))
 }
 
+// PathVariable applies equality check predicate on the "path_variable" field. It's identical to PathVariableEQ.
+func PathVariable(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldPathVariable, v))
+}
+
 // RpmLimit applies equality check predicate on the "rpm_limit" field. It's identical to RpmLimitEQ.
 func RpmLimit(v int) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRpmLimit, v))
@@ -1583,6 +1588,71 @@ func DefaultMappedModelEqualFold(v string) predicate.Group {
 // DefaultMappedModelContainsFold applies the ContainsFold predicate on the "default_mapped_model" field.
 func DefaultMappedModelContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldDefaultMappedModel, v))
+}
+
+// PathVariableEQ applies the EQ predicate on the "path_variable" field.
+func PathVariableEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldPathVariable, v))
+}
+
+// PathVariableNEQ applies the NEQ predicate on the "path_variable" field.
+func PathVariableNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldPathVariable, v))
+}
+
+// PathVariableIn applies the In predicate on the "path_variable" field.
+func PathVariableIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldPathVariable, vs...))
+}
+
+// PathVariableNotIn applies the NotIn predicate on the "path_variable" field.
+func PathVariableNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldPathVariable, vs...))
+}
+
+// PathVariableGT applies the GT predicate on the "path_variable" field.
+func PathVariableGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldPathVariable, v))
+}
+
+// PathVariableGTE applies the GTE predicate on the "path_variable" field.
+func PathVariableGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldPathVariable, v))
+}
+
+// PathVariableLT applies the LT predicate on the "path_variable" field.
+func PathVariableLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldPathVariable, v))
+}
+
+// PathVariableLTE applies the LTE predicate on the "path_variable" field.
+func PathVariableLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldPathVariable, v))
+}
+
+// PathVariableContains applies the Contains predicate on the "path_variable" field.
+func PathVariableContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldPathVariable, v))
+}
+
+// PathVariableHasPrefix applies the HasPrefix predicate on the "path_variable" field.
+func PathVariableHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldPathVariable, v))
+}
+
+// PathVariableHasSuffix applies the HasSuffix predicate on the "path_variable" field.
+func PathVariableHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldPathVariable, v))
+}
+
+// PathVariableEqualFold applies the EqualFold predicate on the "path_variable" field.
+func PathVariableEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldPathVariable, v))
+}
+
+// PathVariableContainsFold applies the ContainsFold predicate on the "path_variable" field.
+func PathVariableContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldPathVariable, v))
 }
 
 // RpmLimitEQ applies the EQ predicate on the "rpm_limit" field.

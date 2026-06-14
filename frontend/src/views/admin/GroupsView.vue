@@ -1153,6 +1153,20 @@
         </div>
 
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
+        <!-- Fork: Anthropic 分组级上游 path 变量 -->
+        <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
+          <label class="input-label">{{ t("admin.groups.pathVariable.label") }}</label>
+          <input
+            v-model.trim="createForm.path_variable"
+            type="text"
+            class="input"
+            :placeholder="t('admin.groups.pathVariable.placeholder')"
+          />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t("admin.groups.pathVariable.hint") }}
+          </p>
+        </div>
+
         <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -2608,6 +2622,20 @@
           </div>
         </div>
 
+        <!-- Fork: Anthropic 分组级上游 path 变量 -->
+        <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
+          <label class="input-label">{{ t("admin.groups.pathVariable.label") }}</label>
+          <input
+            v-model.trim="editForm.path_variable"
+            type="text"
+            class="input"
+            :placeholder="t('admin.groups.pathVariable.placeholder')"
+          />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t("admin.groups.pathVariable.hint") }}
+          </p>
+        </div>
+
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -3695,6 +3723,8 @@ const createForm = reactive({
   claude_code_only: false,
   fallback_group_id: null as number | null,
   fallback_group_id_on_invalid_request: null as number | null,
+  // Fork: Anthropic 分组级上游 path 变量
+  path_variable: '',
   // OpenAI Messages 调度配置（仅 openai 平台使用）
   allow_messages_dispatch: false,
   opus_mapped_model: createMessagesDispatchDefaults.opus_mapped_model,
@@ -4041,6 +4071,8 @@ const editForm = reactive({
   claude_code_only: false,
   fallback_group_id: null as number | null,
   fallback_group_id_on_invalid_request: null as number | null,
+  // Fork: Anthropic 分组级上游 path 变量
+  path_variable: '',
   // OpenAI Messages 调度配置（仅 openai 平台使用）
   allow_messages_dispatch: false,
   default_mapped_model: '',
@@ -4476,6 +4508,7 @@ const handleEdit = async (group: AdminGroup) => {
     })),
   };
   editForm.claude_code_only = group.claude_code_only || false;
+  editForm.path_variable = group.path_variable || "";
   editForm.fallback_group_id = group.fallback_group_id;
   editForm.fallback_group_id_on_invalid_request =
     group.fallback_group_id_on_invalid_request;
@@ -4728,6 +4761,9 @@ watch(
     if (newVal !== "openai") {
       resetMessagesDispatchFormState(createForm);
     }
+    if (newVal !== "anthropic") {
+      createForm.path_variable = "";
+    }
     if (!["openai", "antigravity", "anthropic", "gemini"].includes(newVal)) {
       createForm.require_oauth_only = false;
       createForm.require_privacy_set = false;
@@ -4766,6 +4802,9 @@ watch(
     if (newVal !== 'openai') {
       editForm.allow_messages_dispatch = false
       editForm.default_mapped_model = ''
+    }
+    if (newVal !== 'anthropic') {
+      editForm.path_variable = ''
     }
   }
 )

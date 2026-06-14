@@ -2434,6 +2434,11 @@ export default {
         loading: '正在加载模型列表...',
         empty: '暂无可展示模型'
       },
+      pathVariable: {
+        label: '上游 Path 变量（RESTful）',
+        placeholder: '留空则请求 base_url/v1/messages',
+        hint: '仅 Anthropic 分组生效。填写后，组内 API Key 账号的请求转发到 base_url/<段>/v1/messages（messages 与 count_tokens 同理）；留空则为 base_url/v1/messages。若账号 base_url 末尾已是该段则不重复追加。仅允许字母数字与 - _ . ~。',
+      },
       claudeCode: {
         title: 'Claude Code 客户端限制',
         tooltip:
