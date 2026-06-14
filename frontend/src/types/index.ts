@@ -546,6 +546,8 @@ export interface Group {
   // OpenAI Messages 调度开关（用户侧需要此字段判断是否展示 Claude Code 教程）
   allow_messages_dispatch?: boolean
   default_mapped_model?: string
+  // Fork: Anthropic 分组级上游 path 变量
+  path_variable?: string
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   require_oauth_only: boolean
   require_privacy_set: boolean
@@ -571,6 +573,8 @@ export interface AdminGroup extends Group {
 
   // OpenAI Messages 调度配置（仅 openai 平台使用）
   default_mapped_model?: string
+  // Fork: Anthropic 分组级上游 path 变量
+  path_variable?: string
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   models_list_config?: ModelsListConfig
 
@@ -671,6 +675,8 @@ export interface CreateGroupRequest {
   models_list_config?: ModelsListConfig
   allow_messages_dispatch?: boolean
   default_mapped_model?: string
+  // Fork: Anthropic 分组级上游 path 变量
+  path_variable?: string
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   model_routing?: Record<string, number[]> | null
   model_routing_enabled?: boolean
@@ -712,6 +718,8 @@ export interface UpdateGroupRequest {
   models_list_config?: ModelsListConfig
   allow_messages_dispatch?: boolean
   default_mapped_model?: string
+  // Fork: Anthropic 分组级上游 path 变量
+  path_variable?: string
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   model_routing?: Record<string, number[]> | null
   model_routing_enabled?: boolean

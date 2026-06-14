@@ -177,6 +177,10 @@ func (Group) Fields() []ent.Field {
 			MaxLen(100).
 			Default("").
 			Comment("默认映射模型 ID，当账号级映射找不到时使用此值"),
+		field.String("path_variable").
+			MaxLen(128).
+			Default("").
+			Comment("Fork：Anthropic 分组级上游路径变量，非空时请求 base_url/{path_variable}/v1/messages"),
 		field.JSON("messages_dispatch_model_config", domain.OpenAIMessagesDispatchModelConfig{}).
 			Default(domain.OpenAIMessagesDispatchModelConfig{}).
 			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).

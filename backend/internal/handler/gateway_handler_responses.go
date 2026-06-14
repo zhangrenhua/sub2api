@@ -243,6 +243,12 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 
 		// 5. Forward request
 		writerSizeBeforeForward := c.Writer.Size()
+		// Fork：分组级上游 path 变量（responses 命中 Anthropic 组会转成 /v1/messages 上游）。
+		groupPathVar := ""
+		if apiKey.Group != nil {
+			groupPathVar = apiKey.Group.PathVariable
+		}
+		c.Set(service.CtxKeyGroupPathVar, groupPathVar)
 		forwardBody := body
 		if channelMapping.Mapped {
 			forwardBody = h.gatewayService.ReplaceModelInBody(body, channelMapping.MappedModel)

@@ -2352,6 +2352,11 @@ export default {
         loading: 'Loading model list...',
         empty: 'No displayable models'
       },
+      pathVariable: {
+        label: 'Upstream path variable (RESTful)',
+        placeholder: 'Empty → base_url/v1/messages',
+        hint: 'Anthropic groups only. When set, requests served by API-key accounts in this group are forwarded to base_url/<seg>/v1/messages (messages and count_tokens alike); empty means base_url/v1/messages. If the account base_url already ends with this segment, it is not appended again. Only alphanumerics and - _ . ~ are allowed.',
+      },
       claudeCode: {
         title: 'Claude Code Client Restriction',
         tooltip: 'When enabled, this group only allows official Claude Code clients. Non-Claude Code requests will be rejected or fallback to the specified group.',
