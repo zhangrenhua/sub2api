@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
@@ -16,6 +17,29 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
+
+// fork：模拟 Claude CLI 聚合失败时，真因会写进客户端 502 文案。共享脱敏函数
+// sanitizeUpstreamErrorMessage 只去敏感 query 参数，不剥 host/IP，故底层 net 错误
+// （形如 `Post "https://host/...": read tcp 内网IP->上游IP: ...`）会把上游域名、上游 IP、
+// 内网 IP 透给下游。下面这层只作用于「客户端出口」，把这些地址替换为占位符；
+// Ops 日志 / admin 面板 / zap 日志仍保留完整域名，便于运维定位是哪个上游。
+var (
+	simulateClientURLRedactRegex  = regexp.MustCompile(`https?://[^\s"'` + "`" + `]+`)
+	simulateClientIPv4RedactRegex = regexp.MustCompile(`\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?\b`)
+	simulateClientIPv6RedactRegex = regexp.MustCompile(`\[[0-9a-fA-F:]+\](?::\d+)?`)
+)
+
+// redactUpstreamAddressesForClient 把消息里的上游 URL 与 IP[:port] 替换为占位符，
+// 仅用于返回给下游客户端的文案，避免泄露上游域名/IP 与内网地址。
+func redactUpstreamAddressesForClient(msg string) string {
+	if msg == "" {
+		return msg
+	}
+	msg = simulateClientURLRedactRegex.ReplaceAllString(msg, "<upstream>")
+	msg = simulateClientIPv6RedactRegex.ReplaceAllString(msg, "<addr>")
+	msg = simulateClientIPv4RedactRegex.ReplaceAllString(msg, "<addr>")
+	return msg
+}
 
 // upstreamStreamErrorEvent 表示上游在 HTTP 200 的 SSE 流中下发了 `event: error`
 // (检测型中转/限流常见)。聚合路径在写客户端前就消费完整个流，因此遇到它时尚未写出
@@ -156,13 +180,15 @@ func (s *GatewayService) writeSimulateAggregateFailure(c *gin.Context, account *
 	)
 
 	if c != nil && c.Writer != nil && !c.Writer.Written() {
+		// 客户端出口再脱敏：去掉上游 URL/IP 与内网地址（Ops 日志保留完整 safeReason 供排障）。
+		clientReason := redactUpstreamAddressesForClient(safeReason)
 		c.JSON(http.StatusBadGateway, gin.H{
 			"type": "error",
 			"error": gin.H{
 				"type": "upstream_error",
 				// 真因透传:客户端能看到具体原因(如 upstream stream ended without a message),
-				// 而非以往无信息的 "Upstream request failed"。
-				"message": "Simulated Claude CLI: upstream did not return a valid Anthropic message stream (" + safeReason + ")",
+				// 而非以往无信息的 "Upstream request failed"；但地址类敏感信息已打码。
+				"message": "Simulated Claude CLI: upstream did not return a valid Anthropic message stream (" + clientReason + ")",
 			},
 		})
 	}
