@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-full bg-gray-50 dark:bg-dark-900">
-    <div class="mx-auto max-w-5xl px-4 py-5">
+    <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <!-- 顶部栏：logo（→ /usage） / tabs / 秘钥 -->
-      <div class="mb-6 flex items-center justify-between gap-3">
+      <div class="mb-10 flex items-center justify-between gap-3">
         <div class="flex shrink-0 items-center gap-3">
           <router-link to="/usage" class="flex items-center gap-2">
             <img :src="siteLogo || '/logo.png'" alt="logo" class="h-8 w-8 rounded-lg object-contain" />
@@ -75,28 +75,28 @@
         <!-- ===== 创作台 ===== -->
         <div v-show="tab === 'studio'">
           <!-- Hero + 模板（空态） -->
-          <div v-if="chatMessages.length === 0" class="pb-4 pt-2 text-center">
+          <div v-if="chatMessages.length === 0" class="pb-10 pt-6 text-center">
             <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
               {{ t('imageWorkbench.heroTitle') }}
             </h1>
-            <p class="mx-auto mt-3 max-w-xl text-sm text-gray-500 dark:text-gray-400">
+            <p class="mx-auto mt-4 max-w-xl text-sm text-gray-500 dark:text-gray-400">
               {{ t('imageWorkbench.heroSubtitle') }}
             </p>
-            <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="mt-10 grid grid-cols-2 gap-5 sm:grid-cols-4">
               <button
                 v-for="p in presets"
                 :key="p.id"
-                class="group overflow-hidden rounded-2xl border border-gray-200 bg-white text-left transition hover:-translate-y-0.5 hover:shadow-md dark:border-dark-600 dark:bg-dark-800"
+                class="group overflow-hidden rounded-2xl border border-gray-200 bg-white text-left transition hover:-translate-y-1 hover:shadow-lg dark:border-dark-600 dark:bg-dark-800"
                 @click="usePreset(p)"
               >
                 <div class="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-dark-700">
                   <img :src="p.image" :alt="p.title" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
-                  <span class="absolute right-1.5 top-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white">{{ p.size }}</span>
+                  <span class="absolute right-2 top-2 rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white">{{ p.size }}</span>
                 </div>
-                <div class="p-2.5">
+                <div class="p-3.5">
                   <div class="truncate text-sm font-medium text-gray-800 dark:text-gray-100">{{ p.title }}</div>
-                  <div class="mt-0.5 truncate text-xs text-gray-400">{{ p.hint }}</div>
-                  <div class="mt-1.5 text-xs font-medium text-primary-600">{{ t('imageWorkbench.useTemplate') }} →</div>
+                  <div class="mt-1 truncate text-xs text-gray-400">{{ p.hint }}</div>
+                  <div class="mt-2.5 text-xs font-medium text-primary-600">{{ t('imageWorkbench.useTemplate') }} →</div>
                 </div>
               </button>
             </div>
@@ -165,11 +165,11 @@
           </div>
 
           <!-- 风格快捷 -->
-          <div class="mb-2 flex flex-wrap gap-1.5">
+          <div class="mb-3 mt-2 flex flex-wrap gap-2">
             <button
               v-for="st in styles"
               :key="st"
-              class="rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs text-gray-500 transition hover:border-primary-400 hover:text-primary-600 dark:border-dark-600 dark:bg-dark-800"
+              class="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-500 transition hover:border-primary-400 hover:text-primary-600 dark:border-dark-600 dark:bg-dark-800"
               @click="appendStyle(st)"
             >
               {{ st }}
@@ -195,16 +195,16 @@
           </div>
 
           <!-- 输入框（突出圆角卡片 + 内置工具条）-->
-          <div class="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-dark-600 dark:bg-dark-800">
+          <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-dark-600 dark:bg-dark-800">
             <textarea
               v-model="prompt"
-              rows="2"
+              rows="3"
               :maxlength="PROMPT_MAX"
               class="w-full resize-none border-0 bg-transparent px-1 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 dark:text-gray-100"
               :placeholder="t('imageWorkbench.promptPlaceholder')"
               @keydown.enter.exact.prevent="send"
             ></textarea>
-            <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-3">
+            <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3">
               <button
                 class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-primary-400 hover:text-primary-600 dark:border-dark-600"
                 :title="t('imageWorkbench.upload')"
