@@ -15,6 +15,9 @@ func RegisterUserRoutes(
 	jwtAuth middleware.JWTAuthMiddleware,
 	settingService *service.SettingService,
 ) {
+	// 画图工作台图片文件：不可猜测 token 鉴权（免 JWT，供 <img src> 直接取图）
+	v1.GET("/image-workbench/files/:token", h.ImageWorkbench.ServeFile)
+
 	authenticated := v1.Group("")
 	authenticated.Use(gin.HandlerFunc(jwtAuth))
 	authenticated.Use(middleware.BackendModeUserGuard(settingService))
@@ -76,6 +79,15 @@ func RegisterUserRoutes(
 		channels := authenticated.Group("/channels")
 		{
 			channels.GET("/available", h.AvailableChannel.List)
+		}
+
+		// 画图工作台（fork：对话生图 + 7 天过期）
+		imageWorkbench := authenticated.Group("/image-workbench")
+		{
+			imageWorkbench.POST("/generate", h.ImageWorkbench.Generate)
+			imageWorkbench.GET("/tasks", h.ImageWorkbench.Tasks)
+			imageWorkbench.GET("/history", h.ImageWorkbench.History)
+			imageWorkbench.DELETE("/:id", h.ImageWorkbench.Delete)
 		}
 
 		// 使用记录
