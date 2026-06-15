@@ -25,11 +25,11 @@ import (
 //
 // 提交即建任务(image_workbench_tasks，queued)；服务端 worker 池领取并执行：按所选 key 对
 // 网关 /v1/images/{generations,edits} 发 loopback 请求(复用全部鉴权/计费/限流/转发)，拿回
-// base64 落本地盘、写 image_workbench_images(带 token + 7 天过期)，更新任务为 done/error。
+// base64 落本地盘、写 image_workbench_images(带 token + 3 天过期)，更新任务为 done/error。
 // 任务在服务端运行，刷新页面不影响；前端轮询 /tasks 展示状态与结果。
 
 const (
-	imageWorkbenchTTL            = 7 * 24 * time.Hour
+	imageWorkbenchTTL            = 3 * 24 * time.Hour
 	imageWorkbenchMaxN           = 4
 	imageWorkbenchMaxPerUser     = 50              // 每用户最多保留图片数(超出删最旧)
 	imageWorkbenchHTTPTimeout    = 10 * time.Minute // 生图同步阻塞，给到 600s
@@ -493,7 +493,7 @@ func (s *ImageWorkbenchService) CleanupExpired(ctx context.Context) (int, error)
 	return len(keys), nil
 }
 
-// StartCleanupLoop 每天凌晨 3:00(本地时区)删除超过 7 天的图片。
+// StartCleanupLoop 每天凌晨 3:00(本地时区)删除已过期(默认 3 天)的图片。
 func (s *ImageWorkbenchService) StartCleanupLoop() {
 	go func() {
 		s.runCleanupOnce()

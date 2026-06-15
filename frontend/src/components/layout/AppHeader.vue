@@ -26,7 +26,7 @@
         <!-- Announcement Bell -->
         <AnnouncementBell v-if="user" />
 
-        <!-- Image Workbench (fork: chat-to-image with 7-day storage) -->
+        <!-- Image Workbench (fork: chat-to-image with 3-day storage) -->
         <router-link
           v-if="user"
           to="/image-workbench"

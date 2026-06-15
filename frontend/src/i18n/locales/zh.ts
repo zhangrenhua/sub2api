@@ -1111,7 +1111,7 @@ export default {
   // Available Channels (user-facing)
   imageWorkbench: {
     title: '画图工作台',
-    description: '对话式生成图片，支持多轮编辑，图片保存 7 天后自动过期',
+    description: '对话式生成图片，支持多轮编辑，图片保存 3 天后自动过期',
     heroTitle: '把创意变成图像',
     heroSubtitle: '选择一组预设快速开始，或直接在下方描述你想要的画面',
     studio: '创作台',
@@ -1144,7 +1144,7 @@ export default {
     editingBase: '正在基于上图编辑',
     cancelEdit: '取消编辑',
     templates: '提示词模板',
-    history: '历史（7 天）',
+    history: '历史（3 天）',
     noHistory: '暂无历史',
     expired: '已过期',
     daysLeft: '剩 {n} 天',
@@ -1160,7 +1160,18 @@ export default {
     filterDone: '已完成',
     filterError: '失败',
     noTasks: '暂无任务',
-    refresh: '刷新'
+    refresh: '刷新',
+    retentionNote: '图片仅保留 3 天，到期后自动删除，请及时下载需要保存的图片。',
+    select: '选择',
+    exitSelect: '退出选择',
+    selectAll: '全选',
+    deselectAll: '取消全选',
+    deleteSelected: '删除选中 ({n})',
+    deleteSelectedTitle: '删除选中图片',
+    deleteSelectedConfirm: '确认删除选中的 {n} 张图片？此操作不可恢复。',
+    deleteImageTitle: '删除图片',
+    deleteImageConfirm: '确认删除这张图片？此操作不可恢复。',
+    deletedCount: '已删除 {n} 张图片'
   },
   modelPlaza: {
     title: '模型广场',

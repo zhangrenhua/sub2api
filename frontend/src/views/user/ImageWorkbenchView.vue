@@ -248,13 +248,65 @@
 
         <!-- ===== 图片库 ===== -->
         <div v-show="tab === 'gallery'">
+          <!-- 说明 + 批量操作工具条 -->
+          <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p class="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+              <Icon name="clock" size="sm" />
+              {{ t('imageWorkbench.retentionNote') }}
+            </p>
+            <div v-if="historyImages.length" class="flex shrink-0 items-center gap-2">
+              <template v-if="selecting">
+                <button
+                  class="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-600 hover:border-primary-400 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300"
+                  @click="toggleSelectAll"
+                >
+                  {{ allSelected ? t('imageWorkbench.deselectAll') : t('imageWorkbench.selectAll') }}
+                </button>
+                <button
+                  class="rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-red-700 disabled:opacity-40"
+                  :disabled="selectedIds.size === 0"
+                  @click="askDeleteSelected"
+                >
+                  {{ t('imageWorkbench.deleteSelected', { n: selectedIds.size }) }}
+                </button>
+                <button
+                  class="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-500 hover:border-gray-300 dark:border-dark-600 dark:bg-dark-800"
+                  @click="exitSelect"
+                >
+                  {{ t('imageWorkbench.exitSelect') }}
+                </button>
+              </template>
+              <button
+                v-else
+                class="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-600 hover:border-primary-400 hover:text-primary-600 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300"
+                @click="selecting = true"
+              >
+                {{ t('imageWorkbench.select') }}
+              </button>
+            </div>
+          </div>
+
           <div v-if="historyImages.length === 0" class="rounded-2xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-400 dark:border-dark-600">
             {{ t('imageWorkbench.noHistory') }}
           </div>
           <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5">
-            <div v-for="img in historyImages" :key="img.id" class="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-dark-600">
-              <img :src="img.url" :alt="img.prompt" class="aspect-square w-full cursor-pointer object-cover" loading="lazy" @click="editFromGallery(img)" />
-              <button class="absolute right-1 top-1 hidden rounded-full bg-black/50 px-1.5 text-xs text-white group-hover:block" @click="removeImage(img)">×</button>
+            <div
+              v-for="img in historyImages"
+              :key="img.id"
+              class="group relative overflow-hidden rounded-xl border transition"
+              :class="selecting && selectedIds.has(img.id) ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-200 dark:border-dark-600'"
+            >
+              <img :src="img.url" :alt="img.prompt" class="aspect-square w-full cursor-pointer object-cover" loading="lazy" @click="onCardClick(img)" />
+              <!-- 选择模式：勾选标记 -->
+              <span
+                v-if="selecting"
+                class="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 text-[11px] font-bold"
+                :class="selectedIds.has(img.id) ? 'border-primary-500 bg-primary-500 text-white' : 'border-white/80 bg-black/30 text-transparent'"
+              >
+                ✓
+              </span>
+              <!-- 非选择模式：单张删除 -->
+              <button v-else class="absolute right-1 top-1 hidden rounded-full bg-black/50 px-1.5 text-xs text-white group-hover:block" @click.stop="askDeleteOne(img)">×</button>
               <div class="absolute inset-x-0 bottom-0 hidden items-center justify-between gap-1 bg-gradient-to-t from-black/60 to-transparent px-1.5 py-1 group-hover:flex">
                 <span class="text-[10px] text-white">{{ remainingLabel(img.expires_at) }}</span>
                 <a
@@ -271,6 +323,28 @@
         </div>
       </template>
     </div>
+
+    <!-- 删除确认 -->
+    <ConfirmDialog
+      :show="showDeleteOne"
+      :title="t('imageWorkbench.deleteImageTitle')"
+      :message="t('imageWorkbench.deleteImageConfirm')"
+      :confirm-text="t('common.delete')"
+      :cancel-text="t('common.cancel')"
+      :danger="true"
+      @confirm="confirmDeleteOne"
+      @cancel="showDeleteOne = false"
+    />
+    <ConfirmDialog
+      :show="showDeleteSelected"
+      :title="t('imageWorkbench.deleteSelectedTitle')"
+      :message="t('imageWorkbench.deleteSelectedConfirm', { n: selectedIds.size })"
+      :confirm-text="t('common.delete')"
+      :cancel-text="t('common.cancel')"
+      :danger="true"
+      @confirm="confirmDeleteSelected"
+      @cancel="showDeleteSelected = false"
+    />
   </div>
 </template>
 
@@ -278,6 +352,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import keysAPI from '@/api/keys'
 import userChannelsAPI from '@/api/channels'
 import imageWorkbenchAPI, { type WorkbenchImage, type WorkbenchTask, type GenerateParams } from '@/api/imageWorkbench'
@@ -633,13 +708,60 @@ async function loadHistory() {
   }
 }
 
-async function removeImage(img: WorkbenchImage) {
-  try {
-    await imageWorkbenchAPI.remove(img.id)
-    historyImages.value = historyImages.value.filter((x) => x.id !== img.id)
-  } catch (e: unknown) {
-    appStore.showError(errMessage(e))
+// ---- 图片库：单张 / 批量选择删除 ----
+const selecting = ref(false)
+const selectedIds = ref<Set<number>>(new Set())
+const showDeleteOne = ref(false)
+const pendingDeleteImg = ref<WorkbenchImage | null>(null)
+const showDeleteSelected = ref(false)
+const allSelected = computed(() => historyImages.value.length > 0 && selectedIds.value.size === historyImages.value.length)
+
+function onCardClick(img: WorkbenchImage) {
+  if (selecting.value) toggleSelect(img)
+  else editFromGallery(img)
+}
+function toggleSelect(img: WorkbenchImage) {
+  if (selectedIds.value.has(img.id)) selectedIds.value.delete(img.id)
+  else selectedIds.value.add(img.id)
+}
+function toggleSelectAll() {
+  if (allSelected.value) selectedIds.value.clear()
+  else historyImages.value.forEach((img) => selectedIds.value.add(img.id))
+}
+function exitSelect() {
+  selecting.value = false
+  selectedIds.value.clear()
+}
+function askDeleteOne(img: WorkbenchImage) {
+  pendingDeleteImg.value = img
+  showDeleteOne.value = true
+}
+async function confirmDeleteOne() {
+  showDeleteOne.value = false
+  const img = pendingDeleteImg.value
+  pendingDeleteImg.value = null
+  if (img) await deleteImages([img.id])
+}
+function askDeleteSelected() {
+  if (selectedIds.value.size > 0) showDeleteSelected.value = true
+}
+async function confirmDeleteSelected() {
+  showDeleteSelected.value = false
+  await deleteImages(Array.from(selectedIds.value))
+  exitSelect()
+}
+async function deleteImages(ids: number[]) {
+  if (!ids.length) return
+  const results = await Promise.allSettled(ids.map((id) => imageWorkbenchAPI.remove(id)))
+  const ok = new Set<number>()
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') ok.add(ids[i])
+  })
+  if (ok.size) {
+    historyImages.value = historyImages.value.filter((x) => !ok.has(x.id))
+    appStore.showSuccess(t('imageWorkbench.deletedCount', { n: ok.size }))
   }
+  if (ok.size < ids.length) appStore.showError(t('imageWorkbench.failed'))
 }
 
 function errMessage(e: unknown): string {

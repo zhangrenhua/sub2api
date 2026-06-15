@@ -1108,7 +1108,7 @@ export default {
   // Available Channels (user-facing)
   imageWorkbench: {
     title: 'Image Workbench',
-    description: 'Chat-to-image generation with iterative editing; images expire after 7 days',
+    description: 'Chat-to-image generation with iterative editing; images expire after 3 days',
     heroTitle: 'Turn ideas into images',
     heroSubtitle: 'Pick a preset to start fast, or describe your image below',
     studio: 'Studio',
@@ -1141,7 +1141,7 @@ export default {
     editingBase: 'Editing the image above',
     cancelEdit: 'Cancel',
     templates: 'Prompt templates',
-    history: 'History (7 days)',
+    history: 'History (3 days)',
     noHistory: 'No history yet',
     expired: 'Expired',
     daysLeft: '{n}d left',
@@ -1157,7 +1157,18 @@ export default {
     filterDone: 'Done',
     filterError: 'Failed',
     noTasks: 'No tasks yet',
-    refresh: 'Refresh'
+    refresh: 'Refresh',
+    retentionNote: 'Images are kept for only 3 days and auto-deleted afterwards — download anything you want to keep in time.',
+    select: 'Select',
+    exitSelect: 'Exit select',
+    selectAll: 'Select all',
+    deselectAll: 'Deselect all',
+    deleteSelected: 'Delete selected ({n})',
+    deleteSelectedTitle: 'Delete selected images',
+    deleteSelectedConfirm: 'Delete the {n} selected image(s)? This cannot be undone.',
+    deleteImageTitle: 'Delete image',
+    deleteImageConfirm: 'Delete this image? This cannot be undone.',
+    deletedCount: 'Deleted {n} image(s)'
   },
   modelPlaza: {
     title: 'Model Plaza',

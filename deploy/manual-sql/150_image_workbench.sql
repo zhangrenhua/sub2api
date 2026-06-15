@@ -1,4 +1,4 @@
--- 画图工作台（fork 功能）：生成图片记录 + 7 天自动过期
+-- 画图工作台（fork 功能）：生成图片记录 + 3 天自动过期
 -- 幂等：CREATE TABLE/INDEX IF NOT EXISTS，可安全重复执行。
 -- 行为：图片文件落本地盘，本表存元数据 + expires_at；后台 ticker 定期删过期文件+行。
 -- 注意：fork 功能，手动执行（不进自动迁移 embed）。
@@ -20,11 +20,11 @@ CREATE TABLE IF NOT EXISTS image_workbench_images (
     width          INT          NOT NULL DEFAULT 0,
     height         INT          NOT NULL DEFAULT 0,
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    expires_at     TIMESTAMPTZ  NOT NULL              -- = created_at + 7 天
+    expires_at     TIMESTAMPTZ  NOT NULL              -- = created_at + 3 天（由应用写入）
 );
 
 CREATE INDEX IF NOT EXISTS idx_iwi_user_created ON image_workbench_images (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_iwi_expires ON image_workbench_images (expires_at);
 CREATE INDEX IF NOT EXISTS idx_iwi_token ON image_workbench_images (token);
 
-COMMENT ON TABLE image_workbench_images IS 'Fork：画图工作台生成记录，图片文件落本地盘，7 天过期由后台清理任务删除';
+COMMENT ON TABLE image_workbench_images IS 'Fork：画图工作台生成记录，图片文件落本地盘，3 天过期由后台清理任务删除';
