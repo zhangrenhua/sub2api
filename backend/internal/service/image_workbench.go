@@ -38,7 +38,7 @@ const (
 	imageWorkbenchMaxInputBytes  = 20 << 20         // 单张输入图上限 20MB(/help)
 	imageWorkbenchMaxPromptLen   = 12000            // 后端 prompt 字符上限(前端 UX 限 10000)
 	imageWorkbenchMaxActiveTasks = 20               // 每用户排队+执行中任务上限
-	imageWorkbenchWorkers        = 3                // 并发 worker 数
+	imageWorkbenchWorkers        = 20               // 并发 worker 数
 	imageWorkbenchBaseSubdir     = "_base"          // 上传底图临时落盘子目录
 )
 
@@ -135,12 +135,16 @@ func NewImageWorkbenchService(repo ImageWorkbenchRepository, cfg *config.Config,
 	if dir == "" {
 		dir = filepath.Join("data", "image-workbench")
 	}
+	// loopback 全部打到本机网关(同一 host)，调大单主机空闲连接复用，避免 worker 增多时连接抖动。
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.MaxIdleConns = imageWorkbenchWorkers * 2
+	transport.MaxIdleConnsPerHost = imageWorkbenchWorkers
 	return &ImageWorkbenchService{
 		repo:       repo,
 		cfg:        cfg,
 		keys:       keys,
 		storageDir: dir,
-		httpClient: &http.Client{Timeout: imageWorkbenchHTTPTimeout},
+		httpClient: &http.Client{Timeout: imageWorkbenchHTTPTimeout, Transport: transport},
 	}
 }
 
